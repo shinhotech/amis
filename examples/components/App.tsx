@@ -23,6 +23,8 @@ import DocNavCN from './DocNavCN';
 import Example from './Example';
 import CSSDocs from './CssDocs';
 import Components from './Components';
+import SHComponents from './ShComponents';
+
 import {
   BrowserRouter as Router,
   Route,
@@ -279,6 +281,12 @@ export class App extends React.PureComponent<{
               组件
             </NavLink>
             <NavLink
+              to={`${ContextPath}/zh-CN/sh-components/index`}
+              activeClassName="is-active"
+            >
+              业务组件
+            </NavLink>
+            <NavLink
               to={`${ContextPath}/zh-CN/style`}
               activeClassName="is-active"
             >
@@ -381,7 +389,7 @@ export class App extends React.PureComponent<{
             </div>
             <a
               className="gh-icon"
-              href="https://github.com/baidu/amis"
+              href="https://github.com/shinhotech/amis"
               target="_blank"
             >
               <i className="fa fa-github" />
@@ -657,6 +665,24 @@ export class App extends React.PureComponent<{
             )}
           />
           <Route
+            path={`${ContextPath}/${locale}/sh-components`}
+            render={(props: any) => (
+              <SHComponents
+                {...{
+                  setNavigations: this.setNavigations,
+                  theme: theme.value,
+                  classPrefix: theme.ns,
+                  viewMode: this.state.viewMode,
+                  locale: this.state.locale,
+                  offScreen: this.state.offScreen,
+                  ContextPath,
+                  showCode: false
+                }}
+                {...props}
+              />
+            )}
+          />
+          <Route
             path={`${ContextPath}/examples`}
             render={(props: any) => (
               <Example
@@ -771,6 +797,12 @@ export class App extends React.PureComponent<{
                 activeClassName="is-active"
               >
                 组件
+              </NavLink>
+              <NavLink
+                to={`${ContextPath}/zh-CN/sh-components/index`}
+                activeClassName="is-active"
+              >
+                业务组件
               </NavLink>
               <NavLink
                 to={`${ContextPath}/zh-CN/style`}

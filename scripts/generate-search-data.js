@@ -33,6 +33,7 @@ glob('./docs/**/*.md', {}, function (er, docs) {
         .slice(1)
         .replace('.md', '')
         .replace('/docs/zh-CN/components/', '/zh-CN/components/')
+        .replace('/docs/zh-CN/sh-components/', '/zh-CN/sh-components/')
         .replace('/docs/zh-CN/style/', '/zh-CN/style/')
         .replace('/docs/zh-CN/', '/zh-CN/docs/')
     });

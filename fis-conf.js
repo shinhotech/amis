@@ -896,6 +896,7 @@ if (fis.project.currentMedia() === 'publish-sdk') {
         const DocJs = ret.src['/examples/components/Doc.tsx'];
         const DocNavCN = ret.src['/examples/components/DocNavCN.ts'];
         const Components = ret.src['/examples/components/Components.tsx'];
+        const SHComponents = ret.src['/examples/components/ShComponents.tsx'];
         const DocCSS = ret.src['/examples/components/CssDocs.tsx'];
         const ExampleJs = ret.src['/examples/components/Example.jsx'];
 
@@ -905,6 +906,7 @@ if (fis.project.currentMedia() === 'publish-sdk') {
           DocJs.getContent(),
           DocNavCN.getContent(),
           Components.getContent(),
+          SHComponents.getContent(),
           DocCSS.getContent(),
           ExampleJs.getContent()
         ].join('\n');
