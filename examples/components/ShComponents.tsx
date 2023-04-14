@@ -10,13 +10,32 @@ function wrapDoc(doc: any) {
 
 export const shComponents = [
   {
-    label: '表单组件',
+    label: '开发流程',
     children: [
       {
-        label: '表单筛选项',
+        label: '项目集成',
         path: '/zh-CN/sh-components/index',
         component: React.lazy(() =>
           import('../../docs/zh-CN/sh-components/index.md').then(wrapDoc)
+        )
+      },
+      {
+        label: '混合开发',
+        path: '/zh-CN/sh-components/develop',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/develop.md').then(wrapDoc)
+        )
+      }
+    ]
+  },
+  {
+    label: '表单组件',
+    children: [
+      {
+        label: '表单查询',
+        path: '/zh-CN/sh-components/forms',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/forms.md').then(wrapDoc)
         )
       }
     ]
@@ -25,7 +44,7 @@ export const shComponents = [
     label: '图表组件',
     children: [
       {
-        label: '四象限（气泡图）',
+        label: 'Echats图表',
         path: '/zh-CN/sh-components/charts',
         component: React.lazy(() =>
           import('../../docs/zh-CN/sh-components/charts.md').then(wrapDoc)

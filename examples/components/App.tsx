@@ -281,7 +281,7 @@ export class App extends React.PureComponent<{
               组件
             </NavLink>
             <NavLink
-              to={`${ContextPath}/zh-CN/sh-components/index`}
+              to={`${ContextPath}/zh-CN/sh-components`}
               activeClassName="is-active"
             >
               业务组件
@@ -799,7 +799,7 @@ export class App extends React.PureComponent<{
                 组件
               </NavLink>
               <NavLink
-                to={`${ContextPath}/zh-CN/sh-components/index`}
+                to={`${ContextPath}/zh-CN/sh-components`}
                 activeClassName="is-active"
               >
                 业务组件

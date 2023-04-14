@@ -1,95 +1,164 @@
 ---
-title: 快速开始
+title: 项目集成
 ---
 
-示例有个[主题编辑器](../../examples/theme)，可以在线实时预览效果。
+## 页面组件
+在一个现有项目中，按以下方式进行`amis`页面组件的集成。
 
-> 这是 1.1.0 版本中新增的功能
+1. amis 页面渲染器
 
-在 amis 中自定义样式有四种方式：
+```js
+<template lang="pug">
+.amis-home
+  div(
+    ref="amisBox"
+  )
+</template>
 
-1. 使用 CSS 变量动态修改，通过这种方式修改大部分 amis 组件的样式，所有组件都会生效，注意这种方法不支持 IE11。
-2. 使用辅助 class，可以对单个组件做定制修改。
-3. 自己生成主题 CSS，可以修改所有配置，目前只能通过源码方式，请参考 `scss\themes\cxd.scss` 文件，修改变量后重新编译一个 css，需要注意这种方式在更新 amis 版本的时候最好重新编译，否则就会出现使用旧版 css 的情况，可能导致出错，因此不推荐使用。
-4. `wrapper` 组件可以直接写内嵌 `style`。
+<script lang="ts" setup>
+import { ref, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { $get, $post } from '@/http/request'
 
-本文主要介绍前两种方法：
+import jsonDefault from './json/index'
 
-## CSS 变量
+type TJson = keyof typeof jsonDefault
 
-在 page 下可以设置 cssVars 属性，通过它来动态修改 amis 内的 css 变量。
+const amisBox = ref()
+const route = useRoute()
 
-```schema
-{
-  "type": "page",
-  "cssVars": {
-    "--text-color": "#CD3632",
-    "--primary": "#CD3632",
-    "--primary-onHover": "#F23F3A",
-    "--primary-onActive": "#BB312D"
-  },
-  "body": {
-    "type": "form",
-    "body": [
-      {
-        "type": "input-text",
-        "label": "文本",
-        "name": "text"
-      },
-      {
-        "type": "input-password",
-        "label": "密码",
-        "name": "password"
-      }
-    ]
+defineProps({
+  onAction: {
+    type: Function,
+    required: false,
+    default: () => {
+      //
+    }
   }
+})
+
+/* amis 渲染器 */
+const amisRender = (schemaJson: any) => {
+  const amis = (window as any)?.amisRequire('amis/embed')
+
+  amis.embed(amisBox.value, schemaJson, {}, {
+    // 增加接口访问 fetcher 方法，访问项目接口， 区分不同环境
+    fetcher: ({ url, method, body }: any) => {
+      switch (method) {
+        case 'get':
+          return $get(url, { ...body, extraParams: { type: 'amis' } })
+        case 'post':
+          return $post(url, { ...body, extraParams: { type: 'amis' } })
+      }
+    }
+    // theme: 'antd'
+  })
+}
+
+/* 执行渲染逻辑 */
+const initPage = async (jsonSchema: any) => {
+  const amisRequire = (window as any)?.amisRequire ?? null
+
+  if (!amisRequire) {
+    return
+  }
+  await nextTick() // 待完成跟选择器节点的渲染
+  // 使用 amis 内置组件渲染
+  amisRender(jsonSchema)
+}
+
+/*解析url参数，加载对应的amis配置文件*/
+const loadJsonSchemaHook = () => {
+  // 路由命名规则 /amis/xxx [xxx 使用小驼峰]
+  // 根据规则获取 json 文件名
+  const pathName = (route.path).split('/').at(-1) as TJson
+  // 获取 json 数据
+  const json = jsonDefault[pathName] ?? null
+  json && initPage(json)
+}
+
+watch(() => route.path, (newPath, oldPath) => {
+  if (newPath !== oldPath) {
+    loadJsonSchemaHook()
+  }
+}, {
+  immediate: true,
+  deep: true
+})
+</script>
+
+<style lang="stylus">
+.amis-home
+  width calc(100vw - 251px)
+</style>
+```
+
+2. 配置路由
+
+```js
+{
+  path: '/amis/:type',
+  component: () => import('@/pages/amisPage/init.vue'),
+  name: 'amis-demo'
 }
 ```
 
-具体有哪些变量请参考左侧的 [CSS 变量](css-vars) 说明。
+## 模块组件
 
-## 辅助 class
+1. 创建amis相关组件，如`components/amis.vue`
 
-辅助 class 参考自[tailwindcss](https://tailwindcss.com/), 做了精简，把一些不常用的剔除了，响应式方面只保留 pc 和手机两种，css 未压缩版本大概是 800K 左右，比 tailwind 要小很多。
+```js
+template>
+  <div id="box">
+    <slot></slot>
+  </div>
+</template>
 
-使用方法：
+<script lang="ts" setup>
+import {  onMounted } from "vue";
 
-- JS SDK
-  - 引入 sdk 中的文件 `<link rel="stylesheet" href="sdk/helper.css" />`
-- React
-  - `import 'amis/lib/helper.css'`;
+const props= defineProps({
+  amisjson: {
+    type: Object,
+    required: true
+  }
+})
 
-目前这个文件没有和主题文件合并在一起，用户可以选择性加载。
+onMounted(() => {
+  // @ts-ignore
+  var amis = amisRequire('amis/embed');
+  let amisScoped = amis.embed('#box', props.amisjson);
+})
+</script>
+```
 
-大部分 amis 组件都有 `className` 或者 `xxxClassName` 的配置，比如下面的配置给表单增加了边框、圆角和阴影
+2. 在页面中使用：
 
-```schema: scope="body"
-{
-  "type": "form",
-  "panelClassName": "border-solid border-2 border-blue-500 rounded-xl shadow-lg",
-  "body": [
+```js
+<template>
+  <div class="main">
+    <Amis :amisjson="amisjson"></Amis>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import Amis from "../components/Amis.vue";
+
+const amisjson = {
+  type: 'form',
+  mode: 'horizontal',
+  body: [
     {
-      "type": "input-text",
-      "className": "text-green-700",
-      "label": "文本框",
-      "name": "text"
+      label: '用户名',
+      type: 'input-text',
+      name: 'name'
     },
     {
-      "type": "input-password",
-      "label": "密码",
-      "name": "password"
+      label: '密码',
+      type: 'input-text',
+      name: 'password'
     }
   ]
 }
+</script>
 ```
-
-还可以：
-
-- 通过 `flex` `flex-shrink-0` 来设置布局方式。
-- 通过 `bg-blue-100` `bg-white` 之类的类名设置背景色。
-- 通过 `shadow-md` 设置投影。
-- 通过 `rounded-xl` 设置圆角。
-- 通过 `text-xl`、`font-medium` 设置字体大小粗细。
-- 等等。。
-
-具体用法请查看左边的文档列表。

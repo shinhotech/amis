@@ -253,7 +253,7 @@ export default function (doc) {
 
     getDocEditLink() {
       const {ContextPath} = this.props;
-      const basePath = 'https://github.com/baidu/amis/edit/master';
+      const basePath = 'https://github.com/shinhotech/amis/edit/master';
 
       try {
         const [urlPath, locale, moduleName, relativePath] = location.pathname
