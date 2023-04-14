@@ -407,3 +407,23 @@ title: 表单组件
    }
 }
 ```
+
+## 表单下载
+
+```schema
+{
+  "type": "button",
+  "label": "表格下载",
+  "level": "primary",
+  "onEvent": {
+    "click": {
+      "actions": [
+        {
+          "actionType": "custom",
+          "script": "console.log('excel下载');\n const link = document.createElement('a');\n link.href = '替换为后端S3地址';\n link.download = 'filename.xlsx';\n document.body.appendChild(link); link.click();\n document.body.removeChild(link);"
+        }
+      ]
+    }
+  }
+}
+```
