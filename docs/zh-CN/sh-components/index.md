@@ -46,6 +46,8 @@ const amisRender = (schemaJson: any) => {
     fetcher: ({ url, method, body }: any) => {
       switch (method) {
         case 'get':
+          // 根据项目现有接口请求工具添加对应 api
+          // extraParams 扩展字段是根据树根请求模块扩展的特殊字段，用于统一处理amis接收数据的返回格式，可去除
           return $get(url, { ...body, extraParams: { type: 'amis' } })
         case 'post':
           return $post(url, { ...body, extraParams: { type: 'amis' } })
