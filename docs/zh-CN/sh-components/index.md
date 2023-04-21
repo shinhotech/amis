@@ -2,10 +2,17 @@
 title: 项目集成
 ---
 
-## 页面组件
+## Vue3 + JS SDK 引入形式
+
+### 根目录引入 SDK
+
+参考：https://shinhotech.github.io/amis/zh-CN/docs/start/getting-started
+
+## 配置渲染器
+
 在一个现有项目中，按以下方式进行`amis`页面组件的集成。
 
-1. amis 页面渲染器
+### 新增 amis 页面，承接 amis 渲染器
 
 ```js
 <template lang="pug">
@@ -95,7 +102,7 @@ watch(() => route.path, (newPath, oldPath) => {
 </style>
 ```
 
-2. 配置路由
+### 配置路由
 
 ```js
 {
@@ -105,9 +112,9 @@ watch(() => route.path, (newPath, oldPath) => {
 }
 ```
 
-## 模块组件
+## 第一个 amis 组件
 
-1. 创建amis相关组件，如`components/amis.vue`
+### 创建 amis 相关组件，如`components/amis.vue`
 
 ```js
 template>
@@ -134,7 +141,7 @@ onMounted(() => {
 </script>
 ```
 
-2. 在页面中使用：
+### 在页面中使用创建的 amis 组件
 
 ```js
 <template>
