@@ -1,0 +1,211 @@
+{
+  "msg": "ok",
+  "status": 0,
+  "data": {
+    "city": "江苏省111",
+    "items": [
+      {
+        "type1": "四阶分析",
+        "ipo2": "合计1",
+        "ipo3": "合计2",
+        "ipo4": "合计3",
+        "ipo5": "合计4",
+        "ipo6": "合计5",
+        "ipo7": "合计6",
+        "ipo8": "合计",
+        "ipo9": "合计",
+        "ipo10": "合计",
+        "ipo11": "合计",
+        "children": [
+          {
+            "type1": "一阶（EC）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "city": "江苏省",
+            "type1": "二阶（直营MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "三阶（GT&D-MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "四阶（R）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          }
+        ]
+      },
+      {
+        "type1": "IPO节点比例",
+        "ipo2": "合计",
+        "ipo3": "合计",
+        "ipo4": "合计",
+        "ipo5": "合计",
+        "ipo6": "合计",
+        "ipo7": "合计",
+        "ipo8": "合计",
+        "ipo9": "合计",
+        "ipo10": "合计",
+        "ipo11": "合计",
+        "children": [
+          {
+            "type1": "一阶（EC）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "二阶（直营MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "三阶（GT&D-MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "四阶（R）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          }
+        ]
+      },
+      {
+        "type1": "客户&产品四象限比例",
+        "ipo2": "合计",
+        "ipo3": "合计",
+        "ipo4": "合计",
+        "ipo5": "合计",
+        "ipo6": "合计",
+        "ipo7": "合计",
+        "ipo8": "合计",
+        "ipo9": "合计",
+        "ipo10": "合计",
+        "ipo11": "合计",
+        "children": [
+          {
+            "type1": "一阶（EC）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "二阶（直营MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "三阶（GT&D-MT）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          },
+          {
+            "type1": "四阶（R）",
+            "ipo2": "xxx",
+            "ipo3": "xxx",
+            "ipo4": "xxx",
+            "ipo5": "xxx",
+            "ipo6": "xxx",
+            "ipo7": "xxx",
+            "ipo8": "xxx",
+            "ipo9": "xxx",
+            "ipo10": "xxx",
+            "ipo11": "xxx"
+          }
+        ]
+      }
+    ]
+  }
+}

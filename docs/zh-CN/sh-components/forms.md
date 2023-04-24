@@ -14,7 +14,7 @@ title: 表单组件
       "syncLocation": false,
       "perPage": 10,
       "api": {
-         "url": "https://apimarket-test.shinho.net.cn/sh-root-mvp1/label/get/label-val/list",
+         "url": "/api/mock2/shComponent/nodeList",
          "method": "post",
          "defaultParams": {
             "perPage": 10,
@@ -166,7 +166,7 @@ title: 表单组件
                "multiple": true,
                "checkAll": false,
                "source": {
-                  "url": "https://apimarket-test.shinho.net.cn/sh-root-mvp1/label/get/node/all",
+                  "url": "/api/mock2/shComponent/applyNode",
                   "method": "get",
                   "dataType": "json",
                   "responseData": {
@@ -223,22 +223,20 @@ title: 表单组件
       "draggable": false,
       "syncLocation": false,
       "api": {
-         "url": "https://mock.presstime.cn/mock/6436509d066f61085bf2344a/queryList/query/tableList11",
+         "url": "/api/mock2/shComponent/ipoTableList",
          "method": "post",
          "data": {
             "yearType": "${yearType}",
             "date": "${yearType === \"year\" ? year : (yearType === \"quarter\" ? quarter : month)}",
             "region": "${region}"
          },
-         "messages": {},
          "dataType": "json",
          "responseData": {
-            "items": "${items}",
-            "city1": "${city1}"
+            "items": "${items}"
          }
       },
       "data": {
-         "test": "北京1"
+         "test": "北京"
       },
       "footerToolbar": [
          "statistics",
@@ -373,13 +371,7 @@ title: 表单组件
                "multiple": false,
                "extractValue": true,
                "source": {
-                  "url": "https://apimarket-test.shinho.net.cn/sh-root-mvp1/area/req/get-all?showLevel=2&year=2023",
-                  "method": "get",
-                  "dataType": "json",
-                  "responseData": {
-                     "options": "${items|pick:label~geocName,value~geocCode,children~child}"
-                  },
-                  "adaptor": "return {\nstatus: 0,\n...response\n}"
+                  "url": "/api/mock2/shComponent/getRegionData",
                }
             },
             {

@@ -1,0 +1,261 @@
+{
+  "status": 0,
+  "msg": "请求成功",
+  "data": {
+    "options": [
+      {
+        "label": "中国",
+        "geocType": "COUNTRY",
+        "value": "CN",
+        "canChoose": true,
+        "children": [
+          {
+            "label": "北京",
+            "geocType": "STATE_ABBREV",
+            "value": "010",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "上海",
+            "geocType": "STATE_ABBREV",
+            "value": "020",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "天津",
+            "geocType": "STATE_ABBREV",
+            "value": "030",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "内蒙古",
+            "geocType": "STATE_ABBREV",
+            "value": "040",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "山西",
+            "geocType": "STATE_ABBREV",
+            "value": "050",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "河北",
+            "geocType": "STATE_ABBREV",
+            "value": "060",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "辽宁",
+            "geocType": "STATE_ABBREV",
+            "value": "070",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "吉林",
+            "geocType": "STATE_ABBREV",
+            "value": "080",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "黑龙江",
+            "geocType": "STATE_ABBREV",
+            "value": "090",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "江苏",
+            "geocType": "STATE_ABBREV",
+            "value": "100",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "安徽",
+            "geocType": "STATE_ABBREV",
+            "value": "110",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "山东",
+            "geocType": "STATE_ABBREV",
+            "value": "120",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "浙江",
+            "geocType": "STATE_ABBREV",
+            "value": "130",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "江西",
+            "geocType": "STATE_ABBREV",
+            "value": "140",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "福建",
+            "geocType": "STATE_ABBREV",
+            "value": "150",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "湖南",
+            "geocType": "STATE_ABBREV",
+            "value": "160",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "湖北",
+            "geocType": "STATE_ABBREV",
+            "value": "170",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "河南",
+            "geocType": "STATE_ABBREV",
+            "value": "180",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "广东",
+            "geocType": "STATE_ABBREV",
+            "value": "190",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "海南",
+            "geocType": "STATE_ABBREV",
+            "value": "200",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "广西",
+            "geocType": "STATE_ABBREV",
+            "value": "210",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "贵州",
+            "geocType": "STATE_ABBREV",
+            "value": "220",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "四川",
+            "geocType": "STATE_ABBREV",
+            "value": "230",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "云南",
+            "geocType": "STATE_ABBREV",
+            "value": "240",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "陕西",
+            "geocType": "STATE_ABBREV",
+            "value": "250",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "甘肃",
+            "geocType": "STATE_ABBREV",
+            "value": "260",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "宁夏",
+            "geocType": "STATE_ABBREV",
+            "value": "270",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "青海",
+            "geocType": "STATE_ABBREV",
+            "value": "280",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "新疆",
+            "geocType": "STATE_ABBREV",
+            "value": "290",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "西藏",
+            "geocType": "STATE_ABBREV",
+            "value": "300",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "重庆",
+            "geocType": "STATE_ABBREV",
+            "value": "320",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "台湾",
+            "geocType": "STATE_ABBREV",
+            "value": "330",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "澳门",
+            "geocType": "STATE_ABBREV",
+            "value": "340",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "香港",
+            "geocType": "STATE_ABBREV",
+            "value": "350",
+            "canChoose": true,
+            "children": []
+          },
+          {
+            "label": "其他",
+            "geocType": "STATE_ABBREV",
+            "value": "0000_CN",
+            "canChoose": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
