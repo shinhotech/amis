@@ -19,6 +19,16 @@ function mockRequest(event, context) {
     body = JSON.parse(event.body);
   }
 
+  console.log('event.pathParameters.subpath===', event.pathParameters.subpath)
+
+  if (/shMock/.test(event.pathParameters.subpath)) {
+    const newPath = event.pathParameters.subpath.split('/').splice(1)
+    event.pathParameters.subpath = 'mock2/' + newPath.join('/')
+  }
+
+  console.log('22222222===', event.pathParameters.subpath)
+
+
   return {
     query: event.queryStringParameters || {},
     method: 'GET',

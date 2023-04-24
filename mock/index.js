@@ -6,9 +6,12 @@ const cfcHandler = require('./cfc/index').handler;
 
 module.exports = function (req, res) {
   const subpath = (req.originalUrl || req.url).replace(
-    /^\/(api\/mock2|api)\/|\?.*$/g,
+    /^\/(api\/mock2|api|shMock)\/|\?.*$/g,
     ''
   );
+
+  console.log('subpath11111===', subpath)
+
   const mockEvent = {
     queryStringParameters: req.query,
     pathParameters: {

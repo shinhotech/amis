@@ -721,6 +721,7 @@ if (fis.project.currentMedia() === 'publish-sdk') {
   if (process.env.IS_AISUDA) {
     cfcAddress = '/amis/api';
   }
+  const cfcAddressNew = 'https://shinhotech.github.io/amis/mock/cfc'
 
   ghPages.match('/{examples,docs}/**', {
     preprocessor: function (contents, file) {
@@ -731,6 +732,22 @@ if (fis.project.currentMedia() === 'publish-sdk') {
       return contents.replace(
         /(\\?(?:'|"))((?:get|post|delete|put)\:)?\/api\/(\w+)/gi,
         function (_, qutoa, method, path) {
+
+          // const newPath = path.replace(/^(mock2|api)\/|\?.*$/g, '')
+
+          console.log('=====newPath1====', _)
+          console.log('=====newPath2====', qutoa)
+          console.log('=====newPath3====', method)
+          console.log('=====newPath4====', path)
+
+
+
+          if (path === 'shMock') { // /shComponent/.test(newPath)
+
+            // 欣和业务组件，强制请求本地 json
+            return qutoa + (method || '') + `${cfcAddressNew}/mock`;
+          }
+
           return qutoa + (method || '') + `${cfcAddress}/` + path;
         }
       );

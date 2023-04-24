@@ -1,6 +1,6 @@
 {
-  "code": 200,
-  "msg": "成功",
+  "status": 0,
+  "msg": "ok",
   "data": {
     "pageIndex": 1,
     "pageSize": 10,

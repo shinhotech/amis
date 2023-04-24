@@ -14,7 +14,7 @@ title: 表单组件
       "syncLocation": false,
       "perPage": 10,
       "api": {
-         "url": "/api/mock2/shComponent/nodeList",
+         "url": "/api/shMock/shComponent/nodeList",
          "method": "post",
          "defaultParams": {
             "perPage": 10,
@@ -28,7 +28,6 @@ title: 表单组件
                "nodeCode": "${nodeList|default:[]|split}"
             }
          },
-         "messages": {},
          "dataType": "json",
          "responseData": {
             "items": "${records}",
@@ -165,14 +164,7 @@ title: 表单组件
                "cascade": true,
                "multiple": true,
                "checkAll": false,
-               "source": {
-                  "url": "/api/mock2/shComponent/applyNode",
-                  "method": "get",
-                  "dataType": "json",
-                  "responseData": {
-                     "options": "${items|pick:label~nodeDesc,value~nodeCode}"
-                  }
-               }
+               "source": "/api/shMock/shComponent/applyNode"
             },
             {
                "type": "input-year",
@@ -222,19 +214,7 @@ title: 表单组件
       "type": "crud",
       "draggable": false,
       "syncLocation": false,
-      "api": {
-         "url": "/api/mock2/shComponent/ipoTableList",
-         "method": "post",
-         "data": {
-            "yearType": "${yearType}",
-            "date": "${yearType === \"year\" ? year : (yearType === \"quarter\" ? quarter : month)}",
-            "region": "${region}"
-         },
-         "dataType": "json",
-         "responseData": {
-            "items": "${items}"
-         }
-      },
+      "api": "/api/shMock/shComponent/ipoTableList",
       "data": {
          "test": "北京"
       },
@@ -370,9 +350,7 @@ title: 表单组件
                "value": "010",
                "multiple": false,
                "extractValue": true,
-               "source": {
-                  "url": "/api/mock2/shComponent/getRegionData",
-               }
+               "source": "/api/shMock/shComponent/getRegionData"
             },
             {
                "type": "button-toolbar",

@@ -3,9 +3,11 @@ const fs = require('fs');
 const DIRNAME = path.dirname(__filename);
 
 module.exports = function(req, res) {
-    const subpath = (req.originalUrl || req.url).replace(/^\/(api\/mock2|api)\/|\?.*$/g, '');
+    const subpath = (req.originalUrl || req.url).replace(/^\/(api\/mock2|api|shMock)\/|\?.*$/g, '');
     const jsonFile = subpath  + '.json';
     const jsFile = subpath + '.js';
+
+    console.log('subpath2222===', subpath)
 
     if (subpath == 'options/users') {
         let json = readJson(jsonFile);
