@@ -1,9 +1,11 @@
 {
-  "code": 200,
-  "msg": "成功",
-  "data": [
-    {"nodeCode": "spuCountyCollect", "nodeDesc": "区县&SPU 目标定版页"},
-    {"nodeCode": "itemCountyCollect", "nodeDesc": "区县&ltem 目标定版页"},
-    {"nodeCode": "investComparison", "nodeDesc": "投资测算结果比对页"}
-  ]
+  "status": 0,
+  "msg": "ok",
+  "data": {
+    "options": [
+      {"value": "spuCountyCollect", "label": "区县&SPU 目标定版页"},
+      {"value": "itemCountyCollect", "label": "区县&ltem 目标定版页"},
+      {"value": "investComparison", "label": "投资测算结果比对页"}
+    ]
+  }
 }

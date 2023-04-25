@@ -198,15 +198,15 @@ fis.match('{*.ts,*.jsx,*.tsx,/examples/**.js,/src/**.js,/src/**.ts}', {
     function (content) {
       return (
         content
-          // ts 4.4 生成的代码是 (0, tslib_1.__importStar)，直接改成 tslib_1.__importStar
-          .replace(/\(\d+, (tslib_\d+\.__importStar)\)/g, '$1')
-          .replace(/\b[a-zA-Z_0-9$]+\.__uri\s*\(/g, '__uri(')
-          .replace(
-            /(return|=>)\s*(tslib_\d+)\.__importStar\(require\(('|")(.*?)\3\)\)/g,
-            function (_, r, tslib, quto, value) {
-              return `${r} new Promise(function(resolve){require(['${value}'], function(ret) {resolve(${tslib}.__importStar(ret));})})`;
-            }
-          )
+        // ts 4.4 生成的代码是 (0, tslib_1.__importStar)，直接改成 tslib_1.__importStar
+        .replace(/\(\d+, (tslib_\d+\.__importStar)\)/g, '$1')
+        .replace(/\b[a-zA-Z_0-9$]+\.__uri\s*\(/g, '__uri(')
+        .replace(
+          /(return|=>)\s*(tslib_\d+)\.__importStar\(require\(('|")(.*?)\3\)\)/g,
+          function (_, r, tslib, quto, value) {
+            return `${r} new Promise(function(resolve){require(['${value}'], function(ret) {resolve(${tslib}.__importStar(ret));})})`;
+          }
+        )
       );
     }
   ],
@@ -227,8 +227,7 @@ fis.match('*.html:jsx', {
 
 // 这些用了 esm
 fis.match(
-  '{echarts/extension/**.js,zrender/**.js,markdown-it-html5-media/**.js,react-hook-form/**.js,qrcode.react/**.js,axios/**.js}',
-  {
+  '{echarts/extension/**.js,zrender/**.js,markdown-it-html5-media/**.js,react-hook-form/**.js,qrcode.react/**.js,axios/**.js}', {
     parser: fis.plugin('typescript', {
       sourceMap: false,
       importHelpers: true,
@@ -296,8 +295,8 @@ if (fis.project.currentMedia() === 'dev') {
     if (file.subpath === '/packages/amis-core/src/index.tsx') {
       file.setContent(
         file
-          .getContent()
-          .replace(/__buildVersion/g, JSON.stringify(package.version))
+        .getContent()
+        .replace(/__buildVersion/g, JSON.stringify(package.version))
       );
     }
   });
@@ -380,8 +379,8 @@ if (fis.project.currentMedia() === 'publish-sdk') {
     } else if (file.subpath === '/packages/amis-core/src/index.tsx') {
       file.setContent(
         file
-          .getContent()
-          .replace(/__buildVersion/g, JSON.stringify(package.version))
+        .getContent()
+        .replace(/__buildVersion/g, JSON.stringify(package.version))
       );
     }
   });
@@ -721,6 +720,8 @@ if (fis.project.currentMedia() === 'publish-sdk') {
   if (process.env.IS_AISUDA) {
     cfcAddress = '/amis/api';
   }
+  // 欣和 github.io 存放 mock 数据地址
+  const cfcAddressNew = 'https://shinhotech.github.io/amis/mock/cfc/mock'
 
   ghPages.match('/{examples,docs}/**', {
     preprocessor: function (contents, file) {
@@ -731,7 +732,15 @@ if (fis.project.currentMedia() === 'publish-sdk') {
       return contents.replace(
         /(\\?(?:'|"))((?:get|post|delete|put)\:)?\/api\/(\w+)/gi,
         function (_, qutoa, method, path) {
-          return qutoa + (method || '') + `${cfcAddress}/` + path;
+
+          //【说明】新增 shMock， 代表请求方式使用欣和组件 github.io 下的 mock 数据
+          if (path === 'shMock') {
+
+            // 拼接 api 请求域名
+            return qutoa + (method || '') + `${cfcAddressNew}`;
+          } else {
+            return qutoa + (method || '') + `${cfcAddress}/` + path;
+          }
         }
       );
     }

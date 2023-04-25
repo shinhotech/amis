@@ -14,8 +14,8 @@ title: 表单组件
       "syncLocation": false,
       "perPage": 10,
       "api": {
-         "url": "/api/mock2/shComponent/nodeList",
-         "method": "post",
+         "url": "/api/shMock/shComponent/nodeList.json",
+         "method": "get",
          "defaultParams": {
             "perPage": 10,
             "page": 1,
@@ -165,14 +165,7 @@ title: 表单组件
                "cascade": true,
                "multiple": true,
                "checkAll": false,
-               "source": {
-                  "url": "/api/mock2/shComponent/applyNode",
-                  "method": "get",
-                  "dataType": "json",
-                  "responseData": {
-                     "options": "${items|pick:label~nodeDesc,value~nodeCode}"
-                  }
-               }
+               "source": "/api/shMock/shComponent/applyNode.json"
             },
             {
                "type": "input-year",
@@ -223,16 +216,12 @@ title: 表单组件
       "draggable": false,
       "syncLocation": false,
       "api": {
-         "url": "/api/mock2/shComponent/ipoTableList",
-         "method": "post",
+         "url": "/api/shMock/shComponent/ipoTableList.json",
+         "method": "get",
          "data": {
             "yearType": "${yearType}",
             "date": "${yearType === \"year\" ? year : (yearType === \"quarter\" ? quarter : month)}",
             "region": "${region}"
-         },
-         "dataType": "json",
-         "responseData": {
-            "items": "${items}"
          }
       },
       "data": {
@@ -370,9 +359,7 @@ title: 表单组件
                "value": "010",
                "multiple": false,
                "extractValue": true,
-               "source": {
-                  "url": "/api/mock2/shComponent/getRegionData",
-               }
+               "source": "/api/shMock/shComponent/getRegionData.json"
             },
             {
                "type": "button-toolbar",
