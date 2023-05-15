@@ -29,6 +29,18 @@ export const shComponents = [
     ]
   },
   {
+    label: '重置样式',
+    children: [
+      {
+        label: '树根',
+        path: '/zh-CN/sh-components/index',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/index.md').then(wrapDoc)
+        )
+      }
+    ]
+  },
+  {
     label: '表单组件',
     children: [
       {
@@ -48,6 +60,18 @@ export const shComponents = [
         path: '/zh-CN/sh-components/charts',
         component: React.lazy(() =>
           import('../../docs/zh-CN/sh-components/charts.md').then(wrapDoc)
+        )
+      }
+    ]
+  },
+  {
+    label: '图表页面',
+    children: [
+      {
+        label: 'EchatsPage查询',
+        path: '/zh-CN/sh-components/chartsPage',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/chartsPage.md').then(wrapDoc)
         )
       }
     ]

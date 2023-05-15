@@ -62,7 +62,6 @@ function exist(subpath) {
 }
 
 function readJson(subpath, url) {
-  console.log('路径====', subpath, url)
   const content = fs.readFileSync(path.join(DIRNAME, subpath), 'utf8');
   return JSON.parse(content);
 }
