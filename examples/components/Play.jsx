@@ -470,6 +470,7 @@ export default class PlayGround extends React.Component {
 
   renderEditor() {
     const {theme} = this.props;
+    console.log('this.state.schemaCode=====', this.state.schemaCode)
     return (
       <CodeEditor
         value={this.state.schemaCode}

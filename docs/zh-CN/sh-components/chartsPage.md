@@ -17,7 +17,7 @@ title: Echarts查询页面
       "quotaChecked": [
         "overview",
         "channelRatio",
-        "priceParagraphDiff",
+        "priceParagraphRatio",
         "marketCapacityBar"
       ]
     },
@@ -28,7 +28,7 @@ title: Echarts查询页面
         "body": {
           "type": "form",
           "title": "过滤条件",
-          "target": "overview,channelRatio,priceParagraphDiff,marketCapacityBar",
+          "target": "overview,channelRatio,priceParagraphRatio,marketCapacityBar",
           "submitOnInit": true,
           "wrapWithPanel": false,
           "mode": "inline",
@@ -55,7 +55,8 @@ title: Echarts查询页面
               "name": "channels",
               "multiple": true,
               "checkAll": true,
-              "value": [
+              "value": ["大众"],
+              "options": [
                 {
                   "label": "大众",
                   "value": "大众"
@@ -76,11 +77,7 @@ title: Echarts查询页面
               "joinValues": false,
               "extractValue": true,
               "hideNodePathLabel": true,
-              "source": {
-                "url": "category/invest/get-all?showLevel=3&dataType=9&year=${year}",
-                "method": "get",
-                "dataType": "json"
-              }
+              "source": "/api/shMock/shComponent/prdcateg.json"
             },
             {
               "type": "nested-select",
@@ -91,11 +88,7 @@ title: Echarts查询页面
               "joinValues": false,
               "extractValue": true,
               "hideNodePathLabel": true,
-              "source": {
-                "url": "area/req/get-all?showLevel=4&year=${year}",
-                "method": "get",
-                "dataType": "json"
-              }
+              "source": "/api/shMock/shComponent/getRegionData.json"
             },
             {
               "type": "button-toolbar",
@@ -121,6 +114,9 @@ title: Echarts查询页面
         "type": "button",
         "label": "自定义卡片",
         "className": "amis-topMpdule-btn",
+        "style": {
+          "margin-bottom": "10px"
+        },
         "onEvent": {
           "click": {
             "weight": 0,
@@ -198,18 +194,11 @@ title: Echarts查询页面
         "body": {
           "type": "service",
           "name": "overview",
-          "api": {
-            "url": "/market-volume/overView",
-            "method": "post",
-            "data": {
-              "year": "${INT(year)}",
-              "channels": "${channels|split|default: []}",
-              "prdcategCode": "${prdcateg}",
-              "prdcategLevel": "${prdcateg.length === 4 ? \"prdcateg_2\" : (prdcateg.length === 6 ? \"prdcateg_3\" : \"\")}",
-              "geocCode": "${region}",
-              "geocLevel": "${STARTSWITH(region, \"CN\") ? \"COUNTRY\" : (STARTSWITH(region, \"QU\") ? \"COUNTY\" : (STARTSWITH(region, \"City\") ? \"CITY\" : \"STATE_ABBREV\"))}",
-              "cardType": "prdcateg"
-            }
+          "data": {
+            "population": 140977,
+            "urbanizationRate": 59,
+            "familyCount": 46158,
+            "peopleDensity": 0
           },
           "body": {
             "type": "grid",
@@ -243,240 +232,243 @@ title: Echarts查询页面
         "type": "flex",
         "justify": "space-between",
         "style": {
-          "flex-wrap": "wrap"
+          "flex-wrap": "wrap",
+          "flex": 1
         },
         "items": [{
           "type": "panel",
           "title": "渠道占比",
+          "style": {
+            "width": "100%"
+          },
           "className": {
             "amis-market-capacity-flex-item": true,
-            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, \"channelRatio\"), true, false)}"
+            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, 'channelRatio'), true, false)}"
           },
-          "body": [{
-            "type": "chart",
-            "trackExpression": "${items|json}",
-            "className": "amis-market-capacity-chart",
-            "config": {
-              "tooltip": {
-                "trigger": "item",
-                "borderColor": "transparent",
-                "backgroundColor": "rgba(51, 51, 51, 0.9)",
-                "textStyle": {
-                  "color": "#FFF"
+          "body": {
+            "type": "service",
+            "name": "channelRatio",
+            "id": "channelRatio",
+            "initFetch": false,
+            "api": "/api/shMock/shComponent/channelCard.json",
+            "body": [{
+              "type": "chart",
+              "trackExpression": "${items|json}",
+              "className": "amis-market-capacity-chart",
+              "config": {
+                "tooltip": {
+                  "trigger": "item",
+                  "borderColor": "transparent",
+                  "backgroundColor": "rgba(51, 51, 51, 0.9)",
+                  "textStyle": {
+                    "color": "#FFF"
+                  },
+                  "formatter": "function(params){const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.name.split('&')[0]}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'>${params.data.ratio}<span style='margin-left: 4px;'>${params.data.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.seriesName}</div>${targetHtml}`)}",
                 },
-                "formatter": "function(params){const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.name.split('&')[0]}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'>${params.data.ratio}<span style='margin-left: 4px;'>${params.data.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.seriesName}</div>${targetHtml}`)}",
-              },
-              "color": [
-                "#5BA3F6",
-                "#FDD349",
-                "#F8AD66",
-                "#98C9FB",
-                "#59BDBD",
-                "#A2E168",
-                "#81CA43",
-                "#C89FE0",
-                "#A25FC8",
-                "#FA705B",
-                "#FAAB9D",
-                "#88D0D1"
-              ],
-              "legend": {
-                "left": "53%",
-                "top": "45%",
-                "orient": "vertical",
-                "icon": "circle",
-                "itemWidth": 8,
-                "itemHeight": 8,
-                "type": "scroll",
-                "selectedMode": false,
-                "pageIconSize": 8,
-                "formatter": "function (name) { const target = name.split('&'); return ['{title|' + target[0] + '}', '{ratio|' + target[1] + '}', '{value|' + target[2] + '}'].join('');}",
-                "textStyle": {
-                  "rich": {
-                    "title": {
-                      "fontSize": 12,
-                      "width": 18,
-                      "color": "#333",
-                      "padding": [0, 70, 0, 0]
-                    },
-                    "ratio": {
-                      "fontSize": 12,
-                      "color": "#333",
-                      "align": "right",
-                      "width": 40
-                    },
-                    "value": {
-                      "fontSize": 12,
-                      "color": "#333",
-                      "align": "right",
-                      "width": 61
+                "color": [
+                  "#5BA3F6",
+                  "#FDD349",
+                  "#F8AD66",
+                  "#98C9FB",
+                  "#59BDBD",
+                  "#A2E168",
+                  "#81CA43",
+                  "#C89FE0",
+                  "#A25FC8",
+                  "#FA705B",
+                  "#FAAB9D",
+                  "#88D0D1"
+                ],
+                "legend": {
+                  "left": "53%",
+                  "top": "45%",
+                  "orient": "vertical",
+                  "icon": "circle",
+                  "itemWidth": 8,
+                  "itemHeight": 8,
+                  "type": "scroll",
+                  "selectedMode": false,
+                  "pageIconSize": 8,
+                  "formatter": "function (name) { const target = name.split('&'); return ['{title|' + target[0] + '}', '{ratio|' + target[1] + '}', '{value|' + target[2] + '}'].join('');}",
+                  "textStyle": {
+                    "rich": {
+                      "title": {
+                        "fontSize": 12,
+                        "width": 18,
+                        "color": "#333",
+                        "padding": [0, 70, 0, 0]
+                      },
+                      "ratio": {
+                        "fontSize": 12,
+                        "color": "#333",
+                        "align": "right",
+                        "width": 40
+                      },
+                      "value": {
+                        "fontSize": 12,
+                        "color": "#333",
+                        "align": "right",
+                        "width": 61
+                      }
                     }
                   }
-                }
-              },
-              "series": [
-                {
-                  "name": "渠道占比",
-                  "type": "pie",
-                  "radius": [
-                    "40%",
-                    "70%"
-                  ],
-                  "center": [
-                    "33%",
-                    "50%"
-                  ],
-                  "avoidLabelOverlap": false,
-                  "label": {
-                    "show": false
-                  },
-                  "emphasis": {
-                    "disabled": true
-                  },
-                  "labelLine": {
-                    "show": false
-                  },
-                  "data": [
-                    {
-                      "value": "311349.60",
-                      "name": "大众&39.9%&311,349.6",
-                      "ratio": "39.9%"
+                },
+                "series": [
+                  {
+                    "name": "渠道占比",
+                    "type": "pie",
+                    "radius": [
+                      "40%",
+                      "70%"
+                    ],
+                    "center": [
+                      "33%",
+                      "50%"
+                    ],
+                    "avoidLabelOverlap": false,
+                    "label": {
+                      "show": false
                     },
-                    {
-                      "value": "469719.60",
-                      "name": "餐饮&60.1%&469,719.6",
-                      "ratio": "60.1%"
-                    }
-                  ]
-                }
-              ]
-            },
-            "hiddenOn": "${!COUNT(items)}"
-          }, {
-            "type": "image",
-            "name": "emptyImage",
-            "src": "https://sh-root-mvp1-test.shinho.net.cn/img/empty.a319be45.svg",
-            "thumbMode": "cover",
-            "imageCaption": "暂无数据",
-            "className": "amis-card-empty",
-            "hiddenOn": "${COUNT(items)}"
-          }]
+                    "emphasis": {
+                      "disabled": true
+                    },
+                    "labelLine": {
+                      "show": false
+                    },
+                    "data": "${items}"
+                  }
+                ]
+              },
+              "hiddenOn": "${COUNT(items)}"
+            }, {
+              "type": "image",
+              "name": "emptyImage",
+              "src": "https://sh-root-mvp1-test.shinho.net.cn/img/empty.a319be45.svg",
+              "thumbMode": "cover",
+              "imageCaption": "暂无数据",
+              "className": "amis-card-empty",
+              "hiddenOn": "${!COUNT(items)}",
+              "style": {
+                "width": "110px",
+                "height": "110px"
+              }
+            }]
+          }
         }, {
           "type": "panel",
-          "title": "渠道占比",
+          "title": "价格段占比",
+           "style": {
+            "width": "100%"
+          },
           "className": {
             "amis-market-capacity-flex-item": true,
-            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, \"priceParagraphDiff\"), true, false)}"
+            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, 'priceParagraphRatio'), true, false)}"
           },
-          "body": [{
-            "type": "chart",
-            "trackExpression": "${items|json}",
-            "className": "amis-market-capacity-chart",
-            "config": {
-              "tooltip": {
-                "trigger": "item",
-                "borderColor": "transparent",
-                "backgroundColor": "rgba(51, 51, 51, 0.9)",
-                "textStyle": {
-                  "color": "#FFF"
+          "body": {
+            "type": "service",
+            "name": "priceParagraphRatio",
+            "id": "_priceParagraphRatio",
+            "initFetch": false,
+            "api": "/api/shMock/shComponent/prdcategCard.json",
+            "body": [{
+              "type": "chart",
+              "trackExpression": "${items|json}",
+              "className": "amis-market-capacity-chart",
+              "config": {
+                "tooltip": {
+                  "trigger": "item",
+                  "borderColor": "transparent",
+                  "backgroundColor": "rgba(51, 51, 51, 0.9)",
+                  "textStyle": {
+                    "color": "#FFF"
+                  },
+                  "formatter": "function(params){const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.name.split('&')[0]}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'>${params.data.ratio}<span style='margin-left: 4px;'>${params.data.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.seriesName}</div>${targetHtml}`)}",
                 },
-                "formatter": "function(params){const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.name.split('&')[0]}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'>${params.data.ratio}<span style='margin-left: 4px;'>${params.data.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.seriesName}</div>${targetHtml}`)}",
-              },
-              "color": [
-                "#5BA3F6",
-                "#FDD349",
-                "#F8AD66",
-                "#98C9FB",
-                "#59BDBD",
-                "#A2E168",
-                "#81CA43",
-                "#C89FE0",
-                "#A25FC8",
-                "#FA705B",
-                "#FAAB9D",
-                "#88D0D1"
-              ],
-              "legend": {
-                "left": "53%",
-                "top": "45%",
-                "orient": "vertical",
-                "icon": "circle",
-                "itemWidth": 8,
-                "itemHeight": 8,
-                "type": "scroll",
-                "selectedMode": false,
-                "pageIconSize": 8,
-                "formatter": "function (name) { const target = name.split('&'); return ['{title|' + target[0] + '}', '{ratio|' + target[1] + '}', '{value|' + target[2] + '}'].join('');}",
-                "textStyle": {
-                  "rich": {
-                    "title": {
-                      "fontSize": 12,
-                      "width": 18,
-                      "color": "#333",
-                      "padding": [0, 70, 0, 0]
-                    },
-                    "ratio": {
-                      "fontSize": 12,
-                      "color": "#333",
-                      "align": "right",
-                      "width": 40
-                    },
-                    "value": {
-                      "fontSize": 12,
-                      "color": "#333",
-                      "align": "right",
-                      "width": 61
+                "color": [
+                  "#5BA3F6",
+                  "#FDD349",
+                  "#F8AD66",
+                  "#98C9FB",
+                  "#59BDBD",
+                  "#A2E168",
+                  "#81CA43",
+                  "#C89FE0",
+                  "#A25FC8",
+                  "#FA705B",
+                  "#FAAB9D",
+                  "#88D0D1"
+                ],
+                "legend": {
+                  "left": "53%",
+                  "top": "35%",
+                  "orient": "vertical",
+                  "icon": "circle",
+                  "itemWidth": 8,
+                  "itemHeight": 8,
+                  "type": "scroll",
+                  "selectedMode": false,
+                  "pageIconSize": 8,
+                  "formatter": "function (name) { const target = name.split('&'); return ['{title|' + target[0] + '}', '{ratio|' + target[1] + '}', '{value|' + target[2] + '}'].join('');}",
+                  "textStyle": {
+                    "rich": {
+                      "title": {
+                        "fontSize": 12,
+                        "width": 18,
+                        "color": "#333",
+                        "padding": [0, 70, 0, 0]
+                      },
+                      "ratio": {
+                        "fontSize": 12,
+                        "color": "#333",
+                        "align": "right",
+                        "width": 40
+                      },
+                      "value": {
+                        "fontSize": 12,
+                        "color": "#333",
+                        "align": "right",
+                        "width": 61
+                      }
                     }
                   }
-                }
-              },
-              "series": [
-                {
-                  "name": "人群价格段差异",
-                  "type": "pie",
-                  "radius": [
-                    "40%",
-                    "70%"
-                  ],
-                  "center": [
-                    "33%",
-                    "50%"
-                  ],
-                  "avoidLabelOverlap": false,
-                  "label": {
-                    "show": false
-                  },
-                  "emphasis": {
-                    "disabled": true
-                  },
-                  "labelLine": {
-                    "show": false
-                  },
-                  "data": [
-                    {
-                      "value": "311349.60",
-                      "name": "大众&39.9%&311,349.6",
-                      "ratio": "39.9%"
+                },
+                "series": [
+                  {
+                    "name": "价格段占比",
+                    "type": "pie",
+                    "radius": [
+                      "40%",
+                      "70%"
+                    ],
+                    "center": [
+                      "33%",
+                      "50%"
+                    ],
+                    "avoidLabelOverlap": false,
+                    "label": {
+                      "show": false
                     },
-                    {
-                      "value": "469719.60",
-                      "name": "餐饮&60.1%&469,719.6",
-                      "ratio": "60.1%"
-                    }
-                  ]
-                }
-              ]
-            },
-            "hiddenOn": "${!COUNT(items)}"
-          }, {
-            "type": "image",
-            "name": "emptyImage",
-            "src": "https://sh-root-mvp1-test.shinho.net.cn/img/empty.a319be45.svg",
-            "thumbMode": "cover",
-            "imageCaption": "暂无数据",
-            "className": "amis-card-empty",
-            "hiddenOn": "${COUNT(items)}"
-          }]
+                    "emphasis": {
+                      "disabled": true
+                    },
+                    "labelLine": {
+                      "show": false
+                    },
+                    "data": "${items}"
+                  }
+                ]
+              },
+              "hiddenOn": "${!COUNT(items)}"
+            }, {
+              "type": "image",
+              "name": "emptyImage",
+              "src": "https://sh-root-mvp1-test.shinho.net.cn/img/empty.a319be45.svg",
+              "thumbMode": "cover",
+              "imageCaption": "暂无数据",
+              "className": "amis-card-empty",
+              "hiddenOn": "${COUNT(items)}"
+            }]
+          }
         }, {
           "type": "panel",
           "title": "市场容量",
@@ -484,59 +476,79 @@ title: Echarts查询页面
             "width": "100%"
           },
           "className": {
-            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, \"marketCapacityBar\"), true, false)}"
+            "display-none": "${IF(!ARRAYINCLUDES(quotaChecked, 'marketCapacityBar'), true, false)}"
           },
           "body": {
             "type": "service",
             "name": "marketCapacityBar",
             "id": "_marketCapacityBar",
             "initFetch": false,
-            "api": "",
+            "api": "/api/shMock/shComponent/marketCapacityBar.json",
             "body": [{
               "type": "chart",
               "trackExpression": "${items|json}",
               "className": "amis-market-capacity-chart",
               "config": {
-                  "tooltip": {
-                    "trigger": "axis",
-                    "borderColor": "transparent",
-                    "backgroundColor": "rgba(51, 51, 51, 0.9)",
-                    "textStyle": {
-                      "color": "#fff"
+                "tooltip": {
+                  "trigger": "axis",
+                  "borderColor": "transparent",
+                  "backgroundColor": "rgba(51, 51, 51, 0.9)",
+                  "textStyle": {
+                    "color": "#fff"
+                  },
+                  "axisPointer": {
+                    "type": "shadow",
+                    "show": true,
+                    "shadowStyle": {
+                      "shadowColor": "rgba(0, 0, 0, 0.1)"
+                    }
+                  },
+                  "formatter": "function (paramArr) {const params = paramArr?.[0] || {};const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.seriesName}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'><span style='margin-left: 4px;'>${params.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.name}</div>${targetHtml}`)}",
+                },
+                "dataZoom": {
+                  "type": "slider",
+                  "bottom": 20,
+                  "height": 20
+                },
+                "legend": {
+                  "bottom": 40,
+                  "icon": "circle",
+                  "itemWidth": 8,
+                  "itemHeight": 8,
+                },
+                "grid": {
+                  "left": 0,
+                  "right": 0,
+                  "top": 30,
+                  "bottom": 70,
+                  "containLabel": true
+                },
+                "xAxis": {
+                  "type": "category",
+                  "data": "${xAxisData}",
+                  "axisLine": {
+                    "show": true,
+                    "onZero": false,
+                    "lineStyle": {
+                      "color": "#E6E6E6"
+                    }
+                  },
+                  "axisTick": {
+                    "show": false
+                  },
+                  "axisLabel": {
+                    "color": "#333"
+                  }
+                },
+                "yAxis": [
+                  {
+                    "type": "value",
+                    "name": "万元",
+                    "axisLabel": {
+                      "color": "#333"
                     },
-                    "axisPointer": {
-                      "type": "shadow",
-                      "show": true,
-                      "shadowStyle": {
-                        "shadowColor": "rgba(0, 0, 0, 0.1)"
-                      }
-                    },
-                    "formatter": "function (paramArr) {const params = paramArr?.[0] || {};const targetHtml = `<div><svg width='20' height='10' style='display: inline-block'><circle cx='6' cy='5' r='4'  fill='${params.color}' /></svg><span style='margin-left: -6px; font-size: 12px; color: #fff; font-weight: bold;'>${params.seriesName}</span><span style='display: inline-block; margin-left: 60px; margin-right: 5px;'><span style='margin-left: 4px;'>${params.value}</span></span></div>`;return (`<div style='margin-bottom: 10px;'>${params?.name}</div>${targetHtml}`)}",
-                  },
-                  "dataZoom": {
-                    "type": "slider",
-                    "bottom": 20,
-                    "height": 20
-                  },
-                  "legend": {
-                    "bottom": 40,
-                    "icon": "circle",
-                    "itemWidth": 8,
-                    "itemHeight": 8,
-                  },
-                  "grid": {
-                    "left": 0,
-                    "right": 0,
-                    "top": 30,
-                    "bottom": 70,
-                    "containLabel": true
-                  },
-                  "xAxis": {
-                    "type": "category",
-                    "data": ["江西","重庆","安徽","内蒙古","新疆","贵州","宁夏","北京","山东","广东","湖北","上海","黑龙江","云南","辽宁","河南","浙江","湖南","吉林","陕西","天津","河北","福建","江苏","四川","山西","甘肃"],
                     "axisLine": {
                       "show": true,
-                      "onZero": false,
                       "lineStyle": {
                         "color": "#E6E6E6"
                       }
@@ -544,166 +556,30 @@ title: Echarts查询页面
                     "axisTick": {
                       "show": false
                     },
-                    "axisLabel": {
-                      "color": "#333"
-                    }
-                  },
-                  "yAxis": [
-                    {
-                      "type": "value",
-                      "name": "万元",
-                      "axisLabel": {
-                        "color": "#333"
-                      },
-                      "axisLine": {
-                        "show": true,
-                        "lineStyle": {
-                          "color": "#E6E6E6"
-                        }
-                      },
-                      "axisTick": {
-                        "show": false
-                      },
-                      "splitLine": {
-                        "lineStyle": {
-                          "type": "dashed",
-                          "color": [
-                            "#E6E6E6"
-                          ]
-                        }
-                      },
-                      "nameTextStyle": {
-                        "fontFamily": "PingFang SC",
-                        "fontSize": 12,
-                        "color": "#999",
-                        "align": "right",
-                        "padding": [
-                          0,
-                          0,
-                          0,
-                          0
+                    "splitLine": {
+                      "lineStyle": {
+                        "type": "dashed",
+                        "color": [
+                          "#E6E6E6"
                         ]
                       }
-                    }
-                  ],
-                  "series": [
-                    {
-                      "name": "市场容量",
-                      "type": "bar",
-                      "color": "#5BA3F6",
-                      "data": [
-                        {
-                          "value": 23420.297636542,
-                          "name": "江西"
-                        },
-                        {
-                          "value": 29004.614449101,
-                          "name": "重庆"
-                        },
-                        {
-                          "value": 39339.579345508,
-                          "name": "安徽"
-                        },
-                        {
-                          "value": 13304.476962673,
-                          "name": "内蒙古"
-                        },
-                        {
-                          "value": 1458.785228698,
-                          "name": "新疆"
-                        },
-                        {
-                          "value": 11606.061782215,
-                          "name": "贵州"
-                        },
-                        {
-                          "value": 1871.463590872,
-                          "name": "宁夏"
-                        },
-                        {
-                          "value": 18953.679377903,
-                          "name": "北京"
-                        },
-                        {
-                          "value": 72144.585377507,
-                          "name": "山东"
-                        },
-                        {
-                          "value": 70292.313809653,
-                          "name": "广东"
-                        },
-                        {
-                          "value": 32997.838887886,
-                          "name": "湖北"
-                        },
-                        {
-                          "value": 25921.956565023,
-                          "name": "上海"
-                        },
-                        {
-                          "value": 17538.097451125,
-                          "name": "黑龙江"
-                        },
-                        {
-                          "value": 4790.798964689,
-                          "name": "云南"
-                        },
-                        {
-                          "value": 20794.775845586,
-                          "name": "辽宁"
-                        },
-                        {
-                          "value": 53093.638375099,
-                          "name": "河南"
-                        },
-                        {
-                          "value": 59179.428283743,
-                          "name": "浙江"
-                        },
-                        {
-                          "value": 39043.027557985,
-                          "name": "湖南"
-                        },
-                        {
-                          "value": 12165.142633609,
-                          "name": "吉林"
-                        },
-                        {
-                          "value": 16499.036718631,
-                          "name": "陕西"
-                        },
-                        {
-                          "value": 18622.57887356,
-                          "name": "天津"
-                        },
-                        {
-                          "value": 34113.722216637,
-                          "name": "河北"
-                        },
-                        {
-                          "value": 33365.886916174,
-                          "name": "福建"
-                        },
-                        {
-                          "value": 62343.791586021,
-                          "name": "江苏"
-                        },
-                        {
-                          "value": 53176.494013373,
-                          "name": "四川"
-                        },
-                        {
-                          "value": 15631.216430801,
-                          "name": "山西"
-                        },
-                        {
-                          "value": 395.920812888,
-                          "name": "甘肃"
-                        }
+                    },
+                    "nameTextStyle": {
+                      "fontFamily": "PingFang SC",
+                      "fontSize": 12,
+                      "color": "#999",
+                      "align": "right",
+                      "padding": [
+                        0,
+                        0,
+                        0,
+                        0
                       ]
                     }
-                  ]
-                },
+                  }
+                ],
+                "series": "${items}"
+              },
               "hiddenOn": "${IF(COUNT(items), false, true)}"
             }, {
               "type": "image",
@@ -716,7 +592,64 @@ title: Echarts查询页面
             }]
           }
         }]
-      }]
+      }
+    ]
   }
 }
+```
+
+## Schema页面样式（类名注入）
+```css
+/* 可视化图表 */
+.amis-market-capacity-visual .overview-item-title {
+	 color: #999;
+	 font-size: 12px;
+}
+ .amis-market-capacity-visual .overview-item-data {
+	 color: #f0513e;
+	 font-weight: 600;
+	 font-size: 16px;
+	 margin-top: 15px;
+}
+ .amis-market-capacity-visual .overview-item-data .unit {
+	 font-size: 12px;
+}
+ .amis-market-capacity-visual .cxd-Panel.amis-market-capacity-flex-item {
+	 width: 49.6%;
+}
+ .amis-market-capacity-visual .cxd-Chart.amis-market-capacity-flex-item {
+	 min-height: 248px;
+}
+ .amis-market-capacity-visual .market-capacity-overview {
+	 padding-bottom: 10px;
+}
+ .amis-market-capacity-visual .amis-market-capacity-flex-item.cxd-Panel .cxd-Panel-body {
+	 min-height: 260px;
+}
+
+/* 空态图片 */
+.cxd-ImageField .cxd-Image--thumb .cxd-Image-thumb {
+  transform: translate(-50%, 0);
+  margin-left: 50%;
+  width: 110px;
+  height: 110px;
+}
+.cxd-ImageField .cxd-Image--thumb .cxd-Image-info {
+  width: 100%;
+}
+.cxd-ImageField .cxd-Image {
+  border: none;
+  text-align: center;
+  color: #999;
+  width: 100%;
+}
+/* .cxd-ImageField.amis-card-empty {
+	 position: static;
+	 display: flex;
+	 flex-wrap: wrap;
+	 justify-content: center;
+	 margin-top: 6%;
+	 margin-bottom: 9%;
+} */
+ 
 ```

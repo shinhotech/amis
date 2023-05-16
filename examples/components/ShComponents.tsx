@@ -32,10 +32,17 @@ export const shComponents = [
     label: '重置样式',
     children: [
       {
-        label: '树根',
-        path: '/zh-CN/sh-components/index',
+        label: 'C4I',
+        path: '/zh-CN/sh-components/c4i',
         component: React.lazy(() =>
-          import('../../docs/zh-CN/sh-components/index.md').then(wrapDoc)
+          import('../../docs/zh-CN/sh-components/c4iStyle.md').then(wrapDoc)
+        )
+      },
+      {
+        label: '树根',
+        path: '/zh-CN/sh-components/root',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/rootStyle.md').then(wrapDoc)
         )
       }
     ]

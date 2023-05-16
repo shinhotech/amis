@@ -141,6 +141,75 @@ title: 表单组件
          "submitText": null,
          "body": [
             {
+               "type": "group",
+               "id": "u:4e7ea8572e09",
+               "label": "",
+               "required": "",
+               "gap": "xs",
+               "body": [
+                  {
+                     "type": "button-group-select",
+                     "name": "date_type",
+                     "value": "2",
+                     "btnActiveLevel": "primary",
+                     "mode": "inline",
+                     "options": [
+                     {
+                        "label": "年",
+                        "value": 1
+                     },
+                     {
+                        "label": "季",
+                        "value": 2
+                     },
+                     {
+                        "label": "月",
+                        "value": 3
+                     }
+                     ],
+                     "id": "_filterDateType",
+                     "multiple": false
+                  },
+                  {
+                     "type": "input-year",
+                     "name": "year",
+                     "inline": true,
+                     "inputFormat": "YYYY",
+                     "format": "YYYY",
+                     "visibleOn": "date_type == 1",
+                     "id": "_filterDateYear",
+                     "label": "时间",
+                     "clearable": false,
+                     "value": "${DATETOSTR(TODAY(),'YYYY')}"
+                  },
+                  {
+                     "type": "input-quarter",
+                     "name": "quarter",
+                     "inline": true,
+                     "format": "YYYY-[Q]Q",
+                     "visibleOn": "date_type == 2",
+                     "id": "_filterDateQuarter",
+                     "label": "时间",
+                     "value": "${DATETOSTR(TODAY(),'YYYY-[Q]Q')}",
+                     "inputFormat": "YYYY-[Q]Q",
+                     "clearable": false
+                  },
+                  {
+                     "type": "input-month",
+                     "name": "month",
+                     "inline": true,
+                     "format": "YYYY-MM",
+                     "visibleOn": "date_type == 3",
+                     "id": "_filterDateMonth",
+                     "label": "时间",
+                     "value": "${DATETOSTR(TODAY(),'YYYY-MM')}",
+                     "inputFormat": "YYYY-MM",
+                     "placeholder": "请选择月份",
+                     "clearable": false
+                  }
+               ]
+               },
+            {
                "type": "select",
                "label": "品牌",
                "name": "brand",
@@ -165,19 +234,83 @@ title: 表单组件
                "cascade": true,
                "multiple": true,
                "checkAll": false,
+               "value": "spuCountyCollect",
                "source": "/api/shMock/shComponent/applyNode.json"
             },
             {
-               "type": "input-year",
-               "label": "时间",
-               "name": "year",
-               "id": "u:e1a120d1c59d",
-               "inputFormat": "YYYY",
-               "placeholder": "请选择年",
-               "format": "X",
-               "minDate": "",
-               "maxDate": "",
-               "value": ""
+              "type": "select",
+              "name": "year",
+              "label": "时间",
+              "value": "2023",
+              "options": [
+                {
+                  "label": "2023年",
+                  "value": "2023"
+                },
+                {
+                  "label": "2022年",
+                  "value": "2022"
+                }
+              ]
+            },
+            {
+              "type": "select",
+              "label": "渠道",
+              "name": "channels",
+              "multiple": true,
+              "checkAll": true,
+              "value": [
+                {
+                  "label": "大众",
+                  "value": "大众"
+                },
+                {
+                  "label": "餐饮",
+                  "value": "餐饮"
+                }
+              ],
+              "placeholder": "全部"
+            },
+            {
+              "type": "nested-select",
+              "name": "prdcateg",
+              "label": "品类",
+              "value": "0100",
+              "multiple": false,
+              "joinValues": false,
+              "extractValue": true,
+              "hideNodePathLabel": true,
+              "source": "/api/shMock/shComponent/prdcateg.json"
+            },
+            {
+              "type": "nested-select",
+              "name": "region",
+              "label": "区域",
+              "value": "CN",
+              "multiple": false,
+              "joinValues": false,
+              "extractValue": true,
+              "hideNodePathLabel": true,
+              "source": "/api/shMock/shComponent/getRegionData.json"
+            },
+            {
+               "type": "button-group-select",
+               "name": "unit_type",
+               "label": "",
+               "inline": false,
+               "options": [
+                  {
+                     "label": "销量(千瓶/L)",
+                     "value": 0
+                  },
+                  {
+                     "label": "销额(千元)",
+                     "value": 1
+                  }
+               ],
+               "id": "_filterUnitType",
+               "multiple": false,
+               "value": "0"
             },
             {
                "type": "button-toolbar",
@@ -200,7 +333,113 @@ title: 表单组件
                "actions": []
             }
          }
-      }
+      },
+      "headerToolbar": [
+         {
+            "type": "service",
+            "id": "_exportService",
+            "body": [
+               {
+                  "type": "button",
+                  "icon": "iconfont icon-daochu1",
+                  "label": "导出",
+                  "onEvent": {
+                     "click": {
+                        "actions": [
+                        {
+                           "actionType": "switch",
+                           "children": [
+                              {
+                              "dialog": {
+                                 "type": "dialog",
+                                 "title": "确认导出",
+                                 "body": [
+                                    {
+                                    "type": "tpl",
+                                    "tpl": "导出成功，报表回发送到您的邮箱",
+                                    "wrapperComponent": "",
+                                    "inline": false,
+                                    "id": "u:22c36fa27ae9"
+                                    },
+                                    {
+                                    "type": "tpl",
+                                    "tpl": "${ls:userInfo.userInfo.mail}",
+                                    "wrapperComponent": "",
+                                    "inline": false,
+                                    "id": "u:2009dd6bdbc8"
+                                    }
+                                 ],
+                                 "showCloseButton": true,
+                                 "showErrorMsg": true,
+                                 "showLoading": true,
+                                 "id": "u:80dd09fd6e62",
+                                 "closeOnEsc": false,
+                                 "onEvent": {
+                                    "confirm": {
+                                    "weight": 0,
+                                    "actions": [
+                                       {
+                                          "args": {
+                                          "options": {
+                                          },
+                                          "api": {
+                                             "url": "${exportUrl}",
+                                             "method": "post",
+                                             "messages": {
+                                             },
+                                             "data": {
+                                                "&": "${exportParams}"
+                                             }
+                                          }
+                                          },
+                                          "outputVar": "responseResult",
+                                          "actionType": "ajax"
+                                       }
+                                    ]
+                                    }
+                                 }
+                              },
+                              "actionType": "dialog",
+                              "expression": "${AND(ls:userInfo.userInfo.mail)}"
+                              },
+                              {
+                              "args": {
+                              },
+                              "actionType": "dialog",
+                              "dialog": {
+                                 "type": "dialog",
+                                 "title": "提示",
+                                 "body": [
+                                    {
+                                    "type": "tpl",
+                                    "tpl": "导出报表将发送到您邮箱中，请RTX联系许晗斌补充您的邮箱！",
+                                    "wrapperComponent": "",
+                                    "inline": false,
+                                    "id": "u:320e5a1134aa"
+                                    }
+                                 ],
+                                 "showCloseButton": true,
+                                 "showErrorMsg": true,
+                                 "showLoading": true,
+                                 "id": "u:2f9b4e82fd46",
+                                 "closeOnEsc": false
+                              },
+                              "expression": "${AND(!ls:userInfo.userInfo.mail)}"
+                              }
+                           ]
+                        }
+                        ]
+                     }
+                  },
+                  "id": "u:0d4a85f02e39"
+               }
+            ],
+            "data": {
+               "exportUrl": "xxx",
+               "exportParams": "${filterParams}"
+            }
+         }
+      ],
    }
 }
 ```
