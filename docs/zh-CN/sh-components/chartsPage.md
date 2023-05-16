@@ -113,7 +113,6 @@ title: Echarts查询页面
       {
         "type": "button",
         "label": "自定义卡片",
-        "className": "amis-topMpdule-btn",
         "style": {
           "margin-bottom": "10px"
         },
@@ -141,8 +140,8 @@ title: Echarts查询页面
                           "value": "channelRatio"
                         },
                         {
-                          "label": "人群价格段差异",
-                          "value": "priceParagraphDiff"
+                          "label": "价格段占比",
+                          "value": "priceParagraphRatio"
                         },
                         {
                           "label": "市场容量",
@@ -254,7 +253,6 @@ title: Echarts查询页面
             "body": [{
               "type": "chart",
               "trackExpression": "${items|json}",
-              "className": "amis-market-capacity-chart",
               "config": {
                 "tooltip": {
                   "trigger": "item",
@@ -339,7 +337,7 @@ title: Echarts查询页面
                   }
                 ]
               },
-              "hiddenOn": "${COUNT(items)}"
+              "hiddenOn": "${!COUNT(items)}"
             }, {
               "type": "image",
               "name": "emptyImage",
@@ -347,7 +345,7 @@ title: Echarts查询页面
               "thumbMode": "cover",
               "imageCaption": "暂无数据",
               "className": "amis-card-empty",
-              "hiddenOn": "${!COUNT(items)}",
+              "hiddenOn": "${COUNT(items)}",
               "style": {
                 "width": "110px",
                 "height": "110px"
@@ -373,7 +371,6 @@ title: Echarts查询页面
             "body": [{
               "type": "chart",
               "trackExpression": "${items|json}",
-              "className": "amis-market-capacity-chart",
               "config": {
                 "tooltip": {
                   "trigger": "item",
@@ -487,7 +484,6 @@ title: Echarts查询页面
             "body": [{
               "type": "chart",
               "trackExpression": "${items|json}",
-              "className": "amis-market-capacity-chart",
               "config": {
                 "tooltip": {
                   "trigger": "axis",
@@ -598,36 +594,70 @@ title: Echarts查询页面
 }
 ```
 
-## Schema页面样式（类名注入）
+## Schema页面样式
 ```css
-/* 可视化图表 */
-.amis-market-capacity-visual .overview-item-title {
-	 color: #999;
-	 font-size: 12px;
-}
- .amis-market-capacity-visual .overview-item-data {
-	 color: #f0513e;
-	 font-weight: 600;
-	 font-size: 16px;
-	 margin-top: 15px;
-}
- .amis-market-capacity-visual .overview-item-data .unit {
-	 font-size: 12px;
-}
- .amis-market-capacity-visual .cxd-Panel.amis-market-capacity-flex-item {
-	 width: 49.6%;
-}
- .amis-market-capacity-visual .cxd-Chart.amis-market-capacity-flex-item {
-	 min-height: 248px;
-}
- .amis-market-capacity-visual .market-capacity-overview {
-	 padding-bottom: 10px;
-}
- .amis-market-capacity-visual .amis-market-capacity-flex-item.cxd-Panel .cxd-Panel-body {
-	 min-height: 260px;
+/* 按钮 */
+.cxd-Button.cxd-Button--size-default {
+  height: 28px;
+  font-size: 12px;
+  padding: 4px 18px;
 }
 
-/* 空态图片 */
+.cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled) {
+  border-color: #eee;
+}
+.cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled):hover {
+  background: #fafafa;
+  border-color: #eee;
+  color: #333;
+}
+.cxd-Button.cxd-Button--danger:not(:disabled):not(.is-disabled):hover, .cxd-Button.cxd-Button--primary:not(:disabled):not(.is-disabled):hover {
+  background: #F0513E;
+  border-color: #F0513E;
+  color: #fff;
+}
+.cxd-Form .cxd-ButtonToolbar > .cxd-Button {
+  margin-left: 10px;
+}
+
+/* 级联 */
+.cxd-NestedSelectControl {
+  width: 184px;
+  height: 28px;
+}
+.cxd-NestedSelectControl .cxd-NestedSelect-noResult {
+  width: 184px;
+}
+.cxd-NestedSelectControl .cxd-ResultBox {
+  font-size: 12px;
+  padding: 2px 12px;
+  min-height: 28px;
+}
+
+/* select 下拉 */
+.cxd-SelectControl {
+  width: 164px;
+  height: 28px;
+}
+.cxd-SelectControl .cxd-Select {
+  padding: 2px 12px;
+  font-size: 12px;
+  min-height: 28px;
+}
+.cxd-SelectControl .cxd-Select--multi .cxd-Select-valueWrap .cxd-Select-placeholder {
+  margin-left: 0;
+}
+.cxd-Select-valueIcon {
+  display: inline-block !important;
+}
+.cxd-Checkbox > i + span {
+  vertical-align: middle;
+}
+.cxd-Select-arrow svg.icon {
+  color: #ccc;
+}
+
+/** 空态图片 */
 .cxd-ImageField .cxd-Image--thumb .cxd-Image-thumb {
   transform: translate(-50%, 0);
   margin-left: 50%;
@@ -637,19 +667,43 @@ title: Echarts查询页面
 .cxd-ImageField .cxd-Image--thumb .cxd-Image-info {
   width: 100%;
 }
-.cxd-ImageField .cxd-Image {
-  border: none;
-  text-align: center;
-  color: #999;
-  width: 100%;
+
+.cxd-ImageField.amis-card-empty {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  transform: translate(-55px, 40px);
+  margin-left: 50%;
 }
-/* .cxd-ImageField.amis-card-empty {
-	 position: static;
-	 display: flex;
-	 flex-wrap: wrap;
-	 justify-content: center;
-	 margin-top: 6%;
-	 margin-bottom: 9%;
-} */
- 
+
+/* echarts page 可视化卡片样式设置 */
+.amis-market-capacity-visual .overview-item-title {
+  color: #999;
+  font-size: 12px;
+}
+.amis-market-capacity-visual .overview-item-data {
+  color: #f0513e;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 15px;
+}
+.amis-market-capacity-visual .overview-item-data .unit {
+  font-size: 12px;
+}
+
+.amis-market-capacity-visual .amis-market-capacity-flex-item {
+  min-height: 248px;
+}
+.amis-market-capacity-visual .market-capacity-overview {
+  padding-bottom: 10px;
+}
+.amis-market-capacity-visual .amis-market-capacity-flex-item .cxd-Panel-body {
+  min-height: 260px;
+}
+
+/* 自定义指标 多选 */
+.cxd-CheckboxesControl.is-inline .cxd-Checkbox {
+  display: block !important;
+}
 ```
