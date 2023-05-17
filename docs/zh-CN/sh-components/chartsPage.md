@@ -1,5 +1,5 @@
 ---
-title: Echarts查询页面
+title: Echats图表查询
 ---
 
 ## 图表可视化

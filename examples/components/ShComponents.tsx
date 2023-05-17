@@ -75,7 +75,7 @@ export const shComponents = [
     label: '图表页面',
     children: [
       {
-        label: 'EchatsPage查询',
+        label: 'Echats图表查询',
         path: '/zh-CN/sh-components/chartsPage',
         component: React.lazy(() =>
           import('../../docs/zh-CN/sh-components/chartsPage.md').then(wrapDoc)
