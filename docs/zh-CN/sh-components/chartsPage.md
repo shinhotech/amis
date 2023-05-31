@@ -1,5 +1,5 @@
 ---
-title: Echats图表查询
+title: Echarts 图表查询
 ---
 
 ## 图表可视化
@@ -9,7 +9,17 @@ title: Echats图表查询
 ```schema
 {
   "type": "page",
-  "className": "amis-market-capacity-visual",
+  "className": "amis-charts-page",
+  "cssVars": {
+    "--Checkbox-onHover-color": "#fa705b",
+    "--button-primary-default-top-border-color": "#fa705b",
+    "--button-primary-default-right-border-color": "#fa705b",
+    "--button-primary-default-bottom-border-color": "#fa705b",
+    "--button-primary-default-left-border-color": "#fa705b",
+    "--button-primary-default-bg-color": "#fa705b",
+    "--colors-brand-5": "#fa705b",
+    "--colors-brand-6": "#fa705b"
+  },
   "body": {
     "type": "service",
     "id": "_marketCapacityVisualService",
@@ -114,7 +124,7 @@ title: Echats图表查询
         "type": "button",
         "label": "自定义卡片",
         "style": {
-          "margin-bottom": "10px"
+          "marginBottom": "10px"
         },
         "onEvent": {
           "click": {
@@ -594,70 +604,109 @@ title: Echats图表查询
 }
 ```
 
-## Schema页面样式
+## 页面样式
+
 ```css
+/* echarts page 可视化卡片样式设置 */
+.display-none {
+  display: none;
+}
 /* 按钮 */
-.cxd-Button.cxd-Button--size-default {
+.amis-charts-page .cxd-Button.cxd-Button--size-default {
   height: 28px;
   font-size: 12px;
   padding: 4px 18px;
 }
-
-.cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled) {
+.amis-charts-page .cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled) {
   border-color: #eee;
 }
-.cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled):hover {
+.amis-charts-page .cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled):hover {
   background: #fafafa;
   border-color: #eee;
   color: #333;
 }
-.cxd-Button.cxd-Button--danger:not(:disabled):not(.is-disabled):hover, .cxd-Button.cxd-Button--primary:not(:disabled):not(.is-disabled):hover {
+.amis-charts-page .cxd-Button.cxd-Button--danger:not(:disabled):not(.is-disabled):hover, .cxd-Button.cxd-Button--primary:not(:disabled):not(.is-disabled):hover {
   background: #F0513E;
   border-color: #F0513E;
   color: #fff;
 }
-.cxd-Form .cxd-ButtonToolbar > .cxd-Button {
+.amis-charts-page .cxd-Form .cxd-ButtonToolbar > .cxd-Button {
   margin-left: 10px;
 }
 
-/* 级联 */
-.cxd-NestedSelectControl {
-  width: 184px;
-  height: 28px;
-}
-.cxd-NestedSelectControl .cxd-NestedSelect-noResult {
-  width: 184px;
-}
-.cxd-NestedSelectControl .cxd-ResultBox {
-  font-size: 12px;
-  padding: 2px 12px;
-  min-height: 28px;
-}
-
 /* select 下拉 */
-.cxd-SelectControl {
+.amis-charts-page .cxd-SelectControl {
   width: 164px;
   height: 28px;
 }
-.cxd-SelectControl .cxd-Select {
+.amis-charts-page .cxd-SelectControl .cxd-Select {
   padding: 2px 12px;
   font-size: 12px;
   min-height: 28px;
 }
-.cxd-SelectControl .cxd-Select--multi .cxd-Select-valueWrap .cxd-Select-placeholder {
+.amis-charts-page .cxd-SelectControl .cxd-Select--multi .cxd-Select-valueWrap .cxd-Select-placeholder {
   margin-left: 0;
 }
-.cxd-Select-valueIcon {
+.amis-charts-page .cxd-Select-valueIcon {
   display: inline-block !important;
 }
-.cxd-Checkbox > i + span {
+.amis-charts-page .cxd-Checkbox > i + span {
   vertical-align: middle;
 }
-.cxd-Select-arrow svg.icon {
+.amis-charts-page .cxd-Select-arrow svg.icon {
   color: #ccc;
 }
 
+/* 级联 */
+.amis-charts-page .cxd-NestedSelectControl {
+  width: 184px;
+  height: 28px;
+}
+.amis-charts-page .cxd-NestedSelectControl .cxd-NestedSelect-noResult {
+  width: 184px;
+}
+.amis-charts-page .cxd-NestedSelectControl .cxd-ResultBox {
+  font-size: 12px;
+  padding: 2px 12px;
+  min-height: 28px;
+}
+
+/* 概览卡片 */
+.amis-charts-page .overview-item-title {
+  color: #999;
+  font-size: 12px;
+}
+.amis-charts-page .overview-item-data {
+  color: #f0513e;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 15px;
+}
+.amis-charts-page .overview-item-data .unit {
+  font-size: 12px;
+}
+
+.amis-charts-page .amis-market-capacity-flex-item {
+  min-height: 248px;
+}
+.amis-charts-page .market-capacity-overview {
+  padding-bottom: 10px;
+}
+.amis-charts-page .amis-market-capacity-flex-item .cxd-Panel-body {
+  min-height: 260px;
+}
+
+/* 自定义指标 多选 */
+.cxd-CheckboxesControl.is-inline .cxd-Checkbox {
+  display: block !important;
+}
 /** 空态图片 */
+.cxd-ImageField .cxd-Image {
+  border: none;
+  text-align: center;
+  color: #999;
+  width: 100%;
+}
 .cxd-ImageField .cxd-Image--thumb .cxd-Image-thumb {
   transform: translate(-50%, 0);
   margin-left: 50%;
@@ -675,35 +724,5 @@ title: Echats图表查询
   justify-content: center;
   transform: translate(-55px, 40px);
   margin-left: 50%;
-}
-
-/* echarts page 可视化卡片样式设置 */
-.amis-market-capacity-visual .overview-item-title {
-  color: #999;
-  font-size: 12px;
-}
-.amis-market-capacity-visual .overview-item-data {
-  color: #f0513e;
-  font-weight: 600;
-  font-size: 16px;
-  margin-top: 15px;
-}
-.amis-market-capacity-visual .overview-item-data .unit {
-  font-size: 12px;
-}
-
-.amis-market-capacity-visual .amis-market-capacity-flex-item {
-  min-height: 248px;
-}
-.amis-market-capacity-visual .market-capacity-overview {
-  padding-bottom: 10px;
-}
-.amis-market-capacity-visual .amis-market-capacity-flex-item .cxd-Panel-body {
-  min-height: 260px;
-}
-
-/* 自定义指标 多选 */
-.cxd-CheckboxesControl.is-inline .cxd-Checkbox {
-  display: block !important;
 }
 ```

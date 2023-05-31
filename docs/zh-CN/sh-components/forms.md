@@ -8,6 +8,11 @@ title: 表单组件
 {
    "type": "page",
    "title": "Amis表单查询",
+   "cssVars": {
+      "--colors-brand-5": "#fa6f5b",
+      "--colors-brand-6": "#fa6f5b",
+      "--ButtonGroup--primary-isActive-bg": "#fa6f5b"
+   },
    "body": {
       "type": "crud",
       "draggable": false,
@@ -234,7 +239,7 @@ title: 表单组件
                "cascade": true,
                "multiple": true,
                "checkAll": false,
-               "value": "spuCountyCollect",
+               "value": "",
                "source": "/api/shMock/shComponent/applyNode.json"
             },
             {
@@ -259,7 +264,7 @@ title: 表单组件
               "name": "channels",
               "multiple": true,
               "checkAll": true,
-              "value": [
+              "options": [
                 {
                   "label": "大众",
                   "value": "大众"
@@ -322,7 +327,7 @@ title: 表单组件
                   {
                      "type": "submit",
                      "label": "确定",
-                     "level": "danger"
+                     "level": "primary"
                   }
                ]
             }
@@ -610,7 +615,7 @@ title: 表单组件
                   {
                      "type": "submit",
                      "label": "确定",
-                     "level": "danger"
+                     "level": "primary"
                   }
                ]
             }

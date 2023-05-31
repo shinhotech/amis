@@ -791,3 +791,22 @@ body.dark .amis-doc > .preview {
   border-bottom-left-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
 }
+
+
+/* 新增复制 css 模块样式 */
+.style-show-wrap {
+  height: 0;
+  overflow: hidden;
+}
+.style-show-wrap.isShow {
+  height: auto;
+}
+
+.style-show-wrap pre {
+  padding: 12px 20px;
+  margin: 0;
+}
+
+.style-show-wrap pre code {
+  white-space: pre-wrap;
+}

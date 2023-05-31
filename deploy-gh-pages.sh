@@ -4,6 +4,7 @@ set -e
 echo "building"
 node ./scripts/generate-search-data.js
 
+# 执行 node_modules/.bin/fis3 脚本 --> fis-conf.js --> parserCodeMarkdown --> code-md-parser --> parserMarkdown
 ./node_modules/.bin/fis3 release gh-pages -c
 
 # 拷贝一份兼容之前的访问路径

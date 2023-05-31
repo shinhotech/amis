@@ -487,6 +487,7 @@ export default class PlayGround extends React.Component {
 
   render() {
     const {vertical, mini, height, theme, classPrefix} = this.props;
+
     if (mini) {
       return (
         <div className="Playgroud Playgroud--mini">

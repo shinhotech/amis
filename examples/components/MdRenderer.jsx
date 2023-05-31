@@ -8,7 +8,10 @@ import {Overlay} from 'amis-core';
 import {PopOver} from 'amis-core';
 import classnames from 'classnames';
 import {Link} from 'react-router-dom';
+
 import Play from './Play';
+import CssShow from './CssShow';
+
 
 class CodePreview extends React.Component {
   state = {
@@ -17,8 +20,14 @@ class CodePreview extends React.Component {
 
   render() {
     const {container, setAsideFolded, setHeaderVisible, ...rest} = this.props;
-
     return <Play {...rest} mini />;
+  }
+}
+
+class PreviewStyle extends React.Component {
+
+  render() {
+    return (<CssShow { ...this.props }/>);
   }
 }
 
@@ -45,6 +54,7 @@ class Preview extends React.Component {
 
   componentDidMount() {
     this.renderSchema();
+    this.renderStyle();
     this.fixHtmlPreview();
 
     if (location.hash && location.hash.length > 1) {
@@ -62,6 +72,7 @@ class Preview extends React.Component {
 
   componentDidUpdate() {
     this.renderSchema();
+    this.renderStyle();
     this.fixHtmlPreview();
   }
 
@@ -80,8 +91,54 @@ class Preview extends React.Component {
     }
   }
 
+  // 新增样式渲染器
+  renderStyle() {
+    const styleScripts = document.querySelectorAll('script[type="text/css"]');
+
+    if (!styleScripts && !styleScripts.length) {
+      return;
+    }
+    for (let i = 0, len = styleScripts.length; i < len; i++) {
+      let script = styleScripts[i];
+      let props = {};
+      [].slice.apply(script.attributes).forEach(item => {
+        props[item.name] = item.value;
+      });
+
+      let dom = document.createElement('div');
+      let height = props.height ? parseInt(props.height, 10) : 200;
+
+      if (this.props.viewMode === 'mobile') {
+        // 移动端下高度不能太低
+        if (height < 500) {
+          height = 500;
+        }
+      }
+
+      dom.setAttribute('class', 'doc-play-ground');
+      // dom.setAttribute('style', `min-height: ${height}px;`);
+      const origin = script.parentNode;
+      origin.parentNode.replaceChild(dom, origin);
+      const root = createRoot(dom);
+      this.roots.push(root);
+      root.render(
+        <LazyComponent
+          {...this.props}
+          container={() => findDOMNode(this)}
+          component={PreviewStyle}
+          code={script.innerText}
+          scope={props.scope}
+          // unMountOnHidden
+          height={height}
+          placeholder="加载中，请稍后。。。"
+        />
+      );
+    }
+  }
+
   renderSchema() {
     const scripts = document.querySelectorAll('script[type="text/schema"]');
+
     if (!scripts && !scripts.length) {
       return;
     }

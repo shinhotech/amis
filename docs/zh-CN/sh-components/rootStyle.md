@@ -8,8 +8,10 @@ title: 树根 重置样式
 $color-main = #fa705b
 
 .amis-scope
-  // 页面
+  /* 页面 */
   .cxd-Page
+    .cxd-Page-body
+      padding-top: 0
     .cxd-Panel
       border none
       box-shadow 0px 1px 4px rgba(0, 0, 0, 0.1)
@@ -19,15 +21,21 @@ $color-main = #fa705b
       .cxd-Panel-heading
         padding 10px 20px 11px
 
-  // 弹窗
-  .cxd-Modal
-    top 15% !important
+  /* 弹窗 */
   .cxd-Modal-content
     .cxd-Modal-body
       padding 0 24px
-      margin 16px 0 24px 0
+      margin 16px 8px 10px
 
-  // 图片
+    .cxd-Modal-header
+      .cxd-Modal-close svg.icon
+        width 16px !important
+        height 16px !important
+      .cxd-Modal-title
+        font-weight 600
+        font-size 16px
+
+  /* 图片 */
   .cxd-ImageField
     .cxd-Image--thumb
       .cxd-Image-thumb
@@ -42,8 +50,10 @@ $color-main = #fa705b
       text-align center
       color #999
       width 100%
+      .cxd-Image-caption
+        color #999
 
-  // Form
+  /* Form */
   .cxd-Form
     .cxd-Form-item--inline > .cxd-Form-label
       color #333
@@ -56,22 +66,30 @@ $color-main = #fa705b
       margin-bottom 12px
       margin-right 12px
 
-  // 下拉
+  /* 下拉 */
   .cxd-SelectControl
     width 164px
     height 28px
+
     .cxd-Select
       padding 2px 12px
       font-size 12px
+      height 28px
       min-height 28px
 
     .cxd-Select--multi .cxd-Select-valueWrap .cxd-Select-placeholder
       margin-left 0
 
-  // 级联
+    .cxd-Select-arrow
+      svg.icon
+        color: #ccc
+
+  /* 级联 */
   .cxd-NestedSelectControl
     width 184px
     height 28px
+    .cxd-NestedSelect-noResult
+      width: 184px
     .cxd-ResultBox
       font-size 12px
       padding 2px 12px
@@ -80,7 +98,28 @@ $color-main = #fa705b
       &.cxd-NestedSelect
         padding-left 12px
 
-  // 按钮
+    .cxd-NestedSelect-menuOuter
+      .cxd-NestedSelect-menu
+        min-height 32px
+        max-height 175px
+        width 160px
+
+        .cxd-NestedSelect-option
+          padding-left 16px
+          & > .cxd-NestedSelect-optionLabel
+            height 32px
+            font-size 14px
+
+    .cxd-ResultBox-pc-arrow
+      svg.icon
+        color: #ccc
+    .cxd-NestedSelect-optionArrowRight
+      display: flex
+      align-items: center
+      svg.icon
+        top: 0 !important
+
+  /* 按钮 */
   .cxd-Button.cxd-Button--size-default
     height 28px
     font-size 12px
@@ -89,10 +128,9 @@ $color-main = #fa705b
   .cxd-Button.cxd-Button--default:not(:disabled):not(.is-disabled)
     border-color #eee
     &:hover
-      background #f6f6f6
-      border-color #f6f6f6
+      background #fafafa
+      border-color #eee
       color #333
-
   .cxd-Button.cxd-Button--danger:not(:disabled):not(.is-disabled):hover,
   .cxd-Button.cxd-Button--primary:not(:disabled):not(.is-disabled):hover
     background $color-darkmain
@@ -105,7 +143,7 @@ $color-main = #fa705b
   .cxd-Page .cxd-Panel
     margin-bottom 12px
 
-  /* 自定义指标 多选 */
+  /* 自定义指标 */
   .cxd-CheckboxesControl.is-inline .cxd-Checkbox
     display block !important
 
