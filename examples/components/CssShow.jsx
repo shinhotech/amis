@@ -19,7 +19,7 @@ export default class CssShow extends React.Component {
   }
 
   state = {
-    styleTagClassName: 'myStyle-tag-' + Math.random().toString(36).substr(2, 9),
+    // styleTagClassName: 'myStyle-tag-' + Math.random().toString(36).substr(2, 9),
     styleShowWrapClassName: 'style-show-wrap' + Math.random().toString(36).substr(2, 9),
     isShow: true
   };
@@ -27,14 +27,14 @@ export default class CssShow extends React.Component {
   // 样式复制功能
   handleCopy() {
     // 获取 style 标签
-    const styleTag = document.querySelector('#' + this.state.styleTagClassName);
-
+    // const styleTag = document.querySelector('#' + this.state.styleTagClassName);
     // 获取 style 标签中的内容
-    const styleContent = styleTag.innerHTML;
+    // const styleContent = styleTag.innerHTML;
 
+    const { code } = this.props;
     // 创建一个文本输入框
     const input = document.createElement("textarea");
-    input.value = styleContent;
+    input.value = code;
     document.body.appendChild(input);
 
     // 选中文本输入框中的内容
@@ -109,7 +109,7 @@ export default class CssShow extends React.Component {
         <a onClick={this.handleToggle} className="Playgroud-edit-btn">
           { isShow ? '收起' : '展开'}
         </a>
-        <style id={this.state.styleTagClassName}>{ rest.code }</style>
+        <style>{ rest.code }</style>
         <div className={classnames('style-show-wrap', { 'isShow': isShow })} id={this.state.styleShowWrapClassName}></div>
       </div>
     );
