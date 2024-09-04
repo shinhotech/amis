@@ -6,19 +6,23 @@ import {
   PluginActions,
   RendererPluginAction,
   tipedLabel,
-  getSchemaTpl
+  getSchemaTpl,
+  defaultValue,
+  persistGet
 } from 'amis-editor-core';
 import React from 'react';
 import {ActionConfig, ComponentInfo} from './types';
 import ActionConfigPanel from './action-config-panel';
 import {BASE_ACTION_PROPS} from './comp-action-select';
 import {findActionNode} from './helper';
-import {PlainObject, SchemaNode} from 'amis-core';
+import {PlainObject, SchemaNode, Option} from 'amis-core';
+import {i18n as _i18n} from 'i18n-runtime';
 
 interface ActionDialogProp {
   show: boolean;
   type: string;
   data: any;
+  closeOnEsc?: boolean;
   pluginActions: PluginActions; // 组件的动作列表
   actionTree: RendererPluginAction[]; // 动作树
   commonActions?: {[propName: string]: RendererPluginAction}; // 公共动作Map
@@ -26,12 +30,21 @@ interface ActionDialogProp {
   onClose: () => void;
   getComponents: (action: RendererPluginAction) => ComponentInfo[]; // 当前页面组件树
   actionConfigInitFormatter?: (actionConfig: ActionConfig) => ActionConfig; // 动作配置初始化时格式化
-  actionConfigSubmitFormatter?: (actionConfig: ActionConfig) => ActionConfig; // 动作配置提交时格式化
+  actionConfigSubmitFormatter?: (
+    actionConfig: ActionConfig,
+    type?: string
+  ) => ActionConfig; // 动作配置提交时格式化
   render: (
     region: string,
     node: SchemaNode,
     props?: PlainObject
   ) => JSX.Element;
+
+  subscribeSchemaSubmit: (
+    fn: (schema: any, value: any, id: string, diff?: any) => any,
+    once?: boolean
+  ) => () => void;
+  subscribeActionSubmit: (fn: (value: any) => any) => () => void;
 }
 
 export default class ActionDialog extends React.Component<ActionDialogProp> {
@@ -94,7 +107,7 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
           [key: string]: any;
         } = {};
         let groupType = '';
-
+        let __statusType = '';
         Object.keys(form.data).forEach((key: string) => {
           if (!BASE_ACTION_PROPS.includes(key)) {
             removeKeys[key] = undefined;
@@ -118,14 +131,17 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
           value === 'visibility' &&
           !['show', 'hidden', 'visibility'].includes(groupType)
         ) {
-          groupType = 'show';
+          groupType = 'static';
+          // 多个动作共用字段需要处理一下默认值，否则设为undefined会导致视觉上勾选，但是value实际为空
+          __statusType = 'show';
         }
 
         if (
           value === 'usability' &&
           !['enabled', 'disabled', 'usability'].includes(groupType)
         ) {
-          groupType = 'enabled';
+          groupType = 'static';
+          __statusType = 'enabled';
         }
 
         const actionNode = findActionNode(actionTree, value);
@@ -134,14 +150,16 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
           __keywords: form.data.__keywords,
           __resultActionTree: form.data.__resultActionTree,
           componentId: form.data.componentId ? '' : undefined,
-          args: {},
+          ...(form.data.args ? {args: {}} : {}), // 切换动作时清空args
           groupType,
+          __statusType,
           __actionDesc: actionNode?.description,
           __actionSchema: actionNode?.schema,
           __subActions: actionNode?.actions,
           __cmptTreeSource: actionNode?.supportComponents
             ? getComponents?.(actionNode) ?? []
-            : []
+            : [],
+          ignoreError: false
         });
       }
     };
@@ -159,9 +177,47 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
     }
   }
 
+  // 获取常用动作列表schema
+  getCommonUseActionSchema() {
+    const commonUseActions = persistGet('common-use-actions', []).slice(0, 5);
+    return commonUseActions.map((action: Option) => {
+      return {
+        type: 'tag',
+        label: _i18n(action.label as string),
+        displayMode: 'rounded',
+        color: 'active',
+        style: {
+          borderColor: '#2468f2',
+          cursor: 'pointer',
+          maxWidth: '16%'
+        },
+        onEvent: {
+          click: {
+            actions: [
+              {
+                actionType: 'setValue',
+                componentName: 'actionType',
+                args: {
+                  value: action.value
+                }
+              },
+              {
+                actionType: 'custom',
+                script:
+                  "document.querySelector('.action-tree li .is-checked')?.scrollIntoView()"
+              }
+            ]
+          }
+        }
+      };
+    });
+  }
+
   render() {
     const {
       data,
+      subscribeSchemaSubmit,
+      subscribeActionSubmit,
       show,
       type,
       actionTree,
@@ -169,8 +225,10 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
       getComponents,
       commonActions,
       onClose,
-      render
+      render,
+      closeOnEsc
     } = this.props;
+    const commonUseActionSchema = this.getCommonUseActionSchema();
 
     return render(
       'inner',
@@ -180,7 +238,7 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
         headerClassName: 'font-bold',
         className: 'action-config-dialog',
         bodyClassName: 'action-config-dialog-body',
-        closeOnEsc: true,
+        closeOnEsc: closeOnEsc,
         closeOnOutside: false,
         show,
         showCloseButton: true,
@@ -201,6 +259,20 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
             // debug: true,
             onSubmit: this.props.onSubmit?.bind(this, type),
             body: [
+              {
+                type: 'flex',
+                className: 'common-actions',
+                justify: 'flex-start',
+                visibleOn: `${commonUseActionSchema.length}`,
+                items: [
+                  {
+                    type: 'tpl',
+                    tpl: '常用动作：',
+                    className: 'common-actions-label'
+                  },
+                  ...commonUseActionSchema
+                ]
+              },
               {
                 type: 'grid',
                 className: 'h-full',
@@ -254,20 +326,20 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
                         type: 'tpl',
                         tpl: '动作说明',
                         className: 'action-panel-title',
-                        visibleOn: 'data.actionType',
+                        visibleOn: 'this.actionType',
                         inline: false
                       },
                       {
                         type: 'tpl',
                         className: 'action-desc',
                         tpl: '${__actionDesc}',
-                        visibleOn: 'data.actionType'
+                        visibleOn: 'this.actionType'
                       },
                       {
                         type: 'tpl',
                         tpl: '基础设置',
                         className: 'action-panel-title',
-                        visibleOn: 'data.actionType',
+                        visibleOn: 'this.actionType',
                         inline: false
                       },
                       {
@@ -285,7 +357,45 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
                             tpl: '高级设置',
                             inline: false,
                             className: 'action-panel-title',
-                            visibleOn: 'data.actionType'
+                            visibleOn: 'this.actionType'
+                          },
+                          {
+                            type: 'button-group-select',
+                            name: 'ignoreError',
+                            visibleOn: 'this.actionType',
+                            label: tipedLabel(
+                              '错误忽略',
+                              '动作发生错误时，是否忽略错误继续执行'
+                            ),
+                            mode: 'horizontal',
+                            pipeIn: (value: any, data: any) =>
+                              value === true
+                                ? '1'
+                                : value === false
+                                ? '2'
+                                : '3',
+                            pipeOut: (value: any) =>
+                              value === '1'
+                                ? true
+                                : value === '2'
+                                ? false
+                                : undefined,
+                            options: [
+                              {
+                                label: '忽略',
+                                value: '1'
+                              },
+                              {
+                                label: '不忽略',
+                                value: '2'
+                              },
+                              {
+                                label: '预设',
+                                value: '3'
+                              }
+                            ],
+                            description:
+                              '<%= this.ignoreError === false ? "找不到组件和动作执行失败都中断" : typeof this.ignoreError === "undefined" ? "找不到组件容忍，动作执行失败才中断" : ""%>'
                           },
                           getSchemaTpl('expressionFormulaControl', {
                             name: 'stopPropagation',
@@ -297,7 +407,7 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
                             variables: '${variables}',
                             mode: 'horizontal',
                             size: 'lg',
-                            visibleOn: 'data.actionType'
+                            visibleOn: 'this.actionType'
                           }),
                           getSchemaTpl('expressionFormulaControl', {
                             name: 'expression',
@@ -307,7 +417,7 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
                             mode: 'horizontal',
                             size: 'lg',
                             placeholder: '默认执行该动作',
-                            visibleOn: 'data.actionType'
+                            visibleOn: 'this.actionType'
                           })
                         ]
                       }
@@ -320,13 +430,16 @@ export default class ActionDialog extends React.Component<ActionDialogProp> {
             style: {
               borderStyle: 'solid'
             },
-            className: 'action-config-panel'
+            className: 'action-config-panel :AMISCSSWrapper'
           }
         ],
         onClose
       },
       {
-        data // 必须这样，不然变量会被当作数据映射处理掉
+        data, // 必须这样，不然变量会被当作数据映射处理掉
+
+        subscribeActionSubmit,
+        subscribeSchemaSubmit
       }
     );
     //   : null;

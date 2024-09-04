@@ -66,10 +66,22 @@ export interface SchemaEditorProps extends LocaleProps, ThemeProps {
    */
   enableAdvancedSetting?: boolean;
 
+  popOverContainer?: any;
+
   /**
    * 各属性输入控件的占位提示文本
    */
   placeholder?: SchemaEditorItemPlaceholder;
+
+  /**
+   * 是否为 mini 模式
+   */
+  mini?: boolean;
+
+  /**
+   * 添加属性的按钮文本
+   */
+  addButtonText?: string;
 }
 
 export class SchemaEditor extends React.Component<SchemaEditorProps> {
@@ -168,7 +180,12 @@ export class SchemaEditor extends React.Component<SchemaEditorProps> {
       disabled,
       definitions,
       enableAdvancedSetting,
-      placeholder
+      popOverContainer,
+      placeholder,
+      mobileUI,
+      mini,
+      className,
+      addButtonText
     } = this.props;
     const value: JSONSchema = this.props.value || {
       type: defaultType || 'object'
@@ -210,7 +227,7 @@ export class SchemaEditor extends React.Component<SchemaEditorProps> {
     }
 
     return (
-      <div className={cx('SchemaEditor')}>
+      <div className={cx('SchemaEditor', className)}>
         <SchemaEditorItem
           types={types}
           typeMutable={rootTypeMutable}
@@ -226,7 +243,12 @@ export class SchemaEditor extends React.Component<SchemaEditorProps> {
           disabled={disabled}
           onTypeChange={this.handleTypeChange}
           enableAdvancedSetting={enableAdvancedSetting}
+          popOverContainer={popOverContainer}
           placeholder={placeholder}
+          mobileUI={mobileUI}
+          mini={mini}
+          addButtonText={addButtonText}
+          expandMembers
         />
       </div>
     );

@@ -94,7 +94,98 @@ order: 21
 
 ## 手动上传
 
-如果不希望 File 组件上传，可以配置 `asBlob` 或者 `asBase64`，采用这种方式后，组件不再自己上传了，而是直接把文件数据作为表单项的值，文件内容会在 Form 表单提交的接口里面一起带上。
+默认`"autoUpload": true`，即添加文件后自动上传。可以设置`"autoUpload": false`关闭自动上传，此时通过点击上传按钮上传。
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "data": {
+      "file": {
+        "id":"2ba48d02d348",
+        "value":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+        "url":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+        "filename":"file(single).md",
+        "name":"file(single).md",
+        "state":"uploaded"
+      },
+      "files": [
+        {
+          "id":"2ba48d02d349",
+          "value":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "url":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "filename":"file1.md",
+          "name":"file1.md",
+          "state":"uploaded"
+        },
+        {
+          "id":"14723e0bc640",
+          "value":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "url":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "filename":"file2.md",
+          "name":"file2.md",
+          "state":"uploaded"
+        }
+      ]
+    },
+    "body": [
+      {
+        "type": "input-file",
+        "name": "files",
+        "label": "File(多选)",
+        "mode": "horizontal",
+        "labelAlign": "left",
+        "accept": "*",
+        "receiver": "/api/upload/file",
+        "multiple": true,
+        "autoUpload": false,
+        "joinValues": false,
+        "onEvent": {
+          "success": {
+            "actions": [
+              {
+                "actionType": "toast",
+                "args": {
+                  "msgType": "info",
+                  "msg": "「${event.data.path}」上传成功"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "type": "input-file",
+        "name": "file",
+        "label": "File(单选)",
+        "mode": "horizontal",
+        "labelAlign": "left",
+        "accept": "*",
+        "receiver": "/api/upload/file",
+        "multiple": false,
+        "autoUpload": false,
+        "joinValues": false,
+        "onEvent": {
+          "success": {
+            "actions": [
+              {
+                "actionType": "toast",
+                "args": {
+                  "msgType": "info",
+                  "msg": "「${event.data.path}」上传成功"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+}
+```
+
+## 作为表单项上传
+
+如果不希望 InputFile 组件在提交 Form 之前上传，可以配置 `asBlob` 或者 `asBase64`，采用这种方式后，组件不再自己上传了，而是直接把文件数据作为表单项的值，文件内容会在 Form 表单提交的接口里面一起带上。
 
 ```schema: scope="body"
 {
@@ -302,6 +393,48 @@ order: 21
 }
 ```
 
+## 上传文件列表
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "debug": true,
+    "data": {
+      "files": [
+        {
+          "id":"2ba48d02d349",
+          "value":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "url":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "filename":"file1.md",
+          "name":"file1.md",
+          "state":"uploaded"
+        },
+        {
+          "id":"14723e0bc640",
+          "value":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "url":"http://amis.bj.bcebos.com/amis/2017-11/1510713111265/fis3-react.md",
+          "filename":"file2.md",
+          "name":"file2.md",
+          "state":"uploaded"
+        }
+      ]
+    },
+    "body": [
+      {
+          "type": "input-file",
+          "name": "files",
+          "label": false,
+          "mode": "horizontal",
+          "accept": "*",
+          "receiver": "/api/mock2/upload/random",
+          "multiple": true,
+          "joinValues": false
+      }
+    ]
+}
+```
+
 ## 属性表
 
 除了支持 [普通表单项属性表](./formitem#%E5%B1%9E%E6%80%A7%E8%A1%A8) 中的配置以外，还支持下面一些配置
@@ -310,6 +443,7 @@ order: 21
 | ---------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | receiver         | [API](../../../docs/types/api) |                                                                                                            | 上传文件接口                                                                                                                         |
 | accept           | `string`                       | `text/plain`                                                                                               | 默认只支持纯文本，要支持其他类型，请配置此属性为文件后缀`.xxx`                                                                       |
+| capture          | `string`                       | `undefined`                                                                                                | 用于控制 input[type=file] 标签的 capture 属性，在移动端可控制输入来源                                                                |
 | asBase64         | `boolean`                      | `false`                                                                                                    | 将文件以`base64`的形式，赋值给当前组件                                                                                               |
 | asBlob           | `boolean`                      | `false`                                                                                                    | 将文件以二进制的形式，赋值给当前组件                                                                                                 |
 | maxSize          | `number`                       |                                                                                                            | 默认没有限制，当设置后，文件大小大于此值将不允许上传。单位为`B`                                                                      |
@@ -340,7 +474,7 @@ order: 21
 
 ## 事件表
 
-当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`来获取事件产生的数据（`< 2.3.2 及以下版本 为 ${event.data.[事件参数名]}`），详细请查看[事件动作](../../docs/concepts/event-action)。
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`或`${event.data.[事件参数名]}`来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
 
 > `[name]`表示当前组件绑定的名称，即`name`属性，如果没有配置`name`属性，则通过`file`取值。
 
@@ -367,3 +501,36 @@ order: 21
 | 动作名称 | 动作配置 | 说明 |
 | -------- | -------- | ---- |
 | clear    | -        | 清空 |
+
+### clear
+
+```schema: scope="body"
+{
+    "type": "form",
+    "debug": true,
+    "body": [
+        {
+            "type": "input-file",
+            "name": "file",
+            "label": "File",
+            "accept": "*",
+            "receiver": "/api/upload/file",
+            "id": "clear_text"
+        },
+        {
+            "type": "button",
+            "label": "清空",
+            "onEvent": {
+                "click": {
+                    "actions": [
+                        {
+                            "actionType": "clear",
+                            "componentId": "clear_text"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+```

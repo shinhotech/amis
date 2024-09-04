@@ -1,6 +1,11 @@
 import {PlainObject} from '../types';
 import {uuid} from './helper';
 import cloneDeep from 'lodash/cloneDeep';
+import isObject from 'lodash/isObject';
+import map from 'lodash/map';
+import isEmpty from 'lodash/isEmpty';
+import kebabCase from 'lodash/kebabCase';
+import {resolveVariableAndFilter} from './resolveVariableAndFilter';
 
 export const valueMap: PlainObject = {
   'marginTop': 'margin-top',
@@ -34,29 +39,92 @@ export const inheritValueMap: PlainObject = {
 };
 
 interface extra {
+  important?: boolean;
+  parent?: string;
+  inner?: string;
   pre?: string;
   suf?: string;
 }
 
-export function findOrCreactStyle(id: string) {
-  let varStyleTag = document.getElementById(id);
+/**
+ * 查找或创建style标签
+ * @param param
+ * @param param.classId 根据classId查找或创建style标签
+ * @param param.id 用于赋值给style的class
+ * @param param.doc 文档对象，默认为document
+ * @param param.before 插入到某个class为id的style标签之前
+ */
+
+export function findOrCreateStyle({
+  classId,
+  doc,
+  before,
+  id
+}: {
+  classId: string;
+  doc?: Document;
+  before?: string;
+  id?: string;
+}) {
+  doc = doc || document;
+  let varStyleTag = doc.getElementById(classId);
   if (!varStyleTag) {
-    varStyleTag = document.createElement('style');
-    varStyleTag.id = id;
-    document.body.appendChild(varStyleTag);
+    varStyleTag = doc.createElement('style');
+    varStyleTag.id = classId;
+    varStyleTag.setAttribute('class', id || '');
+    const beforeStyleTag = doc.getElementsByClassName(
+      before || ''
+    )?.[0] as HTMLElement;
+    // 如果存在before则插入到before之前，否则插入到body中
+    if (beforeStyleTag) {
+      beforeStyleTag.before(varStyleTag);
+    } else {
+      doc.body.appendChild(varStyleTag);
+    }
   }
+
   return varStyleTag;
 }
 
-export function insertStyle(style: string, id: string) {
-  const varStyleTag = findOrCreactStyle(id);
+/*
+ * 插入样式
+ * @param param
+ * @param param.style 样式内容
+ * @param param.classId 样式标识，会绑定到id上
+ * @param param.id id,会绑定到class上
+ * @param param.doc 文档对象
+ * @param param.before 插入到某个id之前
+ */
+export function insertStyle({
+  style,
+  classId,
+  id,
+  doc,
+  before
+}: {
+  style: string;
+  classId: string;
+  id?: string;
+  doc?: Document;
+  before?: string;
+}) {
+  const varStyleTag = findOrCreateStyle({
+    classId: 'amis-' + classId,
+    doc,
+    before,
+    id
+  });
 
   // bca-disable-line
   varStyleTag.innerHTML = style;
+
+  if (!style) {
+    varStyleTag.remove();
+  }
 }
 
 export function addStyle(style: string, id: string) {
-  const varStyleTag = findOrCreactStyle(id);
+  const varStyleTag = findOrCreateStyle({classId: id});
   // bca-disable-line
   varStyleTag.innerHTML += style;
 }
@@ -68,9 +136,9 @@ function handleInheritData(statusMap: any, data: any) {
   }
   // 检查是否存在inherit
   ['hover', 'active'].forEach(status => {
-    for (let key in statusMap[status]) {
+    Object.keys(statusMap[status]).forEach(key => {
       if (typeof statusMap[status][key] === 'object') {
-        for (let style in statusMap[status][key]) {
+        Object.keys(statusMap[status][key]).forEach(style => {
           if (statusMap[status][key][style] === 'inherit') {
             // 值为inherit时设置为default的值或者主题中的default值
             if (statusMap['default'][key] && statusMap['default'][key][style]) {
@@ -81,7 +149,7 @@ function handleInheritData(statusMap: any, data: any) {
                 data['default'].body[value][style];
             }
           }
-        }
+        });
       } else {
         if (statusMap[status][key] === 'inherit') {
           if (statusMap['default'][key] && statusMap['default'][key]) {
@@ -92,98 +160,84 @@ function handleInheritData(statusMap: any, data: any) {
           }
         }
       }
-    }
+    });
   });
 }
 
 export function formatStyle(
   themeCss: any,
-  classNames: {
-    key: string;
-    value?: string;
-    weights?: {
-      default?: extra;
-      hover?: extra;
-      active?: extra;
-      disabled?: extra;
-    };
-  }[],
+  classNames?: CustomStyleClassName[],
   id?: string,
-  defaultData?: any
+  defaultData?: any,
+  data?: any
 ) {
-  if (!themeCss) {
+  // 没有具体的样式，或者没有对应的classname
+  if (!themeCss || !classNames) {
     return {value: '', origin: []};
   }
-  const res = [];
+  const res: {className: string; content: string}[] = [];
   const status2string: PlainObject = {
     default: '',
     hover: ':hover',
     active: ':hover:active',
-    disabled: '.is-disabled'
+    focused: '',
+    disabled: ''
   };
 
   for (let item of classNames) {
     const body = themeCss[item.key];
-    const list = item.value?.split(' ');
-    const classNameList: string[] = [];
 
     if (!body) {
       continue;
     }
 
-    list?.forEach(n => {
-      if (
-        /(\S*[C|c]lassName-\S*)/.test(n) &&
-        !!~n.indexOf(
-          id
-            ?.replace('u:', '')
-            .replace('-label', '')
-            .replace('-description', '')
-            .replace('-addOn', '') || ''
-        )
-      ) {
-        classNameList.push(n);
-      }
-    });
+    let className = item.key + '-' + id?.replace('u:', '');
     const weightsList: PlainObject = item.weights || {};
 
-    for (let className of classNameList) {
-      // 没有具体的样式，或者没有对应的classname
-      const statusMap: PlainObject = {
-        default: {},
-        hover: {},
-        active: {},
-        disabled: {}
-      };
-      for (let key in body) {
-        if (key === '$$id') {
-          continue;
-        }
+    if (typeof data?.index === 'number') {
+      className += `-${data.index}`;
+    }
+
+    const statusMap: PlainObject = {
+      default: {},
+      hover: {},
+      active: {},
+      focused: {},
+      disabled: {}
+    };
+    Object.keys(body).forEach(key => {
+      if (key !== '$$id' && body[key]) {
         if (!!~key.indexOf(':default')) {
           statusMap.default[key.replace(':default', '')] = body[key];
         } else if (!!~key.indexOf(':hover')) {
           statusMap.hover[key.replace(':hover', '')] = body[key];
         } else if (!!~key.indexOf(':active')) {
           statusMap.active[key.replace(':active', '')] = body[key];
+        } else if (!!~key.indexOf(':focused')) {
+          statusMap.focused[key.replace(':focused', '')] = body[key];
         } else if (!!~key.indexOf(':disabled')) {
           statusMap.disabled[key.replace(':disabled', '')] = body[key];
         } else {
           statusMap.default[key] = body[key];
         }
       }
-      handleInheritData(statusMap, defaultData);
+    });
+    handleInheritData(statusMap, defaultData);
 
-      for (let status in statusMap) {
-        const weights = weightsList[status];
-        const styles: string[] = [];
-        const fn = (key: string, value: string) => {
-          key = valueMap[key] || key;
-          styles.push(`${key}: ${value};`);
-        };
-        for (let key in statusMap[status]) {
-          if (key === '$$id') {
-            continue;
-          }
+    Object.keys(statusMap).forEach(status => {
+      const weights = weightsList[status];
+      const styles: string[] = [];
+      const fn = (key: string, value: string) => {
+        key = valueMap[key] || key;
+        value = resolveVariableAndFilter(value, data, '| raw') || value;
+        styles.push(
+          `${key.startsWith('--') ? key : kebabCase(key)}: ${
+            value + (weights?.important ? ' !important' : '')
+          };`
+        );
+      };
+      Object.keys(statusMap[status]).forEach(key => {
+        if (key !== '$$id') {
           const style = statusMap[status][key];
           if (typeof style === 'object') {
             // 圆角特殊处理
@@ -191,44 +245,52 @@ export function formatStyle(
               fn(
                 'border-radius',
                 [
-                  style['top-left-border-radius'],
-                  style['top-right-border-radius'],
-                  style['bottom-right-border-radius'],
-                  style['bottom-left-border-radius']
+                  style['top-left-border-radius'] || 0,
+                  style['top-right-border-radius'] || 0,
+                  style['bottom-right-border-radius'] || 0,
+                  style['bottom-left-border-radius'] || 0
                 ].join(' ')
               );
             } else {
-              for (let k in style) {
-                if (k === '$$id') {
-                  continue;
+              Object.keys(style).forEach(k => {
+                if (k !== '$$id') {
+                  const value = style[k];
+                  value && fn(k, value);
                 }
-                const value = style[k];
-                value && fn(k, value);
-              }
+              });
             }
           } else {
             const value = style;
-            value && fn(key, value);
+            if (key === 'iconSize') {
+              fn('width', value);
+              fn('height', value);
+              fn('font-size', value);
+            } else {
+              value && fn(key, value);
+            }
           }
         }
-        if (styles.length > 0) {
-          const cx = (weights?.pre || '') + className + (weights?.suf || '');
-          res.push({
-            className: cx + status2string[status],
-            content: `.${cx + status2string[status]} {\n  ${styles.join(
-              '\n  '
-            )}\n}`
-          });
-          // TODO:切换状态暂时先不改变组件的样式
-          // if (['hover', 'active', 'disabled'].includes(status)) {
-          //   res.push({
-          //     className: cx + '.' + status,
-          //     content: `.${cx}.${status} {\n  ${styles.join('\n  ')}\n}`
-          //   });
-          // }
-        }
+      });
+      if (styles.length > 0) {
+        const cx = (weights?.pre || '') + className + (weights?.suf || '');
+        const inner = weights?.inner || '';
+        const parent = weights?.parent || '';
+
+        res.push({
+          className: parent + cx + status2string[status] + inner,
+          content: `${parent} .${
+            cx + status2string[status]
+          } ${inner}{\n  ${styles.join('\n  ')}\n}`
+        });
+        // TODO:切换状态暂时先不改变组件的样式
+        // if (['hover', 'active', 'disabled'].includes(status)) {
+        //   res.push({
+        //     className: cx + '.' + status,
+        //     content: `.${cx}.${status} {\n  ${styles.join('\n  ')}\n}`
+        //   });
+        // }
       }
-    }
+    });
   }
   return {
     value: res.map(n => n.content).join('\n'),
@@ -236,28 +298,53 @@ export function formatStyle(
   };
 }
 
-export function insertCustomStyle(
-  themeCss: any,
-  classNames: {
-    key: string;
-    value?: string;
-    weights?: {
-      default?: extra;
-      hover?: extra;
-      active?: extra;
-      disabled?: extra;
-    };
-  }[],
-  id?: string,
-  defaultData?: any
-) {
+export interface CustomStyleClassName {
+  key: string;
+  weights?: {
+    default?: extra;
+    hover?: extra;
+    active?: extra;
+    focused?: extra;
+    disabled?: extra;
+  };
+}
+
+export function insertCustomStyle(params: {
+  themeCss: any;
+  classNames: CustomStyleClassName[];
+  id: string;
+  defaultData?: any;
+  customStyleClassPrefix?: string;
+  doc?: Document;
+  [propName: string]: any;
+}) {
+  const {
+    themeCss,
+    classNames,
+    id,
+    defaultData,
+    customStyleClassPrefix,
+    doc,
+    data
+  } = params;
   if (!themeCss) {
     return;
   }
-  const {value} = formatStyle(themeCss, classNames, id, defaultData);
-  if (value) {
-    insertStyle(value, id?.replace('u:', '') || uuid());
+
+  let {value} = formatStyle(themeCss, classNames, id, defaultData, data);
+  value = customStyleClassPrefix ? `${customStyleClassPrefix} ${value}` : value;
+  let classId = id?.replace?.('u:', '') || id + '';
+  if (typeof data?.index === 'number') {
+    classId += `-${data.index}`;
   }
+  // 这里需要插入到wrapperCustomStyle的前面
+  insertStyle({
+    style: value,
+    classId,
+    doc,
+    id: classId.replace(/(-.*)/, ''),
+    before: classId.replace(/(-.*)/, '')
+  });
 }
 
 /**
@@ -276,5 +363,184 @@ export function getValueByPath(path: string, data: any) {
     return value;
   } catch (e) {
     return null;
+  }
+}
+
+// 递归处理嵌套的样式，转化成一维对象
+function traverseStyle(style: any, path: string, result: any) {
+  Object.keys(style).forEach(key => {
+    if (key !== '$$id') {
+      if (isObject(style[key])) {
+        const nowPath = path ? `${path} ${key}` : key;
+        traverseStyle(style[key], nowPath, result);
+      } else if (path === '') {
+        !result[key] && (result[key] = {});
+        result[key] = style[key];
+      } else {
+        !result[path] && (result[path] = {});
+        result[path][key] = style[key];
+      }
+    }
+  });
+}
+
+/**
+ * 设置源码编辑自定义样式
+ */
+export function insertEditCustomStyle(params: {
+  customStyle: any;
+  id?: string;
+  doc?: Document;
+  [propName: string]: any;
+}) {
+  const {customStyle, doc, data} = params;
+  const id = params.id?.replace?.('u:', '') || params.id + '';
+  let styles: any = {};
+  traverseStyle(customStyle, '', styles);
+
+  let content = '';
+  let index = '';
+  if (typeof data?.index === 'number') {
+    index = `-${data.index}`;
+  }
+  if (!isEmpty(styles)) {
+    const className = `wrapperCustomStyle-${id}${index}`;
+    Object.keys(styles).forEach((key: string) => {
+      if (!isObject(styles[key])) {
+        content += `\n.${className} {\n  ${key}: ${
+          resolveVariableAndFilter(
+            styles[key].replace(/['|"]/g, ''),
+            data,
+            '| raw'
+          ) || styles[key]
+        }\n}`;
+      } else if (key === 'root') {
+        const res = map(
+          styles[key],
+          (value, key) =>
+            `${key}: ${
+              resolveVariableAndFilter(
+                value.replace(/['|"]/g, ''),
+                data,
+                '| raw'
+              ) || value
+            };`
+        );
+        content += `\n.${className} {\n  ${res.join('\n  ')}\n}`;
+      } else if (/^root:/.test(key)) {
+        const res = map(
+          styles[key],
+          (value, key) =>
+            `${key}: ${
+              resolveVariableAndFilter(
+                value.replace(/['|"]/g, ''),
+                data,
+                '| raw'
+              ) || value
+            };`
+        );
+        const nowKey = key.replace('root', '');
+        content += `\n.${className} ${nowKey} {\n  ${res.join('\n  ')}\n}`;
+      } else {
+        const res = map(
+          styles[key],
+          (value, key) =>
+            `${key}: ${
+              resolveVariableAndFilter(
+                value.replace(/['|"]/g, ''),
+                data,
+                '| raw'
+              ) || value
+            };`
+        );
+        content += `\n.${className} ${key} {\n  ${res.join('\n  ')}\n}`;
+      }
+    });
+  }
+
+  insertStyle({
+    style: content,
+    classId: 'wrapperCustomStyle-' + (id || uuid()) + index,
+    doc,
+    id: id.replace(/(-.*)/, '')
+  });
+}
+
+export interface InsertCustomStyle {
+  themeCss: any;
+  classNames: CustomStyleClassName[];
+  id?: string;
+  defaultData?: any;
+  customStyleClassPrefix?: string;
+  doc?: Document;
+}
+
+/**
+ * 移除自定义样式
+ */
+export function removeCustomStyle(
+  type: string,
+  id: string,
+  doc?: Document,
+  data?: any
+) {
+  let styleId =
+    'amis-' + (type ? type + '-' : '') + (id.replace?.('u:', '') || id + '');
+  if (typeof data?.index === 'number') {
+    styleId += `-${data.index}`;
+  }
+  const style = (doc || document).getElementById(styleId);
+  if (style) {
+    style.remove();
+  }
+}
+
+export function formatInputThemeCss(themeCss: any) {
+  if (!themeCss) {
+    return;
+  }
+  const inputFontThemeCss: any = {inputControlClassName: {}};
+  const inputControlClassNameObject = themeCss?.inputControlClassName || {};
+  Object.keys(inputControlClassNameObject).forEach((key: string) => {
+    if (~key.indexOf('font')) {
+      inputFontThemeCss.inputControlClassName[key] =
+        inputControlClassNameObject[key];
+    }
+  });
+  return inputFontThemeCss;
+}
+
+export function setThemeClassName(params: {
+  name: string | string[];
+  id?: string;
+  themeCss: any;
+  extra?: string;
+  [propName: string]: any;
+}) {
+  const {name, id, themeCss, extra, data} = params;
+  if (!id || !themeCss) {
+    return '';
+  }
+
+  let index = '';
+  if (typeof data?.index === 'number') {
+    index = `-${data.index}`;
+  }
+
+  function setClassName(name: string, id: string) {
+    if (name !== 'wrapperCustomStyle' && !themeCss[name]) {
+      return '';
+    }
+    return (
+      `${name}-${id.replace?.('u:', '') || id}` +
+      (extra ? `-${extra}` : '') +
+      index
+    );
+  }
+
+  if (typeof name === 'string') {
+    return setClassName(name, id);
+  } else {
+    return name.map(n => setClassName(n, id)).join(' ');
   }
 }

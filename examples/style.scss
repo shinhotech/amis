@@ -5,14 +5,14 @@
 body {
   background-color: #fff !important;
   &.dark {
-    background-color: #333538 !important;
-
+    background-color: var(--colors-neutral-fill-11) !important;
     pre {
       color: #fff;
     }
 
     .markdown-body {
-      color: #fff;
+      color: rgb(100 116 139 / 1);
+      background-color: var(--colors-neutral-fill-11) !important;
     }
   }
 }
@@ -140,10 +140,10 @@ body {
         right: 20px;
         top: 15px;
         font-size: 22px;
-        color: #333;
+        color: var(--colors-neutral-text-3);
 
         &:hover {
-          color: #333;
+          color: var(--colors-neutral-text-3);
         }
       }
     }
@@ -210,7 +210,7 @@ body {
         display: inline-block;
         padding: 20px;
         cursor: pointer;
-        color: #666;
+        color: var(--colors-neutral-text-3);
 
         > svg {
           width: 14px;
@@ -282,7 +282,7 @@ body {
 
   > a {
     display: inline-block;
-    color: #333;
+    color: var(--colors-neutral-text-3);
     padding: 0px 5px;
     margin: 0 5px;
     font-weight: 500;
@@ -334,7 +334,7 @@ body {
 
   a.anchor {
     padding-top: 100px;
-    margin-top: -100px;
+    margin-top: -94px;
   }
 
   &-nav,
@@ -949,15 +949,22 @@ body {
 
   .search-bar {
     padding: 22px 20px;
-    border: 0;
     border-bottom: 1px solid #e8ebee;
     border-radius: 0;
     font-size: 16px;
     font-weight: 500;
+    display: flex;
 
     > .icon-search {
       margin-right: 10px;
       top: 1px;
+    }
+    > input {
+      flex-basis: 1.875rem;
+      flex-grow: 1;
+      border: none;
+      outline: none;
+      width: 100%;
     }
   }
 

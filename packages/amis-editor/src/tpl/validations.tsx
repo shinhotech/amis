@@ -6,7 +6,7 @@ import {
   getI18nEnabled
 } from 'amis-editor-core';
 import {ValidationOptions} from '../component/BaseControl';
-import {str2rules} from 'amis';
+import {Schema, str2rules} from 'amis';
 import {ValidatorTag} from '../validator';
 
 import find from 'lodash/find';
@@ -80,8 +80,12 @@ setSchemaTpl('validations', function () {
       value: 'isZipcode'
     },
     {
-      label: '身份证号码',
+      label: '身份证号码(18/15位)',
       value: 'isId'
+    },
+    {
+      label: '身份证号码(18位)',
+      value: 'isId18'
     },
     {
       label: 'JSON格式',
@@ -194,76 +198,76 @@ setSchemaTpl('validations', function () {
       {
         type: 'input-number',
         name: 'isLength',
-        visibleOn: 'data.type == "isLength"',
+        visibleOn: 'this.type == "isLength"',
         placeholder: '设置长度',
         value: '1'
       },
       {
         type: 'input-number',
         name: 'maximum',
-        visibleOn: 'data.type == "maximum"',
+        visibleOn: 'this.type == "maximum"',
         placeholder: '设置最大值'
       },
       {
         type: 'input-number',
         name: 'minimum',
-        visibleOn: 'data.type == "minimum"',
+        visibleOn: 'this.type == "minimum"',
         placeholder: '设置最小值'
       },
       {
         type: 'input-number',
         name: 'maxLength',
-        visibleOn: 'data.type == "maxLength"',
+        visibleOn: 'this.type == "maxLength"',
         placeholder: '设置最大长度值'
       },
       {
         type: 'input-number',
         name: 'minLength',
-        visibleOn: 'data.type == "minLength"',
+        visibleOn: 'this.type == "minLength"',
         placeholder: '设置最小长度值'
       },
       {
         type: 'input-text',
         name: 'equals',
-        visibleOn: 'data.type == "equals"',
+        visibleOn: 'this.type == "equals"',
         placeholder: '设置值',
         value: ''
       },
       {
         type: 'input-text',
         name: 'equalsField',
-        visibleOn: 'data.type == "equalsField"',
+        visibleOn: 'this.type == "equalsField"',
         placeholder: '设置字段名',
         value: ''
       },
       {
         type: 'input-text',
         name: 'matchRegexp',
-        visibleOn: 'data.type == "matchRegexp"',
+        visibleOn: 'this.type == "matchRegexp"',
         placeholder: '设置正则规则'
       },
       {
         type: 'input-text',
         name: 'matchRegexp1',
-        visibleOn: 'data.type == "matchRegexp1"',
+        visibleOn: 'this.type == "matchRegexp1"',
         placeholder: '设置正则规则'
       },
       {
         type: 'input-text',
         name: 'matchRegexp2',
-        visibleOn: 'data.type == "matchRegexp2"',
+        visibleOn: 'this.type == "matchRegexp2"',
         placeholder: '设置正则规则'
       },
       {
         type: 'input-text',
         name: 'matchRegexp3',
-        visibleOn: 'data.type == "matchRegexp3"',
+        visibleOn: 'this.type == "matchRegexp3"',
         placeholder: '设置正则规则'
       },
       {
         type: 'input-text',
         name: 'matchRegexp4',
-        visibleOn: 'data.type == "matchRegexp4"',
+        visibleOn: 'this.type == "matchRegexp4"',
         placeholder: '设置正则规则'
       }
     ]
@@ -547,13 +551,19 @@ setSchemaTpl('validateOnChange', {
 
 setSchemaTpl(
   'validation',
-  (config: {tag: ValidatorTag | ((ctx: any) => ValidatorTag)}) => {
+  (config: {
+    tag: ValidatorTag | ((ctx: any) => ValidatorTag);
+    rendererSchema?: (schema: Schema) => void | Schema | Schema[];
+  }) => {
     let a = {
       title: '校验',
       body: [
         {
           type: 'ae-validationControl',
           mode: 'normal',
+          style: {
+            marginBottom: '6px'
+          },
           ...config
           // pipeIn: (value: any, data: any) => {
           //   // return reduce(value, (arr: any, item) => {
@@ -582,12 +592,18 @@ setSchemaTpl(
           //   // }, []);
           // },
         },
+        getSchemaTpl('validationApiControl'),
         getSchemaTpl('validateOnChange')
       ]
     };
     return a;
   }
 );
+
+setSchemaTpl('validationApiControl', {
+  type: 'ae-validationApiControl',
+  label: false
+});
 
 setSchemaTpl('validationControl', (value: Array<ValidationOptions> = []) => ({
   type: 'ae-validationControl',

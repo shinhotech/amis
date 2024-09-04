@@ -13,6 +13,10 @@ export interface ActionEventConfig {
     debounce?: {
       wait: number;
     };
+    track?: {
+      id: string;
+      name: string;
+    };
   };
 }
 
@@ -33,4 +37,5 @@ export interface ContextVariables {
   value?: any;
   tag?: string | string[];
   children?: any[];
+  path?: string;
 }

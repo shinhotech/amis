@@ -1,8 +1,15 @@
-import {getI18nEnabled, registerEditorPlugin} from 'amis-editor-core';
+import {
+  RendererPluginAction,
+  RendererPluginEvent,
+  getI18nEnabled,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {BasePlugin, RegionConfig, BaseEventContext} from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
+import {getEventControlConfig} from '../renderer/event-control/helper';
 
 export class CollapsePlugin extends BasePlugin {
+  static id = 'CollapsePlugin';
   // 关联渲染器名字
   rendererName = 'collapse';
   $schema = '/schemas/CollapseSchema.json';
@@ -34,6 +41,88 @@ export class CollapsePlugin extends BasePlugin {
 
   panelJustify = true;
 
+  events: RendererPluginEvent[] = [
+    {
+      eventName: 'change',
+      eventLabel: '折叠状态改变',
+      description: '折叠器折叠状态改变时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                collapsed: {
+                  type: 'boolean',
+                  title: '折叠器状态'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'expand',
+      eventLabel: '折叠器展开',
+      description: '折叠器状态变更为展开时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                collapsed: {
+                  type: 'boolean',
+                  title: '折叠器状态'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'collapse',
+      eventLabel: '折叠器收起',
+      description: '折叠器状态变更为收起时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                collapsed: {
+                  type: 'boolean',
+                  title: '折叠器状态'
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ];
+
+  actions: RendererPluginAction[] = [
+    {
+      actionType: 'expand',
+      actionLabel: '组件展开',
+      description: '组件折叠状态变更为展开'
+    },
+    {
+      actionLabel: '组件收起',
+      actionType: 'collapse',
+      description: '组件折叠状态变更为收起'
+    }
+  ];
+
   panelBodyCreator = (context: BaseEventContext) => {
     const i18nEnabled = getI18nEnabled();
     return getSchemaTpl('tabs', [
@@ -44,10 +133,9 @@ export class CollapsePlugin extends BasePlugin {
             title: '基本',
             body: [
               getSchemaTpl('layout:originPosition', {value: 'left-top'}),
-              {
+              getSchemaTpl('title', {
                 name: 'header',
                 label: '标题',
-                type: i18nEnabled ? 'input-text-i18n' : 'input-text',
                 pipeIn: defaultValue(
                   context?.schema?.title || context?.schema?.header || ''
                 ),
@@ -61,7 +149,7 @@ export class CollapsePlugin extends BasePlugin {
                   form.setValueByName('header', value);
                   form.setValueByName('title', undefined);
                 }
-              },
+              }),
               getSchemaTpl('collapseOpenHeader'),
               {
                 name: 'headerPosition',
@@ -120,6 +208,16 @@ export class CollapsePlugin extends BasePlugin {
             ]
           })
         ])
+      },
+      {
+        title: '事件',
+        className: 'p-none',
+        body: [
+          getSchemaTpl('eventControl', {
+            name: 'onEvent',
+            ...getEventControlConfig(this.manager, context)
+          })
+        ]
       }
     ]);
   };

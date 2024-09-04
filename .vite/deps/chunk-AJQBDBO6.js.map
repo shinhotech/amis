@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/function-apply.js"],
+  "sourcesContent": ["'use strict';\nvar NATIVE_BIND = require('../internals/function-bind-native');\n\nvar FunctionPrototype = Function.prototype;\nvar apply = FunctionPrototype.apply;\nvar call = FunctionPrototype.call;\n\n// eslint-disable-next-line es/no-reflect -- safe\nmodule.exports = typeof Reflect == 'object' && Reflect.apply || (NATIVE_BIND ? call.bind(apply) : function () {\n  return call.apply(apply, arguments);\n});\n"],
+  "mappings": ";;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,cAAc;AAElB,QAAI,oBAAoB,SAAS;AACjC,QAAI,QAAQ,kBAAkB;AAC9B,QAAI,OAAO,kBAAkB;AAG7B,WAAO,UAAU,OAAO,WAAW,YAAY,QAAQ,UAAU,cAAc,KAAK,KAAK,KAAK,IAAI,WAAY;AAC5G,aAAO,KAAK,MAAM,OAAO,SAAS;AAAA,IACpC;AAAA;AAAA;",
+  "names": []
+}

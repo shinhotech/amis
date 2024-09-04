@@ -152,7 +152,7 @@ module.exports = function (content, file) {
       return _;
     })
     .replace(
-      /```(schema|html|css)(?::(.*?))?\n([\s\S]*?)```/g,
+      /```(schema|html)(?::(.*?))?\n([\s\S]*?)```/g,
       function (_, lang, attr, code) {
         const setting = {};
         attr &&
@@ -187,10 +187,6 @@ module.exports = function (content, file) {
             prism.languages[lang],
             lang
           )}</code></pre></div><!--amis-preview-end-->`;
-        } else if (lang === 'css') {
-          placeholder[
-            index
-          ] = `<!--amis-preview-start--><div class="amis-style-preview" style="min-height: ${setting.height}px"><script type="text/css" id="amis-business-style" ${attr}>${code}</script></div><!--amis-preview-end-->`;
         } else {
           placeholder[
             index

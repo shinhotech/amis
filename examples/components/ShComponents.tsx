@@ -82,6 +82,18 @@ export const shComponents = [
         )
       }
     ]
+  },
+  {
+    label: '数据展示',
+    children: [
+      {
+        label: '时间轴',
+        path: '/zh-CN/sh-components/timeline',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/sh-components/timeline.md').then(wrapDoc)
+        )
+      }
+    ]
   }
 ];
 

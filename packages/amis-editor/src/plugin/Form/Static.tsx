@@ -1,10 +1,13 @@
 import React from 'react';
+import get from 'lodash/get';
+import {getVariable} from 'amis-core';
 import {Button} from 'amis';
 import {
   defaultValue,
   getSchemaTpl,
   setSchemaTpl,
-  tipedLabel
+  tipedLabel,
+  RendererPluginEvent
 } from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {BaseEventContext, BasePlugin} from 'amis-editor-core';
@@ -21,6 +24,13 @@ setSchemaTpl('quickEdit', (patch: any, manager: any) => ({
   hiddenOnDefault: true,
   formType: 'extend',
   pipeIn: (value: any) => !!value,
+  trueValue: {
+    mode: 'popOver'
+  },
+  isChecked: (e: any) => {
+    const {data, name} = e;
+    return !!get(data, name);
+  },
   form: {
     body: [
       {
@@ -28,7 +38,7 @@ setSchemaTpl('quickEdit', (patch: any, manager: any) => ({
         name: 'quickEdit.mode',
         type: 'button-group-select',
         inputClassName: 'items-center',
-        visibleOn: 'data.quickEdit',
+        visibleOn: 'this.quickEdit',
         pipeIn: defaultValue('popOver'),
         options: [
           {
@@ -41,13 +51,16 @@ setSchemaTpl('quickEdit', (patch: any, manager: any) => ({
           }
         ]
       },
+      getSchemaTpl('icon', {
+        name: 'quickEdit.icon'
+      }),
       getSchemaTpl('switch', {
         name: 'quickEdit.saveImmediately',
         label: tipedLabel(
           '立即保存',
           '开启后修改即提交，而不是标记修改批量提交。'
         ),
-        visibleOn: 'data.quickEdit',
+        visibleOn: 'this.quickEdit',
         pipeIn: (value: any) => !!value
       }),
       getSchemaTpl('apiControl', {
@@ -61,24 +74,43 @@ setSchemaTpl('quickEdit', (patch: any, manager: any) => ({
       {
         name: 'quickEdit',
         asFormItem: true,
-        visibleOn: 'data.quickEdit',
+        visibleOn: 'this.quickEdit',
         mode: 'row',
         children: ({value, onChange, data}: any) => {
           if (value === true) {
             value = {};
+          } else if (typeof value === 'undefined') {
+            value = getVariable(data, 'quickEdit');
           }
-
-          const originMode = value.mode;
-
-          value = {
-            type: 'input-text',
-            name: data.name,
-            ...value
-          };
-          delete value.mode;
-
+          value = {...value};
+          const originMode = value.mode || 'popOver';
+          if (value.mode) {
+            delete value.mode;
+          }
+          const originSaveImmediately = value.saveImmediately;
+          if (value.saveImmediately) {
+            delete value.saveImmediately;
+          }
+          value =
+            value.body && ['container', 'wrapper'].includes(value.type)
+              ? {
+                  // schema中存在容器，用自己的就行
+                  type: 'wrapper',
+                  body: [],
+                  ...value
+                }
+              : {
+                  // schema中不存在容器，打开子编辑器时需要包裹一层
+                  type: 'wrapper',
+                  body: [
+                    {
+                      type: 'input-text',
+                      name: data.name,
+                      ...value
+                    }
+                  ]
+                };
           // todo 多个快速编辑表单模式看来只能代码模式编辑了。
-
           return (
             <Button
               block
@@ -87,17 +119,12 @@ setSchemaTpl('quickEdit', (patch: any, manager: any) => ({
                 manager.openSubEditor({
                   title: '配置快速编辑类型',
                   value: value,
-                  slot: {
-                    type: 'form',
-                    mode: 'normal',
-                    body: ['$$'],
-                    wrapWithPanel: false
-                  },
                   onChange: (value: any) =>
                     onChange(
                       {
                         ...value,
-                        mode: originMode
+                        mode: originMode,
+                        saveImmediately: originSaveImmediately
                       },
                       'quickEdit'
                     )
@@ -129,7 +156,7 @@ setSchemaTpl('morePopOver', (patch: any, manager: any) => ({
         label: '弹出模式',
         name: 'popOver.mode',
         type: 'button-group-select',
-        visibleOn: 'data.popOver',
+        visibleOn: 'this.popOver',
         pipeIn: defaultValue('popOver'),
         options: [
           {
@@ -153,7 +180,7 @@ setSchemaTpl('morePopOver', (patch: any, manager: any) => ({
         label: '浮层位置',
         type: 'select',
         visibleOn:
-          'data.popOver && (data.popOver.mode === "popOver" || !data.popOver.mode)',
+          'this.popOver && (this.popOver.mode === "popOver" || !this.popOver.mode)',
         pipeIn: defaultValue('center'),
         options: [
           {
@@ -195,7 +222,7 @@ setSchemaTpl('morePopOver', (patch: any, manager: any) => ({
         ]
       },
       {
-        visibleOn: 'data.popOver',
+        visibleOn: 'this.popOver',
         name: 'popOver',
         mode: 'row',
         asFormItem: true,
@@ -246,7 +273,7 @@ setSchemaTpl('copyable', {
         type: 'textarea',
         mode: 'row',
         maxRow: 2,
-        visibleOn: 'data.copyable',
+        visibleOn: 'this.copyable',
         description: '默认为当前字段值，可定制。'
       }
     ]
@@ -254,17 +281,15 @@ setSchemaTpl('copyable', {
 });
 
 export class StaticControlPlugin extends BasePlugin {
+  static id = 'StaticControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'static';
   $schema = '/schemas/StaticControlSchema.json';
 
-  order = -390;
-
   // 组件名称
   name = '静态展示框';
   isBaseComponent = true;
-  disabledRendererPlugin = true;
   icon = 'fa fa-info';
   pluginIcon = 'static-plugin';
   description = '纯用来展示数据，可用来展示 json、date、image、progress 等数据';
@@ -300,20 +325,19 @@ export class StaticControlPlugin extends BasePlugin {
           {
             title: '基本',
             body: [
-              {
-                type: 'alert',
-                inline: false,
-                level: 'warning',
-                className: 'text-sm',
-                body: '<p>当前组件已停止维护，建议您使用<a href="/amis/zh-CN/components/form/formitem#%E9%85%8D%E7%BD%AE%E9%9D%99%E6%80%81%E5%B1%95%E7%A4%BA" target="_blank">静态展示</a>新特性实现表单项的静态展示。</p>'
-              },
               getSchemaTpl('formItemName', {
                 required: false
               }),
               getSchemaTpl('label'),
               // getSchemaTpl('value'),
               getSchemaTpl('valueFormula', {
-                name: 'tpl'
+                name: 'tpl',
+                onChange: (value: any, oldValue: any, item: any, form: any) => {
+                  value === '' &&
+                    form.setValues({
+                      value: undefined
+                    });
+                }
                 // rendererSchema: {
                 //   ...context?.schema,
                 //   type: 'textarea', // 改用多行文本编辑
@@ -385,11 +409,83 @@ export class StaticControlPlugin extends BasePlugin {
   filterProps(props: any, node: EditorNodeType) {
     props.$$id = node.id;
 
-    if (typeof props.value === 'undefined') {
-      props.value = mockValue(props);
+    if (typeof props.value === 'undefined' && !node.state.value) {
+      node.updateState({
+        value: mockValue(props)
+      });
     }
     return props;
   }
+
+  // 事件定义
+  events: RendererPluginEvent[] = [
+    {
+      eventName: 'click',
+      eventLabel: '点击',
+      description: '点击时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'mouseenter',
+      eventLabel: '鼠标移入',
+      description: '鼠标移入时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'mouseleave',
+      eventLabel: '鼠标移出',
+      description: '鼠标移出时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ];
 
   /*exchangeRenderer(id: string) {
     this.manager.showReplacePanel(id, '展示');

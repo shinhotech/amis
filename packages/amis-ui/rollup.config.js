@@ -30,6 +30,7 @@ const external = id =>
     `^(?:${Object.keys(dependencies)
       .concat([
         'linkify-it',
+        'react-is',
         'markdown-it',
         'markdown-it-html5-media',
         'mdurl',
@@ -48,7 +49,8 @@ const input = [
   './src/components/Markdown.tsx',
   './src/components/Tinymce.tsx',
   './src/components/RichText.tsx',
-  './src/components/CityDB.ts'
+  './src/components/CityDB.ts',
+  './src/components/PdfViewer.tsx'
 ];
 
 /** 获取子包编译后的入口路径，需要使用相对路径 */
@@ -62,7 +64,6 @@ const getCompiledEntryPath = (repo, format) =>
 
 export default [
   {
-    // TODO 增加 样式导入
     input: input.concat([
       './scss/themes/antd.scss',
       './scss/themes/ang.scss',
@@ -146,6 +147,37 @@ function transpileDynamicImportForCJS(options) {
   };
 }
 
+// 参考：https://github.com/theKashey/jsx-compress-loader/blob/master/src/index.js
+function transpileReactCreateElement() {
+  return {
+    name: 'transpile-react-create-element',
+    enforce: 'post',
+    transform: (code, id) => {
+      if (
+        /\.(?:tsx|jsx|svg)$/.test(id) &&
+        code.indexOf('React.createElement') !== -1
+      ) {
+        const separator = '\n\n;';
+        const appendText =
+          `\n` +
+          `var __react_jsx__ = require('react');\n` +
+          `var _J$X_ = (__react_jsx__["default"] || __react_jsx__).createElement;\n` +
+          `var _J$F_ = (__react_jsx__["default"] || __react_jsx__).Fragment;\n`;
+
+        const newSource = code
+          .replace(/React\.createElement\(/g, '_J$X_(')
+          .replace(/React\.createElement\(/g, '_J$F_(');
+
+        code = [appendText, newSource].join(separator);
+      }
+
+      return {
+        code
+      };
+    }
+  };
+}
+
 function getPlugins(format = 'esm') {
   const overridePaths = ['amis-formula', 'amis-core'].reduce(
     (prev, current) => ({
@@ -195,13 +227,16 @@ function getPlugins(format = 'esm') {
     commonjs({
       sourceMap: false
     }),
+
+    format === 'esm' ? null : transpileReactCreateElement(),
+
     license({
       banner: `
         ${name} v${version}
         Copyright 2018<%= moment().format('YYYY') > 2018 ? '-' + moment().format('YYYY') : null %> ${author}
       `
     })
-  ];
+  ].filter(item => item);
 }
 
 function processSass(context, payload) {

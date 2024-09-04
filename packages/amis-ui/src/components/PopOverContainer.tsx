@@ -1,5 +1,5 @@
 import React from 'react';
-import {autobind, isMobile, PopOver, Overlay, toNumber} from 'amis-core';
+import {autobind, PopOver, Overlay, toNumber} from 'amis-core';
 import PopUp from './PopUp';
 import {findDOMNode} from 'react-dom';
 import isNumber from 'lodash/isNumber';
@@ -12,24 +12,29 @@ export interface PopOverOverlay {
 }
 
 export interface PopOverContainerProps {
+  show?: boolean;
   children: (props: {
+    disabled?: boolean;
     onClick: (e: React.MouseEvent) => void;
     isOpened: boolean;
     ref: any;
   }) => JSX.Element;
+  disabled?: boolean;
   popOverRender: (props: {onClose: () => void}) => JSX.Element;
   popOverContainer?: any;
   popOverClassName?: string;
-  useMobileUI?: boolean;
+  mobileUI?: boolean;
   placement?: string;
   overlayWidth?: number | string;
   overlayWidthField?: 'minWidth' | 'width';
+  showConfirm?: boolean;
   // 相当于 placement 的简化版
   align?: OverlayAlignType;
   /** Popover层隐藏前触发的事件 */
   onBeforeHide?: () => void;
   /** Popover层隐藏后触发的事件 */
   onAfterHide?: () => void;
+  onConfirm?: () => void;
 }
 
 export interface PopOverContainerState {
@@ -59,9 +64,10 @@ export class PopOverContainer extends React.Component<
 
   @autobind
   handleClick() {
-    this.setState({
-      isOpened: true
-    });
+    this.props.disabled ||
+      this.setState({
+        isOpened: true
+      });
   }
 
   @autobind
@@ -89,6 +95,12 @@ export class PopOverContainer extends React.Component<
   @autobind
   getParent() {
     return this.getTarget()?.parentElement;
+  }
+
+  @autobind
+  onConfirm() {
+    this.props.onConfirm?.();
+    this.close();
   }
 
   static calcOverlayWidth(overlay: PopOverOverlay, targetWidth: number) {
@@ -136,28 +148,34 @@ export class PopOverContainer extends React.Component<
 
   render() {
     const {
-      useMobileUI,
+      mobileUI,
       children,
       popOverContainer,
       popOverClassName,
       popOverRender: dropdownRender,
       placement,
-      align
+      align,
+      showConfirm,
+      onConfirm,
+      disabled
     } = this.props;
-    const mobileUI = useMobileUI && isMobile();
+
     return (
       <>
         {children({
-          isOpened: this.state.isOpened,
+          isOpened: this.state.isOpened && this.props.show !== false,
           onClick: this.handleClick,
-          ref: this.targetRef
+          ref: this.targetRef,
+          disabled
         })}
         {mobileUI ? (
           <PopUp
-            isShow={this.state.isOpened}
+            isShow={this.state.isOpened && this.props.show !== false}
             container={popOverContainer}
             className={popOverClassName}
+            showConfirm={showConfirm}
             onHide={this.close}
+            onConfirm={this.onConfirm}
           >
             {dropdownRender({onClose: this.close})}
           </PopUp>
@@ -166,7 +184,7 @@ export class PopOverContainer extends React.Component<
             container={popOverContainer || this.getParent}
             target={this.getTarget}
             placement={placement || PopOverContainer.alignToPlacement({align})}
-            show={this.state.isOpened}
+            show={this.state.isOpened && this.props.show !== false}
           >
             <PopOver
               overlay

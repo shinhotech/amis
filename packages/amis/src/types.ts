@@ -44,11 +44,11 @@ export interface fetchOptions {
   [propName: string]: any;
 }
 
-export interface Payload {
+export interface Payload<T = any> {
   ok: boolean;
   msg: string;
   msgTimeout?: number;
-  data: any;
+  data: T;
   status: number;
   errors?: {
     [propName: string]: string;
@@ -115,7 +115,9 @@ export interface Action extends Button {
     | 'selectAll'
     | 'changeTabKey'
     | 'click'
-    | 'stopAutoRefresh';
+    | 'stopAutoRefresh'
+    | 'preview'
+    | 'zoom';
   api?: SchemaApi;
   asyncApi?: SchemaApi;
   payload?: any;

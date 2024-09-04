@@ -1,4 +1,4 @@
-import {ContainerWrapper} from 'amis-editor-core';
+import {ContainerWrapper, JSONPipeOut} from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {
   BaseEventContext,
@@ -8,11 +8,13 @@ import {
 } from 'amis-editor-core';
 import {getEventControlConfig} from '../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
-import type {SchemaObject} from 'amis/lib/Schema';
+import type {SchemaObject} from 'amis';
 import {tipedLabel} from 'amis-editor-core';
 import {jsonToJsonSchema, EditorNodeType} from 'amis-editor-core';
+import omit from 'lodash/omit';
 
 export class PagePlugin extends BasePlugin {
+  static id = 'PagePlugin';
   // 关联渲染器名字
   rendererName = 'page';
   $schema = '/schemas/PageSchema.json';
@@ -57,9 +59,10 @@ export class PagePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前数据域'
+              title: '数据',
+              description: '当前数据域，可以通过.字段名读取对应的值'
             }
           }
         }
@@ -67,15 +70,29 @@ export class PagePlugin extends BasePlugin {
     },
     {
       eventName: 'inited',
-      eventLabel: '初始化数据接口请求成功',
-      description: '远程初始化数据接口请求成功时触发',
+      eventLabel: '初始化数据接口请求完成',
+      description: '远程初始化数据接口请求完成时触发',
       dataSchema: [
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '初始化数据接口请求成功返回的数据'
+              title: '数据',
+              properties: {
+                responseData: {
+                  type: 'object',
+                  title: '响应数据'
+                },
+                responseStatus: {
+                  type: 'number',
+                  title: '响应状态(0表示成功)'
+                },
+                responseMsg: {
+                  type: 'string',
+                  title: '响应消息'
+                }
+              }
             }
           }
         }
@@ -163,14 +180,14 @@ export class PagePlugin extends BasePlugin {
                   getSchemaTpl('remark', {
                     label: '标题提示',
                     hiddenOn:
-                      'data.regions && !data.regions.includes("header") || !data.title'
+                      'this.regions && !this.regions.includes("header") || !this.title'
                   }),
                   {
                     type: 'ae-Switch-More',
                     name: 'asideResizor',
                     mode: 'normal',
                     label: '边栏宽度可调节',
-                    hiddenOn: 'data.regions && !data.regions.includes("aside")',
+                    hiddenOn: 'this.regions && !this.regions.includes("aside")',
                     value: false,
                     hiddenOnDefault: true,
                     formType: 'extend',
@@ -204,19 +221,14 @@ export class PagePlugin extends BasePlugin {
                     name: 'asideSticky',
                     inputClassName: 'is-inline',
                     pipeIn: defaultValue(true),
-                    hiddenOn: 'data.regions && !data.regions.includes("aside")'
+                    hiddenOn: 'this.regions && !this.regions.includes("aside")'
                   }
                 ]
               },
               {
                 title: '数据',
                 body: [
-                  getSchemaTpl('combo-container', {
-                    type: 'input-kv',
-                    mode: 'normal',
-                    name: 'data',
-                    label: '组件静态数据'
-                  }),
+                  getSchemaTpl('pageData'),
                   getSchemaTpl('apiControl', {
                     name: 'initApi',
                     mode: 'row',
@@ -275,7 +287,40 @@ export class PagePlugin extends BasePlugin {
           className: 'p-none',
           body: [
             getSchemaTpl('collapseGroup', [
-              ...getSchemaTpl('theme:common', ['layout'])
+              ...getSchemaTpl('theme:common', {
+                exclude: ['layout'],
+                classname: 'baseControlClassName',
+                baseTitle: '基本样式',
+                extra: [
+                  getSchemaTpl('theme:base', {
+                    classname: 'bodyControlClassName',
+                    title: '内容区样式',
+                    hiddenOn: 'this.regions && !this.regions.includes("body")'
+                  }),
+                  getSchemaTpl('theme:base', {
+                    classname: 'headerControlClassName',
+                    title: '标题栏样式',
+                    extra: [
+                      getSchemaTpl('theme:font', {
+                        label: '文字',
+                        name: 'themeCss.titleControlClassName.font'
+                      })
+                    ],
+                    hiddenOn: 'this.regions && !this.regions.includes("header")'
+                  }),
+                  getSchemaTpl('theme:base', {
+                    classname: 'toolbarControlClassName',
+                    title: '工具栏样式',
+                    hiddenOn:
+                      'this.regions && !this.regions.includes("toolbar")'
+                  }),
+                  getSchemaTpl('theme:base', {
+                    classname: 'asideControlClassName',
+                    title: '边栏样式',
+                    hiddenOn: 'this.regions && !this.regions.includes("aside")'
+                  })
+                ]
+              })
             ])
           ]
         },
@@ -347,22 +392,46 @@ export class PagePlugin extends BasePlugin {
     ];
   };
 
-  rendererBeforeDispatchEvent(node: EditorNodeType, e: any, data: any) {
-    if (e === 'init') {
-      const scope = this.manager.dataSchema.getScope(`${node.id}-${node.type}`);
-      const jsonschema: any = {
-        $id: 'pageInitData',
-        ...jsonToJsonSchema(data)
-      };
+  async buildDataSchemas(
+    node: EditorNodeType,
+    region?: EditorNodeType,
+    trigger?: EditorNodeType
+  ) {
+    let jsonschema = {
+      ...jsonToJsonSchema(JSONPipeOut(node.schema.data))
+    };
 
-      scope?.removeSchema(jsonschema.$id);
-      scope?.addSchema(jsonschema);
+    const pool = node.children.concat();
+
+    while (pool.length) {
+      const current = pool.shift() as EditorNodeType;
+      const schema = current.schema;
+
+      if (current.rendererConfig?.isFormItem && schema?.name) {
+        const tmpSchema = await current.info.plugin.buildDataSchemas?.(
+          current,
+          undefined,
+          trigger,
+          node
+        );
+        jsonschema.properties[schema.name] = {
+          ...tmpSchema,
+          ...(tmpSchema?.$id ? {} : {$id: `${current.id}-${current.type}`})
+        };
+      } else if (!current.rendererConfig?.storeType) {
+        pool.push(...current.children);
+      }
     }
+
+    return jsonschema;
+  }
+
+  rendererBeforeDispatchEvent(node: EditorNodeType, e: any, data: any) {
     if (e === 'inited') {
       const scope = this.manager.dataSchema.getScope(`${node.id}-${node.type}`);
       const jsonschema: any = {
         $id: 'pageInitedData',
-        ...jsonToJsonSchema(data)
+        ...jsonToJsonSchema(data.responseData)
       };
 
       scope?.removeSchema(jsonschema.$id);

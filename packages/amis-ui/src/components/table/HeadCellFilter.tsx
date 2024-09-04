@@ -21,6 +21,7 @@ import HeadCellDropDown, {
 import CheckBox from '../Checkbox';
 import Button from '../Button';
 import {Icon} from '../icons';
+import type {TestIdBuilder} from 'amis-core';
 
 export interface Props extends ThemeProps, LocaleProps {
   column: any;
@@ -30,6 +31,7 @@ export interface Props extends ThemeProps, LocaleProps {
   popOverContainer?: () => HTMLElement;
   classnames: ClassNamesFn;
   classPrefix: string;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface OptionProps {
@@ -44,7 +46,7 @@ export interface State {
   filteredValue: Array<string>;
 }
 
-export class HeadCellFilter extends React.Component<Props, State> {
+export class HeadCellFilter extends React.PureComponent<Props, State> {
   static defaultProps = {
     filteredValue: [],
     filterMultiple: false
@@ -92,7 +94,8 @@ export class HeadCellFilter extends React.Component<Props, State> {
       column,
       popOverContainer,
       classnames: cx,
-      classPrefix: ns
+      classPrefix: ns,
+      testIdBuilder
     } = this.props;
 
     const filterProps = {
@@ -110,6 +113,7 @@ export class HeadCellFilter extends React.Component<Props, State> {
                     onClick={() =>
                       this.handleClick(confirm, setSelectedKeys, [option.value])
                     }
+                    {...testIdBuilder?.getChild(`${index}`).getTestId()}
                   >
                     {option.text}
                   </li>
@@ -126,6 +130,7 @@ export class HeadCellFilter extends React.Component<Props, State> {
                         )
                       }
                       checked={option.selected}
+                      testIdBuilder={testIdBuilder?.getChild(`ckbx-${index}`)}
                     >
                       {option.text}
                     </CheckBox>
@@ -140,6 +145,7 @@ export class HeadCellFilter extends React.Component<Props, State> {
                   size={'xs'}
                   level={'primary'}
                   onClick={() => this.handleConfirmClick(confirm)}
+                  testIdBuilder={testIdBuilder?.getChild(`btn-confirm`)}
                 >
                   确定
                 </Button>
@@ -148,6 +154,7 @@ export class HeadCellFilter extends React.Component<Props, State> {
                   onClick={() =>
                     this.handleCancelClick(confirm, setSelectedKeys)
                   }
+                  testIdBuilder={testIdBuilder?.getChild(`btn-cancel`)}
                 >
                   取消
                 </Button>
@@ -169,6 +176,7 @@ export class HeadCellFilter extends React.Component<Props, State> {
             icon="column-filter"
             className="icon"
             iconContent="table-filter-icon"
+            testIdBuilder={testIdBuilder?.getChild(`icon`)}
           />
         }
         active={
@@ -192,21 +200,15 @@ export class HeadCellFilter extends React.Component<Props, State> {
     selectedKeys?: Array<string>
   ) {
     const {onFilter, column} = this.props;
-    const payload = {[column.name]: selectedKeys};
-
-    if (onFilter) {
-      const prevented = await onFilter({
-        filterName: column.name,
-        filterValue: selectedKeys?.join(',')
-      });
-      if (prevented) {
-        return;
-      }
-    }
 
     setSelectedKeys && setSelectedKeys(selectedKeys);
 
-    onFilter && onFilter(payload);
+    onFilter &&
+      onFilter({
+        filterName: column.name,
+        filterValue: selectedKeys?.join(',')
+      });
+
     confirm();
   }
 
@@ -241,6 +243,8 @@ export class HeadCellFilter extends React.Component<Props, State> {
     ) => void | undefined
   ) {
     setSelectedKeys && setSelectedKeys([]);
+    const {onFilter, column} = this.props;
+    onFilter && onFilter({[column.name]: ''});
     confirm();
   }
 }

@@ -230,6 +230,13 @@ export const components = [
         )
       },
       {
+        label: 'Control 表单项包裹',
+        path: '/zh-CN/components/form/control',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/form/control.md').then(wrapDoc)
+        )
+      },
+      {
         label: 'Options 选择器表单项',
         path: '/zh-CN/components/form/options',
         component: React.lazy(() =>
@@ -557,6 +564,15 @@ export const components = [
           ).then(wrapDoc)
         )
       },
+
+      {
+        label: 'Radio 单选框',
+        path: '/zh-CN/components/form/radio',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/form/radio.md').then(wrapDoc)
+        )
+      },
+
       {
         label: 'Radios 单选框',
         path: '/zh-CN/components/form/radios',
@@ -769,6 +785,25 @@ export const components = [
             wrapDoc
           )
         )
+      },
+
+      {
+        label: 'InputSignature 签名面板',
+        path: '/zh-CN/components/form/input-signature',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/form/input-signature.md').then(
+            wrapDoc
+          )
+        )
+      },
+      {
+        label: 'InputVerificationCode 验证码',
+        path: '/zh-CN/components/form/input-verification-code',
+        component: React.lazy(() =>
+          import(
+            '../../docs/zh-CN/components/form/input-verification-code.md'
+          ).then(wrapDoc)
+        )
       }
     ]
   },
@@ -791,13 +826,13 @@ export const components = [
           import('../../docs/zh-CN/components/table.md').then(wrapDoc)
         )
       },
-      // {
-      //   label: 'Table2 表格',
-      //   path: '/zh-CN/components/table2',
-      //   component: React.lazy(() =>
-      //     import('../../docs/zh-CN/components/table2.md').then(wrapDoc)
-      //   )
-      // },
+      {
+        label: 'Table2 表格',
+        path: '/zh-CN/components/table2',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/table2.md').then(wrapDoc)
+        )
+      },
       {
         label: 'Table View 表格视图',
         path: '/zh-CN/components/table-view',
@@ -965,10 +1000,26 @@ export const components = [
         )
       },
       {
-        label: 'OfficeViewer 文档渲染',
+        label: 'OfficeViewer Word 渲染',
         path: '/zh-CN/components/office-viewer',
         component: React.lazy(() =>
           import('../../docs/zh-CN/components/office-viewer.md').then(wrapDoc)
+        )
+      },
+      {
+        label: 'OfficeViewer Excel 渲染',
+        path: '/zh-CN/components/office-viewer-excel',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/office-viewer-excel.md').then(
+            wrapDoc
+          )
+        )
+      },
+      {
+        label: 'PDFViewer 渲染',
+        path: '/zh-CN/components/pdf-viewer',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/pdf-viewer.md').then(wrapDoc)
         )
       },
       {
@@ -1153,6 +1204,13 @@ export const components = [
         path: '/zh-CN/components/web-component',
         component: React.lazy(() =>
           import('../../docs/zh-CN/components/web-component.md').then(wrapDoc)
+        )
+      },
+      {
+        label: 'amis 渲染器',
+        path: '/zh-CN/components/amis',
+        component: React.lazy(() =>
+          import('../../docs/zh-CN/components/amis.md').then(wrapDoc)
         )
       }
     ]

@@ -5,9 +5,6 @@ $category-2-height: px2rem(32px);
 $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
 
 .editor-right-panel {
-  --select-base-default-fontSize: 12px;
-  --fonts-size-7: 12px;
-
   position: relative;
   flex: 0 0 auto;
   width: $right-panel-width;
@@ -38,6 +35,11 @@ $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
   // 宽度可拖拽时不增加过渡，避免卡顿
   &.width-draggable {
     transition: none;
+  }
+  
+  // 用于避免右侧配置面板被超长的valueLabel撑开，导致样式异常
+  .#{$ns}SubForm-valueLabel {
+    word-break: break-all;
   }
 
   // 外层有多个tab面板
@@ -240,7 +242,7 @@ $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
   .config-form-content {
     position: relative;
     height: 100%;
-    padding: 16px 12px;
+    padding: 10px 12px;
 
     // 带底部操作按钮的属性配置面板
     &.with-actions {
@@ -248,13 +250,17 @@ $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
 
       .editor-prop-config-tabs {
         padding-bottom: 45px;
+
+        &-links {
+          --fonts-size-7: 14px;
+        }
       }
 
       .ae-Settings-actions,
       > input {
-        position: fixed;
+        position: sticky;
         left: 0;
-        bottom: 0;
+        bottom: -16px;
         margin-bottom: 0;
         width: 100%;
         line-height: 1;
@@ -318,7 +324,10 @@ $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
           font-family: PingFangSC-Regular;
           color: #84868c;
           width: 100%;
-          font-size: 14px;
+          --Tabs--line-active-fontSize: 14px;
+          --Tabs--line-fontSize: 14px;
+          --Tabs--line-hover-fontSize: 14px;
+          --Tabs--line-disabled-fontSize: 14px;
           letter-spacing: 0;
           font-weight: 400;
           text-decoration: none;
@@ -437,4 +446,64 @@ $tooltip-bottom: '[data-tooltip][data-position=' bottom ']:hover:after';
 
 .right-panel-pop {
   @include panel-sm-content();
+}
+
+// 包裹样式
+.config-wrapper-contanier {
+  position: relative;
+  margin: 0 auto 12px auto;
+  padding: 12px 8px;
+  background-color: #f7f7f9;
+  border-radius: 2px;
+
+  &::after {
+    display: block;
+    content: '';
+    height: 12px;
+    width: 12px;
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    transform: rotate(45deg);
+    background-color: #f7f7f9;
+  }
+
+  &.hidden-tip {
+    &::after {
+      display: none;
+    }
+  }
+
+  &.tip-position-20p {
+    &::after {
+      left: 20%;
+    }
+  }
+
+  &.tip-position-30p {
+    &::after {
+      left: 30%;
+    }
+  }
+
+  &.tip-position-right-12 {
+    &::after {
+      left: auto;
+      right: 12px;
+    }
+  }
+
+  &.tip-position-right-55 {
+    &::after {
+      left: auto;
+      right: 55px;
+    }
+  }
+
+  &.tip-position-right-90 {
+    &::after {
+      left: auto;
+      right: 90px;
+    }
+  }
 }

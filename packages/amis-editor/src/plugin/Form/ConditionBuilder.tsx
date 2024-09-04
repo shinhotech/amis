@@ -10,12 +10,14 @@ import {
 } from 'amis-editor-core';
 import {getSchemaTpl} from 'amis-editor-core';
 
-import {isObject, isString} from 'lodash';
+import isObject from 'lodash/isObject';
+import isString from 'lodash/isString';
 import defaultConfig, {
   OperationMap
 } from 'amis-ui/lib/components/condition-builder/config';
 
 export class ConditionBilderPlugin extends BasePlugin {
+  static id = 'ConditionBilderPlugin';
   // 关联渲染器名字
   rendererName = 'condition-builder';
   $schema = '/schemas/ConditionBuilderControlSchema.json';
@@ -161,7 +163,7 @@ export class ConditionBilderPlugin extends BasePlugin {
 
             {
               type: 'group',
-              visibleOn: 'data.type === "number"',
+              visibleOn: 'this.type === "number"',
               body: [
                 {
                   type: 'input-number',
@@ -184,7 +186,7 @@ export class ConditionBilderPlugin extends BasePlugin {
 
             {
               type: 'group',
-              visibleOn: '!!~["date", "datetime", "time"].indexOf(data.type)',
+              visibleOn: '!!~["date", "datetime", "time"].indexOf(this.type)',
               body: [
                 {
                   type: 'input-text',
@@ -200,14 +202,14 @@ export class ConditionBilderPlugin extends BasePlugin {
                   type: 'input-text',
                   name: 'timeFormat',
                   placeholder: '时间显示格式',
-                  visibleOn: 'data.type === "datetime"'
+                  visibleOn: 'this.type === "datetime"'
                 }
               ]
             },
 
             {
               type: 'group',
-              visibleOn: 'data.type === "select"',
+              visibleOn: 'this.type === "select"',
               body: [
                 {
                   type: 'input-text',

@@ -6,16 +6,18 @@ import {
   autobind,
   hasAbility,
   columnsSplit,
-  flattenTreeWithLeafNodes
+  flattenTreeWithLeafNodes,
+  getVariable
 } from 'amis-core';
 import type {ActionObject, Api, OptionsControlProps, Option} from 'amis-core';
-import {Checkbox, Icon} from 'amis-ui';
+import {Checkbox, Icon, Spinner} from 'amis-ui';
 import {FormOptionsSchema} from '../../Schema';
 import {supportStatic} from './StaticHoc';
+import type {TestIdBuilder} from 'amis-core';
 
 /**
  * 复选框
- * 文档：https://baidu.gitee.io/amis/docs/components/form/checkboxes
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/checkboxes
  */
 export interface CheckboxesControlSchema extends FormOptionsSchema {
   type: 'checkboxes';
@@ -31,6 +33,10 @@ export interface CheckboxesControlSchema extends FormOptionsSchema {
   defaultCheckAll?: boolean;
 
   /**
+   * 全选/不选文案
+   */
+  checkAllText?: string;
+  /**
    * 每行显示多少个
    */
   columnsCount?: number | number[];
@@ -39,6 +45,7 @@ export interface CheckboxesControlSchema extends FormOptionsSchema {
    * 自定义选项展示
    */
   menuTpl?: string;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface CheckboxesProps
@@ -80,13 +87,15 @@ export default class CheckboxesControl extends React.Component<
   };
 
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       onChange('');
     } else if (actionType === 'reset') {
-      onChange(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      onChange(pristineVal ?? '');
     }
   }
 
@@ -254,10 +263,14 @@ export default class CheckboxesControl extends React.Component<
       translate: __,
       optionType,
       menuTpl,
-      data
+      data,
+      testIdBuilder
     } = this.props;
     const labelText = String(option[labelField || 'label']);
     const optionLabelClassName = option['labelClassName'];
+    const itemTestIdBuilder = testIdBuilder?.getChild(
+      'item-' + labelText || index
+    );
 
     return (
       <Checkbox
@@ -270,6 +283,7 @@ export default class CheckboxesControl extends React.Component<
         labelClassName={optionLabelClassName || labelClassName}
         description={option.description}
         optionType={optionType}
+        testIdBuilder={itemTestIdBuilder}
       >
         {menuTpl
           ? render(`checkboxes/${index}`, menuTpl, {
@@ -337,6 +351,7 @@ export default class CheckboxesControl extends React.Component<
       onToggle,
       onToggleAll,
       checkAll,
+      checkAllText,
       classnames: cx,
       itemClassName,
       labelClassName,
@@ -344,7 +359,9 @@ export default class CheckboxesControl extends React.Component<
       addApi,
       createBtnLabel,
       translate: __,
-      optionType
+      optionType,
+      loading,
+      loadingConfig
     } = this.props;
 
     let body: Array<React.ReactNode> = [];
@@ -369,7 +386,7 @@ export default class CheckboxesControl extends React.Component<
           inline={inline}
           labelClassName={labelClassName}
         >
-          {__('Checkboxes.selectAll')}
+          {checkAllText ?? __('Checkboxes.selectAll')}
         </Checkbox>
       );
     }
@@ -380,9 +397,19 @@ export default class CheckboxesControl extends React.Component<
       <div className={cx(`CheckboxesControl`, className)} ref="checkboxRef">
         {body && body.length ? (
           body
-        ) : (
+        ) : loading ? null : (
           <span className={`Form-placeholder`}>{__(placeholder)}</span>
         )}
+
+        {loading ? (
+          <Spinner
+            show
+            icon="reload"
+            size="sm"
+            spinnerClassName={cx('Checkboxes-spinner')}
+            loadingConfig={loadingConfig}
+          />
+        ) : null}
 
         {(creatable || addApi) && !disabled ? (
           <a className={cx('Checkboxes-addBtn')} onClick={this.handleAddClick}>
@@ -397,6 +424,7 @@ export default class CheckboxesControl extends React.Component<
 
 @OptionsControl({
   type: 'checkboxes',
-  sizeMutable: false
+  sizeMutable: false,
+  thin: true
 })
 export class CheckboxesControlRenderer extends CheckboxesControl {}

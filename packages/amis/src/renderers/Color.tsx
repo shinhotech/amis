@@ -8,7 +8,7 @@ import {getPropValue} from 'amis-core';
 
 /**
  * Color 显示渲染器，格式说明。
- * 文档：https://baidu.gitee.io/amis/docs/components/color
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/color
  */
 export interface ColorSchema extends BaseSchema {
   /**
@@ -34,22 +34,28 @@ export interface ColorProps
 export class ColorField extends React.Component<ColorProps, object> {
   static defaultProps = {
     className: '',
-    defaultColor: '#ccc',
+    defaultColor: '',
     showValue: true
   };
 
   render() {
-    const {className, style, classnames: cx, defaultColor, showValue} = this.props;
-    const color = getPropValue(this.props);
+    const {
+      className,
+      style,
+      classnames: cx,
+      defaultColor,
+      showValue
+    } = this.props;
+    const color = getPropValue(this.props) || defaultColor;
 
     return (
       <div className={cx('ColorField', className)} style={style}>
         <i
           className={cx('ColorField-previewIcon')}
-          style={{backgroundColor: color || defaultColor}}
+          style={{backgroundColor: color}}
         />
-        {showValue ? (
-          <span className={cx('ColorField-value')}>{color || defaultColor}</span>
+        {showValue && color ? (
+          <span className={cx('ColorField-value')}>{color}</span>
         ) : null}
       </div>
     );

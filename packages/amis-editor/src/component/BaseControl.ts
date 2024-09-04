@@ -9,7 +9,6 @@ import {
 } from '../renderer/event-control/helper';
 import {getSchemaTpl, isObject, tipedLabel} from 'amis-editor-core';
 import type {BaseEventContext} from 'amis-editor-core';
-import {SchemaObject} from 'amis/lib/Schema';
 
 // 默认动作
 export const BUTTON_DEFAULT_ACTION = {
@@ -203,7 +202,7 @@ export const formItemControl: (
   const supportStatic = SUPPORT_STATIC_FORMITEM_CMPTS.includes(type);
   const collapseProps = {
     type: 'collapse',
-    headingClassName: 'ae-formItemControl-header',
+    headingClassName: 'ae-formItemControl-header ae-Collapse-header',
     bodyClassName: 'ae-formItemControl-body'
   };
   // 已经配置了的属性
@@ -254,11 +253,12 @@ export const formItemControl: (
           key: 'status',
           body: normalizeBodySchema(
             [
+              getSchemaTpl('visible'),
               getSchemaTpl('hidden'),
+              getSchemaTpl('clearValueOnHidden'),
               supportStatic ? getSchemaTpl('static') : null,
               // TODO: 下面的部分表单项才有，是不是判断一下是否是表单项
-              getSchemaTpl('disabled'),
-              getSchemaTpl('clearValueOnHidden')
+              getSchemaTpl('disabled')
             ],
             panels?.status?.body,
             panels?.status?.replace,
@@ -323,7 +323,7 @@ export const formItemControl: (
               getSchemaTpl('horizontal', {
                 label: '',
                 visibleOn:
-                  'data.mode == "horizontal" && data.label !== false && data.horizontal'
+                  'this.mode == "horizontal" && this.label !== false && this.horizontal'
               }),
               // renderer.sizeMutable !== false
               //   ? getSchemaTpl('formItemSize')
@@ -430,7 +430,7 @@ export function remarkTpl(config: {
       },
       body: {
         type: 'grid',
-        className: 'pt-4 right-panel-pop',
+        className: 'pt-4 right-panel-pop :AMISCSSWrapper',
         gap: 'lg',
         columns: [
           {
@@ -480,17 +480,16 @@ export function remarkTpl(config: {
               getSchemaTpl('icon'),
               {
                 name: 'className',
-                label: 'CSS 类名',
-                type: 'input-text',
-                labelRemark: BaseLabelMark(
+                label: tipedLabel(
+                  'CSS 类名',
                   '有哪些辅助类 CSS 类名？请前往 <a href="https://baidu.gitee.io/amis/zh-CN/style/index" target="_blank">样式说明</a>，除此之外你可以添加自定义类名，然后在系统配置中添加自定义样式。'
-                )
+                ),
+                type: 'input-text'
               },
               {
                 name: 'trigger',
                 type: 'select',
-                label: '触发方式',
-                labelRemark: BaseLabelMark('浮层触发方式默认值为鼠标悬停'),
+                label: tipedLabel('触发方式', '浮层触发方式默认值为鼠标悬停'),
                 multiple: true,
                 pipeIn: (value: any) =>
                   Array.isArray(value) ? value.join(',') : [],

@@ -77,6 +77,15 @@
       height: auto;
     }
 
+    &.#{$ns}Spinner-icon--disabled > svg.icon {
+      color: var(--Spinner-color--disabled);
+      fill: var(--Spinner-color--disabled);
+
+      & path {
+        fill: var(--Spinner-color--disabled);
+      }
+    }
+
     &--lg {
       width: var(--Spinner--lg-width);
       height: var(--Spinner--lg-height);
@@ -93,6 +102,12 @@
       i.icon {
         font-size: var(--Spinner--sm-height);
       }
+    }
+  }
+
+  .#{$ns}Spinner-icon--darkBg {
+    svg.icon path {
+      fill: var(--loading-dark-bg-color);
     }
   }
 
@@ -148,7 +163,7 @@
 
 .#{$ns}Spinner-overlay {
   position: absolute;
-  z-index: calc($zindex-spinner-overlay - 1);
+  z-index: calc(#{$zindex-spinner-overlay} - 1);
   top: 0;
   left: 0;
   right: 0;
@@ -156,6 +171,9 @@
   background: var(--Spinner-overlay-bg);
   transition: ease-out opacity var(--animation-duration);
   opacity: 0;
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  filter: blur(1px);
 
   &.in {
     opacity: 1;

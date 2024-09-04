@@ -1,17 +1,22 @@
+import React from 'react';
 import {
   createObject,
   IScopedContext,
   Renderer,
   RendererProps,
   resolveEventData,
-  ScopedContext
+  ScopedComponentType,
+  ScopedContext,
+  autobind,
+  getPropValue,
+  setVariable
 } from 'amis-core';
-import React from 'react';
+
 import {BaseSchema, SchemaClassName} from '../Schema';
 import {SearchBox} from 'amis-ui';
-import {autobind, getPropValue, getVariable, setVariable} from 'amis-core';
-import type {ListenerAction} from 'amis-core';
-import type {ScopedComponentType} from 'amis-core/lib/Scoped';
+
+import {ListenerAction, TestIdBuilder} from 'amis-core';
+import type {SpinnerExtraProps} from 'amis-ui';
 
 /**
  * 搜索框渲染器
@@ -20,7 +25,7 @@ export interface SearchBoxSchema extends BaseSchema {
   /**
    * 指定为搜索框。
    *
-   * 文档：https://baidu.gitee.io/amis/docs/components/search-box
+   * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/search-box
    */
   type: 'search-box';
 
@@ -65,13 +70,19 @@ export interface SearchBoxSchema extends BaseSchema {
    * 是否开启清空内容后立即重新搜索
    */
   clearAndSubmit?: boolean;
+
+  /** 是否处于加载状态 */
+  loading?: boolean;
 }
 
 interface SearchBoxProps
   extends RendererProps,
-    Omit<SearchBoxSchema, 'type' | 'className'> {
+    Omit<SearchBoxSchema, 'type' | 'className'>,
+    SpinnerExtraProps {
   name: string;
-  onQuery?: (query: {[propName: string]: string}) => void;
+  onQuery?: (query: {[propName: string]: string}) => any;
+  loading?: boolean;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface SearchBoxState {
@@ -119,13 +130,9 @@ export class SearchBoxRenderer extends React.Component<
 
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(
-        this.props,
-        {
-          value
-        },
-        'value'
-      )
+      resolveEventData(this.props, {
+        value
+      })
     );
 
     if (rendererEvent?.prevented) {
@@ -171,26 +178,33 @@ export class SearchBoxRenderer extends React.Component<
     const {dispatchEvent} = this.props;
     dispatchEvent(
       name,
-      resolveEventData(this.props, {value: this.state.value}, 'value')
+      resolveEventData(this.props, {value: this.state.value})
     );
   }
 
-  doAction(action: ListenerAction, args: any) {
+  doAction(
+    action: ListenerAction,
+    data: any,
+    throwErrors: boolean,
+    args?: any
+  ) {
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       this.setState({value: ''});
     }
   }
-
   setData(value: any) {
-    this.setState({value});
+    if (typeof value === 'string') {
+      this.handleChange(value);
+    }
   }
 
   render() {
     const {
       data,
       name,
+      disabled,
       onQuery: onQuery,
       mini,
       enhance,
@@ -200,17 +214,25 @@ export class SearchBoxRenderer extends React.Component<
       placeholder,
       onChange,
       className,
-      style
+      style,
+      mobileUI,
+      loading,
+      loadingConfig,
+      onEvent,
+      testIdBuilder
     } = this.props;
-
     const value = this.state.value;
+    /** 有可能通过Search事件处理 */
+    const isDisabled = (!onQuery && !onEvent?.search) || disabled;
 
     return (
       <SearchBox
         className={className}
         style={style}
         name={name}
-        disabled={!onQuery}
+        disabled={isDisabled}
+        loading={loading}
+        loadingConfig={loadingConfig}
         defaultActive={!!value}
         defaultValue={onChange ? undefined : value}
         value={value}
@@ -225,6 +247,8 @@ export class SearchBoxRenderer extends React.Component<
         onChange={this.handleChange}
         onFocus={() => this.dispatchEvent('focus')}
         onBlur={() => this.dispatchEvent('blur')}
+        mobileUI={mobileUI}
+        testIdBuilder={testIdBuilder}
       />
     );
   }

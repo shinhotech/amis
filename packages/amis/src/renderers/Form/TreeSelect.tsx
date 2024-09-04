@@ -1,5 +1,12 @@
 import React from 'react';
-import {Overlay, resolveEventData} from 'amis-core';
+import {
+  Overlay,
+  findTree,
+  findTreeIndex,
+  getVariable,
+  hasAbility,
+  resolveEventData
+} from 'amis-core';
 import {PopOver} from 'amis-core';
 import {PopUp, SpinnerExtraProps} from 'amis-ui';
 
@@ -23,14 +30,15 @@ import {autobind, getTreeAncestors, isMobile, createObject} from 'amis-core';
 import {findDOMNode} from 'react-dom';
 import {normalizeOptions} from 'amis-core';
 import {ActionObject} from 'amis-core';
-import {FormOptionsSchema} from '../../Schema';
+import {FormOptionsSchema, SchemaApi} from '../../Schema';
 import {supportStatic} from './StaticHoc';
 import {TooltipWrapperSchema} from '../TooltipWrapper';
 import type {ItemRenderStates} from 'amis-ui/lib/components/Selection';
+import type {TestIdBuilder} from 'amis-core';
 
 /**
  * Tree 下拉选择框。
- * 文档：https://baidu.gitee.io/amis/docs/components/form/tree
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/tree
  */
 export interface TreeSelectControlSchema extends FormOptionsSchema {
   type: 'tree-select';
@@ -101,6 +109,11 @@ export interface TreeSelectControlSchema extends FormOptionsSchema {
   showOutline?: boolean;
 
   /**
+   * 懒加载接口
+   */
+  deferApi?: SchemaApi;
+
+  /**
    * 标签的最大展示数量，超出数量后以收纳浮层的方式展示，仅在多选模式开启后生效
    */
   maxTagCount?: number;
@@ -119,6 +132,7 @@ export interface TreeSelectControlSchema extends FormOptionsSchema {
    * 是否为选项添加默认的Icon，默认值为true
    */
   enableDefaultIcon?: boolean;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface TreeSelectProps
@@ -129,12 +143,13 @@ export interface TreeSelectProps
   hideNodePathLabel?: boolean;
   enableNodePath?: boolean;
   pathSeparator?: string;
-  useMobileUI?: boolean;
+  mobileUI?: boolean;
 }
 
 export interface TreeSelectState {
   isOpened: boolean;
   inputValue: string;
+  tempValue: string;
 }
 
 export default class TreeSelectControl extends React.Component<
@@ -182,12 +197,15 @@ export default class TreeSelectControl extends React.Component<
 
     this.state = {
       inputValue: '',
+      tempValue: '',
       isOpened: false
     };
 
     this.open = this.open.bind(this);
     this.close = this.close.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.handleTempChange = this.handleTempChange.bind(this);
+    this.handleConfirm = this.handleConfirm.bind(this);
     this.clearValue = this.clearValue.bind(this);
     this.handleFocus = this.handleFocus.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
@@ -234,14 +252,36 @@ export default class TreeSelectControl extends React.Component<
     );
   }
 
+  resolveOptions() {
+    const {options, searchable, autoComplete} = this.props;
+
+    return !isEffectiveApi(autoComplete) && searchable && this.state.inputValue
+      ? this.filterOptions(options, this.state.inputValue)
+      : options;
+  }
+
+  resolveOption(options: any, value: string) {
+    return findTree(options, item => {
+      const valueAbility = this.props.valueField || 'value';
+      const itemValue = hasAbility(item, valueAbility)
+        ? item[valueAbility]
+        : '';
+      return itemValue === value;
+    });
+  }
+
   handleFocus(e: any) {
     const {dispatchEvent, value} = this.props;
-    dispatchEvent('focus', resolveEventData(this.props, {value}, 'value'));
+    const items = this.resolveOptions();
+    const item = this.resolveOption(items, value);
+    dispatchEvent('focus', resolveEventData(this.props, {value, item, items}));
   }
 
   handleBlur(e: any) {
-    const {dispatchEvent, value, data} = this.props;
-    dispatchEvent('blur', resolveEventData(this.props, {value}, 'value'));
+    const {dispatchEvent, value} = this.props;
+    const items = this.resolveOptions();
+    const item = this.resolveOption(items, value);
+    dispatchEvent('blur', resolveEventData(this.props, {value, item, items}));
   }
 
   handleKeyPress(e: React.KeyboardEvent) {
@@ -316,6 +356,22 @@ export default class TreeSelectControl extends React.Component<
     );
   }
 
+  handleTempChange(value: any) {
+    this.setState({
+      tempValue: value
+    });
+  }
+
+  handleConfirm() {
+    this.close();
+    this.setState(
+      {
+        inputValue: ''
+      },
+      () => this.resultChangeEvent(this.state.tempValue)
+    );
+  }
+
   handleInputChange(value: string) {
     const {autoComplete, data} = this.props;
 
@@ -343,6 +399,13 @@ export default class TreeSelectControl extends React.Component<
     }
   }
 
+  resetValue() {
+    const {onChange, resetValue, formStore, store, name} = this.props;
+    const pristineVal =
+      getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+    onChange(pristineVal);
+  }
+
   clearValue() {
     const {onChange, resetValue} = this.props;
 
@@ -357,7 +420,8 @@ export default class TreeSelectControl extends React.Component<
         ...option
       };
       option.visible = !!matchSorter([option], keywords, {
-        keys: [labelField || 'label', valueField || 'value']
+        keys: [labelField || 'label', valueField || 'value'],
+        threshold: matchSorter.rankings.CONTAINS
       }).length;
 
       if (!option.visible && option.children) {
@@ -427,11 +491,13 @@ export default class TreeSelectControl extends React.Component<
     if (Array.isArray(selectedOptions) && selectedOptions.length) {
       selectedOptions.forEach(option => {
         if (
-          !find(combinedOptions, (item: Option) => item.value == option.value)
+          !findTree(
+            combinedOptions,
+            (item: Option) => item.value == option.value
+          )
         ) {
           combinedOptions.push({
-            ...option,
-            visible: false
+            ...option
           });
         }
       });
@@ -475,18 +541,59 @@ export default class TreeSelectControl extends React.Component<
   }
 
   doAction(action: ActionObject, data: any, throwErrors: boolean) {
-    if (action.actionType && ['clear', 'reset'].includes(action.actionType)) {
+    if (action.actionType === 'clear') {
       this.clearValue();
+    } else if (action.actionType === 'reset') {
+      this.resetValue();
+    } else if (action.actionType === 'add') {
+      this.addItemFromAction(action.args?.item, action.args?.parentValue);
+    } else if (action.actionType === 'edit') {
+      this.editItemFromAction(action.args?.item, action.args?.originValue);
+    } else if (action.actionType === 'delete') {
+      this.deleteItemFromAction(action.args?.value);
+    } else if (action.actionType === 'reload') {
+      this.reload();
     }
   }
 
   @autobind
-  async resultChangeEvent(value: any) {
-    const {onChange, dispatchEvent, data} = this.props;
+  addItemFromAction(item: Option, parentValue?: any) {
+    const {onAdd, options, valueField} = this.props;
+    const idxes =
+      findTreeIndex(options, item => {
+        const valueAbility = valueField || 'value';
+        const value = hasAbility(item, valueAbility) ? item[valueAbility] : '';
+        return value === parentValue;
+      }) || [];
+    onAdd && onAdd(idxes.concat(0), item, true);
+  }
 
+  @autobind
+  editItemFromAction(item: Option, originValue: any) {
+    const {onEdit, options} = this.props;
+    const editItem = this.resolveOption(options, originValue);
+    onEdit && editItem && onEdit({...item, originValue}, editItem, true);
+  }
+
+  @autobind
+  deleteItemFromAction(value: any) {
+    const {onDelete, options} = this.props;
+    const deleteItem = this.resolveOption(options, value);
+    onDelete && deleteItem && onDelete(deleteItem);
+  }
+
+  @autobind
+  async resultChangeEvent(value: any) {
+    const {onChange, dispatchEvent} = this.props;
+    const items = this.resolveOptions();
+    const item = this.resolveOption(items, value);
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(this.props, {value}, 'value')
+      resolveEventData(this.props, {
+        value,
+        item,
+        items: this.resolveOptions()
+      })
     );
 
     if (rendererEvent?.prevented) {
@@ -559,6 +666,7 @@ export default class TreeSelectControl extends React.Component<
       maxLength,
       minLength,
       labelField,
+      deferField,
       nodePath,
       onAdd,
       creatable,
@@ -583,7 +691,9 @@ export default class TreeSelectControl extends React.Component<
       virtualThreshold,
       itemHeight,
       menuTpl,
-      enableDefaultIcon
+      enableDefaultIcon,
+      mobileUI,
+      testIdBuilder
     } = this.props;
 
     let filtedOptions =
@@ -599,8 +709,9 @@ export default class TreeSelectControl extends React.Component<
         onlyLeaf={onlyLeaf}
         labelField={labelField}
         valueField={valueField}
+        deferField={deferField}
         disabled={disabled}
-        onChange={this.handleChange}
+        onChange={mobileUI ? this.handleTempChange : this.handleChange}
         joinValues={joinValues}
         extractValue={extractValue}
         delimiter={delimiter}
@@ -645,6 +756,8 @@ export default class TreeSelectControl extends React.Component<
         itemHeight={toNumber(itemHeight) > 0 ? toNumber(itemHeight) : undefined}
         itemRender={menuTpl ? this.renderOptionItem : undefined}
         enableDefaultIcon={enableDefaultIcon}
+        mobileUI={mobileUI}
+        testIdBuilder={testIdBuilder}
       />
     );
   }
@@ -667,19 +780,29 @@ export default class TreeSelectControl extends React.Component<
       selectedOptions,
       placeholder,
       popOverContainer,
-      useMobileUI,
+      mobileUI,
       maxTagCount,
       overflowTagPopover,
       translate: __,
       env,
-      loadingConfig
+      loadingConfig,
+      testIdBuilder
     } = this.props;
-
     const {isOpened} = this.state;
-    const mobileUI = useMobileUI && isMobile();
+    const resultValue = multiple
+      ? selectedOptions
+      : selectedOptions.length
+      ? this.renderItem(selectedOptions[0])
+      : '';
+
     return (
-      <div ref={this.container} className={cx(`TreeSelectControl`, className)}>
+      <div
+        ref={this.container}
+        className={cx(`TreeSelectControl`, className)}
+        {...testIdBuilder?.getTestId()}
+      >
         <ResultBox
+          popOverContainer={popOverContainer || env.getModalContainer}
           maxTagCount={maxTagCount}
           overflowTagPopover={overflowTagPopover}
           disabled={disabled}
@@ -695,13 +818,7 @@ export default class TreeSelectControl extends React.Component<
             'is-opened': this.state.isOpened,
             'is-disabled': disabled
           })}
-          result={
-            multiple
-              ? selectedOptions
-              : selectedOptions.length
-              ? this.renderItem(selectedOptions[0])
-              : ''
-          }
+          result={resultValue}
           onResultClick={this.handleOutClick}
           value={this.state.inputValue}
           onChange={this.handleInputChange}
@@ -712,8 +829,15 @@ export default class TreeSelectControl extends React.Component<
           onBlur={this.handleBlur}
           onKeyDown={this.handleInputKeyDown}
           clearable={clearable}
-          allowInput={searchable || isEffectiveApi(autoComplete)}
+          allowInput={
+            !mobileUI &&
+            (searchable || isEffectiveApi(autoComplete)) &&
+            (multiple || !resultValue)
+          }
           hasDropDownArrow
+          readOnly={mobileUI}
+          mobileUI={mobileUI}
+          testIdBuilder={testIdBuilder?.getChild('result-box')}
         >
           {loading ? (
             <Spinner loadingConfig={loadingConfig} size="sm" />
@@ -740,12 +864,12 @@ export default class TreeSelectControl extends React.Component<
         ) : null}
         {mobileUI ? (
           <PopUp
-            container={
-              env && env.getModalContainer ? env.getModalContainer : undefined
-            }
+            container={env.getModalContainer}
             className={cx(`${ns}TreeSelect-popup`)}
             isShow={isOpened}
             onHide={this.close}
+            showConfirm
+            onConfirm={this.handleConfirm}
           >
             {this.renderOuter()}
           </PopUp>

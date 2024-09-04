@@ -1,4 +1,9 @@
-import {OptionsControlProps, OptionsControl, resolveEventData} from 'amis-core';
+import {
+  OptionsControlProps,
+  OptionsControl,
+  resolveEventData,
+  getVariable
+} from 'amis-core';
 import React from 'react';
 import {Spinner, SpinnerExtraProps} from 'amis-ui';
 import {BaseTabsTransferRenderer} from './TabsTransfer';
@@ -9,10 +14,11 @@ import {Selection as BaseSelection} from 'amis-ui';
 import {ActionObject, toNumber} from 'amis-core';
 import type {ItemRenderStates} from 'amis-ui/lib/components/Selection';
 import {supportStatic} from './StaticHoc';
+import {isMobile} from 'amis-core';
 
 /**
  * TabsTransferPicker 穿梭器的弹框形态
- * 文档：https://baidu.gitee.io/amis/docs/components/form/tabs-transfer-picker
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/tabs-transfer-picker
  */
 export interface TabsTransferPickerControlSchema
   extends Omit<TabsTransferControlSchema, 'type'>,
@@ -47,12 +53,12 @@ export class TabsTransferPickerRenderer extends BaseTabsTransferRenderer<TabsTra
   @autobind
   dispatchEvent(name: string) {
     const {dispatchEvent, value} = this.props;
-    dispatchEvent(name, resolveEventData(this.props, {value}, 'value'));
+    dispatchEvent(name, resolveEventData(this.props, {value}));
   }
 
   @autobind
   optionItemRender(option: any, states: ItemRenderStates) {
-    const {menuTpl, render, data} = this.props;
+    const {menuTpl, render, data, classnames} = this.props;
     const ctx = arguments[2] || {};
 
     if (menuTpl) {
@@ -67,18 +73,22 @@ export class TabsTransferPickerRenderer extends BaseTabsTransferRenderer<TabsTra
       });
     }
 
-    return BaseSelection.itemRender(option, states);
+    return BaseSelection.itemRender(option, {...states, classnames});
   }
 
   // 动作
   doAction(action: ActionObject) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     switch (action.actionType) {
       case 'clear':
         onChange?.('');
         break;
       case 'reset':
-        onChange?.(resetValue ?? '');
+        onChange?.(
+          getVariable(formStore?.pristine ?? store?.pristine, name) ??
+            resetValue ??
+            ''
+        );
         break;
     }
   }
@@ -104,7 +114,16 @@ export class TabsTransferPickerRenderer extends BaseTabsTransferRenderer<TabsTra
       leftOptions,
       itemHeight,
       virtualThreshold,
-      loadingConfig
+      loadingConfig,
+      labelField = 'label',
+      valueField = 'value',
+      deferField = 'defer',
+      mobileUI,
+      env,
+      maxTagCount,
+      overflowTagPopover,
+      placeholder,
+      initiallyOpen = true
     } = this.props;
 
     return (
@@ -112,6 +131,7 @@ export class TabsTransferPickerRenderer extends BaseTabsTransferRenderer<TabsTra
         <TabsTransferPicker
           activeKey={this.state.activeKey}
           onTabChange={this.onTabChange}
+          placeholder={placeholder}
           value={selectedOptions}
           disabled={disabled}
           options={options}
@@ -135,6 +155,14 @@ export class TabsTransferPickerRenderer extends BaseTabsTransferRenderer<TabsTra
             toNumber(itemHeight) > 0 ? toNumber(itemHeight) : undefined
           }
           virtualThreshold={virtualThreshold}
+          labelField={labelField}
+          valueField={valueField}
+          deferField={deferField}
+          mobileUI={mobileUI}
+          popOverContainer={env?.getModalContainer}
+          maxTagCount={maxTagCount}
+          overflowTagPopover={overflowTagPopover}
+          initiallyOpen={initiallyOpen}
         />
 
         <Spinner

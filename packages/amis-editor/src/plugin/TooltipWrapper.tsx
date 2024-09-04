@@ -8,16 +8,18 @@ import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {tipedLabel} from 'amis-editor-core';
 
 export class TooltipWrapperPlugin extends BasePlugin {
+  static id = 'TooltipWrapperPlugin';
   static scene = ['layout'];
   rendererName = 'tooltip-wrapper';
   $schema = '/schemas/TooltipWrapperSchema.json';
 
   isBaseComponent = true;
-  name = '文字提示容器';
+  name = '文字提示';
   description =
     '类似容器，可以将多个渲染器放置在一起，当用户鼠标悬停或者点击容器时，显示文字提示浮层';
+  searchKeywords = '文字提示容器';
   docLink = '/amis/zh-CN/components/tooltip';
-  tags = ['容器'];
+  tags = ['功能'];
   icon = 'fa fa-comment-alt';
   pluginIcon = 'tooltip-wrapper-plugin';
 
@@ -236,24 +238,44 @@ export class TooltipWrapperPlugin extends BasePlugin {
                     name: 'showArrow',
                     inputClassName: 'is-inline'
                   },
-
                   {
-                    label: '延迟打开',
-                    type: 'input-number',
-                    min: 0,
-                    step: 100,
+                    type: 'input-group',
                     name: 'mouseEnterDelay',
-                    suffix: 'ms',
-                    pipeIn: defaultValue(0)
+                    label: '延迟打开',
+                    body: [
+                      {
+                        type: 'input-number',
+                        min: 0,
+                        step: 100,
+                        name: 'mouseEnterDelay',
+                        pipeIn: defaultValue(0)
+                      },
+                      {
+                        type: 'tpl',
+                        addOnclassName: 'border-0 bg-none',
+                        tpl: 'ms'
+                      }
+                    ]
                   },
                   {
-                    label: '延迟关闭',
-                    type: 'input-number',
-                    min: 0,
-                    step: 100,
+                    type: 'input-group',
                     name: 'mouseLeaveDelay',
-                    suffix: 'ms',
-                    pipeIn: defaultValue(0)
+                    label: '延迟关闭',
+                    body: [
+                      {
+                        label: '延迟关闭',
+                        type: 'input-number',
+                        min: 0,
+                        step: 100,
+                        name: 'mouseLeaveDelay',
+                        pipeIn: defaultValue(0)
+                      },
+                      {
+                        type: 'tpl',
+                        addOnclassName: 'border-0 bg-none',
+                        tpl: 'ms'
+                      }
+                    ]
                   }
                 ]
               }
@@ -264,19 +286,20 @@ export class TooltipWrapperPlugin extends BasePlugin {
           title: '外观',
           className: 'p-none',
           body: getSchemaTpl('collapseGroup', [
-            ...getSchemaTpl('style:common'),
-            {
-              title: 'CSS 类名',
-              body: [
-                getSchemaTpl('className', {
-                  label: '内容区CSS类名'
-                }),
-                getSchemaTpl('className', {
-                  label: '浮层CSS类名',
-                  name: 'tooltipClassName'
+            ...getSchemaTpl('theme:common', {
+              layoutExtra: [
+                getSchemaTpl('theme:size', {
+                  label: '尺寸',
+                  name: 'themeCss.baseControlClassName.size:default'
+                })
+              ],
+              extra: [
+                getSchemaTpl('theme:base', {
+                  classname: 'tooltipControlClassName',
+                  title: '浮层样式'
                 })
               ]
-            }
+            })
           ])
         }
       ])

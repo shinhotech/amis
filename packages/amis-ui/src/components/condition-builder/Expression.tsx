@@ -22,7 +22,12 @@ import ConditionFunc from './Func';
 import {ConditionBuilderConfig} from './config';
 import Formula from './Formula';
 import {FormulaPickerProps} from '../formula/Picker';
-import type {ExpressionComplex, OperatorType, ExpressionFunc} from 'amis-core';
+import type {
+  ExpressionComplex,
+  OperatorType,
+  ExpressionFunc,
+  TestIdBuilder
+} from 'amis-core';
 
 /**
  * 支持4中表达式设置方式
@@ -41,7 +46,7 @@ export interface ExpressionProps extends ThemeProps, LocaleProps {
   valueField?: FieldSimple;
   fields?: ConditionBuilderField[];
   funcs?: ConditionBuilderFuncs;
-  allowedTypes?: Array<'value' | 'field' | 'func' | 'formula'>;
+  allowedTypes?: Array<'value' | 'field' | 'func'>;
   op?: OperatorType;
   config: ConditionBuilderConfig;
   disabled?: boolean;
@@ -50,19 +55,19 @@ export interface ExpressionProps extends ThemeProps, LocaleProps {
   formula?: FormulaPickerProps;
   popOverContainer?: any;
   renderEtrValue?: any;
-  selectMode?: 'list' | 'tree';
+  selectMode?: 'list' | 'tree' | 'chained';
+  testIdBuilder?: TestIdBuilder;
 }
 
 const fieldMap = {
   value: '值',
   field: '字段',
-  func: '函数',
-  formula: '公式'
+  func: '函数'
 };
 
 export class Expression extends React.Component<ExpressionProps> {
   @autobind
-  handleInputTypeChange(type: 'value' | 'field' | 'func' | 'formula') {
+  handleInputTypeChange(type: 'value' | 'field' | 'func') {
     let value = this.props.value;
     const onChange = this.props.onChange;
 
@@ -83,11 +88,6 @@ export class Expression extends React.Component<ExpressionProps> {
       value = {
         type: 'field',
         field: ''
-      };
-    } else if (type === 'formula') {
-      value = {
-        type: 'formula',
-        value: ''
       };
     }
     onChange(value, this.props.index);
@@ -120,17 +120,6 @@ export class Expression extends React.Component<ExpressionProps> {
     onChange(value, this.props.index);
   }
 
-  @autobind
-  handleFormulaChange(formula: string) {
-    let value = this.props.value;
-    const onChange = this.props.onChange;
-    value = {
-      type: 'formula',
-      value: formula
-    };
-    onChange(value, this.props.index);
-  }
-
   render() {
     const {
       value,
@@ -148,15 +137,14 @@ export class Expression extends React.Component<ExpressionProps> {
       formula,
       popOverContainer,
       selectMode,
-      renderEtrValue
+      renderEtrValue,
+      testIdBuilder
     } = this.props;
     const inputType =
       ((value as any)?.type === 'field'
         ? 'field'
         : (value as any)?.type === 'func'
         ? 'func'
-        : (value as any)?.type === 'formula'
-        ? 'formula'
         : value !== undefined
         ? 'value'
         : undefined) ||
@@ -181,6 +169,7 @@ export class Expression extends React.Component<ExpressionProps> {
             formula={formula}
             popOverContainer={popOverContainer}
             renderEtrValue={renderEtrValue}
+            testIdBuilder={testIdBuilder?.getChild('tValue')}
           />
         ) : null}
 
@@ -193,6 +182,7 @@ export class Expression extends React.Component<ExpressionProps> {
             searchable={searchable}
             popOverContainer={popOverContainer}
             selectMode={selectMode}
+            testIdBuilder={testIdBuilder?.getChild('tField')}
             options={
               valueField
                 ? filterTree(
@@ -216,14 +206,7 @@ export class Expression extends React.Component<ExpressionProps> {
             fields={fields}
             allowedTypes={allowedTypes}
             disabled={disabled}
-          />
-        ) : null}
-
-        {inputType === 'formula' ? (
-          <Formula
-            value={(value as any)?.value}
-            onChange={this.handleFormulaChange}
-            disabled={disabled}
+            testIdBuilder={testIdBuilder?.getChild('tFunc')}
           />
         ) : null}
 
@@ -233,6 +216,7 @@ export class Expression extends React.Component<ExpressionProps> {
             value={inputType}
             popOverContainer={popOverContainer}
             onChange={this.handleInputTypeChange}
+            testIdBuilder={testIdBuilder?.getChild('tSwitch')}
             options={types.map(item => ({
               label: fieldMap[item],
               value: item

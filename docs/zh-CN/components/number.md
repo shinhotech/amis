@@ -8,7 +8,7 @@ icon:
 order: 39
 ---
 
-用于展示日期
+用于展示数字
 
 ## 基本使用
 
@@ -32,7 +32,7 @@ order: 39
     "type": "page",
     "body": {
         "type": "number",
-        "value": 123456.34343434343,
+        "value": 13525646.295,
         "precision": 2
     }
 }

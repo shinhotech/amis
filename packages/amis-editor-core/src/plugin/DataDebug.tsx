@@ -1,7 +1,10 @@
 import {registerEditorPlugin} from '../manager';
 import {BaseEventContext, BasePlugin, BasicToolbarItem} from '../plugin';
 import React from 'react';
-import JsonView, {InteractionProps} from 'react-json-view';
+import {importLazyComponent} from 'amis-core';
+export const JsonView = React.lazy(() =>
+  import('react-json-view').then(importLazyComponent)
+);
 
 /**
  * 添加调试功能
@@ -28,21 +31,15 @@ export class DataDebugPlugin extends BasePlugin {
     // if (!renderInfo || !renderInfo.storeType) {
     //   return;
     // }
-    const store = comp.props.store;
-
-    toolbars.push({
-      icon: 'fa fa-bug',
-      order: -1000,
-      placement: 'bottom',
-      tooltip: '上下文数据',
-      onClick: () =>
-        this.openDebugForm(
-          comp.props.data,
-          store.updateData && store.data === comp.props.data
-            ? values => store.updateData(values)
-            : undefined
-        )
-    });
+    if (this.manager.store.toolbarMode === 'default') {
+      toolbars.push({
+        icon: 'fa fa-bug',
+        order: -1000,
+        placement: 'bottom',
+        tooltip: '上下文数据',
+        onClick: () => this.openDebugForm(comp.props.data)
+      });
+    }
   }
 
   dataViewer = {
@@ -50,15 +47,7 @@ export class DataDebugPlugin extends BasePlugin {
     name: 'ctx',
     asFormItem: true,
     className: 'm-b-none',
-    component: ({
-      value,
-      onChange,
-      readOnly
-    }: {
-      value: any;
-      onChange: (value: any) => void;
-      readOnly?: boolean;
-    }) => {
+    component: ({value}: {value: any}) => {
       const [index, setIndex] = React.useState(0);
       let start = value || {};
       const stacks = [start];
@@ -72,14 +61,6 @@ export class DataDebugPlugin extends BasePlugin {
 
         stacks.push(superData);
         start = superData;
-      }
-
-      function emitChange(e: InteractionProps) {
-        const obj = Object.create(stacks[1] || Object.prototype);
-        Object.keys(e.updated_src).forEach(
-          key => (obj[key] = (e.updated_src as any)[key])
-        );
-        onChange(obj);
       }
 
       return (
@@ -98,30 +79,28 @@ export class DataDebugPlugin extends BasePlugin {
             </ul>
           </div>
           <div className="aeDataChain-main">
-            <JsonView
-              name={false}
-              src={stacks[index]}
-              enableClipboard={false}
-              iconStyle="square"
-              onAdd={index === 0 && !readOnly ? emitChange : false}
-              onEdit={index === 0 && !readOnly ? emitChange : false}
-              onDelete={index === 0 && !readOnly ? emitChange : false}
-              collapsed={2}
-            />
+            <React.Suspense fallback={<div>...</div>}>
+              <JsonView
+                name={false}
+                src={stacks[index]}
+                enableClipboard={false}
+                iconStyle="square"
+                collapsed={2}
+              />
+            </React.Suspense>
           </div>
         </div>
       );
     }
   };
 
-  async openDebugForm(data: any, callback?: (values: any) => void) {
-    const result = await this.manager.scaffold(
+  async openDebugForm(data: any) {
+    await this.manager.scaffold(
       {
         title: '上下文数据',
         body: [
           {
-            ...this.dataViewer,
-            readOnly: callback ? false : true
+            ...this.dataViewer
           }
         ]
       },
@@ -129,8 +108,6 @@ export class DataDebugPlugin extends BasePlugin {
         ctx: data
       }
     );
-
-    callback?.((result as any).ctx);
   }
 }
 

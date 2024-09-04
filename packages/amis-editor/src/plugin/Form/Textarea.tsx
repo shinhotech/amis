@@ -6,12 +6,13 @@ import type {BaseEventContext} from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import {inputStateTpl} from '../../renderer/style-control/helper';
 
 export class TextareaControlPlugin extends BasePlugin {
+  static id = 'TextareaControlPlugin';
   // 关联渲染器名字
   rendererName = 'textarea';
   $schema = '/schemas/TextareaControlSchema.json';
-  order = -490;
 
   // 组件名称
   name = '多行文本框';
@@ -19,6 +20,7 @@ export class TextareaControlPlugin extends BasePlugin {
   icon = 'fa fa-paragraph';
   pluginIcon = 'textarea-plugin';
   description = '支持换行输入';
+  searchKeywords = '多行文本输入框';
   docLink = '/amis/zh-CN/components/form/textarea';
   tags = ['表单项'];
   scaffold = {
@@ -49,9 +51,15 @@ export class TextareaControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前文本内容'
+                }
+              }
             }
           }
         }
@@ -65,9 +73,15 @@ export class TextareaControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前文本内容'
+                }
+              }
             }
           }
         }
@@ -81,9 +95,15 @@ export class TextareaControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前的文本内容'
+                }
+              }
             }
           }
         }
@@ -100,7 +120,7 @@ export class TextareaControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'setValue',
@@ -137,6 +157,13 @@ export class TextareaControlPlugin extends BasePlugin {
                 )
               }),
               getSchemaTpl('showCounter'),
+              {
+                name: 'maxLength',
+                label: tipedLabel('最大字数', '限制输入最多文字数量'),
+                type: 'input-number',
+                min: 0,
+                step: 1
+              },
               getSchemaTpl('labelRemark'),
               getSchemaTpl('remark'),
               getSchemaTpl('placeholder'),
@@ -157,23 +184,36 @@ export class TextareaControlPlugin extends BasePlugin {
         title: '外观',
         body: [
           getSchemaTpl('collapseGroup', [
-            getSchemaTpl('style:formItem', {
-              renderer: context.info.renderer,
+            getSchemaTpl('theme:formItem', {
               schema: [
                 {
                   type: 'input-number',
                   name: 'minRows',
                   value: 3,
-                  label: '最小展示行数'
+                  label: '最小展示行数',
+                  min: 1
                 },
                 {
                   type: 'input-number',
                   name: 'maxRows',
                   value: 20,
-                  label: '最大展示行数'
+                  label: '最大展示行数',
+                  min: 1
                 }
               ]
             }),
+            getSchemaTpl('theme:form-label'),
+            getSchemaTpl('theme:form-description'),
+            {
+              title: '多行文本样式',
+              body: [
+                ...inputStateTpl(
+                  'themeCss.inputControlClassName',
+                  '--input-textarea'
+                )
+              ]
+            },
+            getSchemaTpl('theme:cssCode'),
             getSchemaTpl('style:classNames')
           ])
         ]

@@ -6,16 +6,19 @@ import {
   OptionsControlProps,
   Option,
   FormOptionsControl,
-  resolveEventData
+  resolveEventData,
+  TestIdBuilder,
+  getVariable
 } from 'amis-core';
 import {autobind, isEmpty, createObject} from 'amis-core';
 import {ActionObject} from 'amis-core';
 import {FormOptionsSchema} from '../../Schema';
 import {supportStatic} from './StaticHoc';
+import {filter} from 'amis-core';
 
 /**
  * Radio 单选框。
- * 文档：https://baidu.gitee.io/amis/docs/components/form/radios
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/radios
  */
 export interface RadiosControlSchema extends FormOptionsSchema {
   type: 'radios';
@@ -36,6 +39,7 @@ export interface RadiosProps extends OptionsControlProps {
   labelClassName?: string;
   /** 选项CSS类名 */
   optionClassName?: string;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export default class RadiosControl extends React.Component<RadiosProps, any> {
@@ -44,13 +48,15 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
   };
 
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       onChange?.('');
     } else if (actionType === 'reset') {
-      onChange?.(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      onChange?.(pristineVal ?? '');
     }
   }
 
@@ -73,16 +79,12 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
 
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(
-        this.props,
-        {
-          value,
-          options,
-          items: options, // 为了保持名字统一
-          selectedItems: option
-        },
-        'value'
-      )
+      resolveEventData(this.props, {
+        value,
+        options,
+        items: options, // 为了保持名字统一
+        selectedItems: option
+      })
     );
     if (rendererEvent?.prevented) {
       return;
@@ -94,6 +96,13 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
   reload() {
     const reload = this.props.reloadOptions;
     reload && reload();
+  }
+
+  @autobind
+  renderLabel(option: Option, {labelField}: any) {
+    const {data} = this.props;
+    const label = option[labelField || 'label'];
+    return <>{typeof label === 'string' ? filter(label, data) : `${label}`}</>;
   }
 
   @supportStatic()
@@ -119,9 +128,11 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
       optionClassName,
       labelField,
       valueField,
+      data,
       translate: __,
       optionType,
-      level
+      level,
+      testIdBuilder
     } = this.props;
 
     return (
@@ -140,11 +151,13 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
         valueField={valueField}
         placeholder={__(placeholder)}
         options={options}
+        renderLabel={this.renderLabel}
         columnsCount={columnsCount}
         classPrefix={classPrefix}
         itemClassName={itemClassName}
         optionType={optionType}
         level={level}
+        testIdBuilder={testIdBuilder}
       />
     );
   }
@@ -152,7 +165,8 @@ export default class RadiosControl extends React.Component<RadiosProps, any> {
 
 @OptionsControl({
   type: 'radios',
-  sizeMutable: false
+  sizeMutable: false,
+  thin: true
 })
 export class RadiosControlRenderer extends RadiosControl {
   static defaultProps = {

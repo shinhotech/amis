@@ -4,8 +4,7 @@
 
 import React from 'react';
 import {render as amisRender, FormItem} from 'amis';
-import {omit} from 'lodash';
-import {SchemaApi} from 'amis/lib/Schema';
+import type {SchemaApi} from 'amis';
 import {autobind, getSchemaTpl} from 'amis-editor-core';
 import cx from 'classnames';
 import {tipedLabel} from 'amis-editor-core';
@@ -17,11 +16,13 @@ interface OptionControlProps extends FormControlProps {
   className?: string;
 }
 
+type SourceType = 'custom' | 'api' | 'form' | 'variable';
+
 interface OptionControlState {
   api: SchemaApi;
   labelField: string;
   valueField: string;
-  source: 'custom' | 'api' | 'form';
+  source: SourceType;
 }
 
 function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
@@ -37,7 +38,11 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
         api: props.data.source,
         labelField: props.data.labelField,
         valueField: props.data.valueField,
-        source: props.data.source ? 'api' : 'custom'
+        source: props.data.source
+          ? /\$\{(.*?)\}/g.test(props.data.source)
+            ? 'variable'
+            : 'api'
+          : 'custom'
       };
 
       this.handleSourceChange = this.handleSourceChange.bind(this);
@@ -61,7 +66,7 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
         valueField: undefined
       };
 
-      if (source === 'api') {
+      if (['api', 'variable'].includes(source)) {
         const {api, labelField, valueField} = this.state;
         data.source = api;
         data.labelField = labelField || undefined;
@@ -75,8 +80,8 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
     /**
      * 切换选项类型
      */
-    handleSourceChange(source: 'custom' | 'api' | 'form') {
-      this.setState({source: source}, this.onChange);
+    handleSourceChange(source: SourceType) {
+      this.setState({api: '', source: source}, this.onChange);
     }
 
     handleAPIChange(source: SchemaApi) {
@@ -159,10 +164,14 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
           {
             label: '接口获取',
             value: 'api'
+          },
+          {
+            label: '上下文变量',
+            value: 'variable'
           }
         ] as Array<{
           label: string;
-          value: 'custom' | 'api' | 'form';
+          value: SourceType;
         }>
       ).map(item => ({
         ...item,
@@ -180,11 +189,7 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
                   tooltip: labelRemark,
                   className: cx(`Form-lableRemark`, labelRemark?.className),
                   useMobileUI,
-                  container: popOverContainer
-                    ? popOverContainer
-                    : env && env.getModalContainer
-                    ? env.getModalContainer
-                    : undefined
+                  container: popOverContainer || env.getModalContainer
                 })
               : null}
           </label>
@@ -228,7 +233,7 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
           label: '接口',
           name: 'source',
           className: 'ae-ExtendMore',
-          visibleOn: 'data.autoComplete !== false',
+          visibleOn: 'this.autoComplete !== false',
           value: api,
           onChange: this.handleAPIChange,
           footer: [
@@ -258,7 +263,7 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
 
     render() {
       const {source, api, labelField, valueField} = this.state;
-      const {className} = this.props;
+      const {className, render} = this.props;
       const cmptProps = {
         ...this.props,
         data: {
@@ -275,7 +280,20 @@ function BaseOptionControl(Cmpt: React.JSXElementConstructor<any>) {
 
           {source === 'custom' ? <Cmpt {...cmptProps} /> : null}
 
-          {this.renderApiPanel()}
+          {source === 'api' ? this.renderApiPanel() : null}
+
+          {source === 'variable'
+            ? render(
+                'variable',
+                getSchemaTpl('sourceBindControl', {
+                  label: false,
+                  className: 'ae-ExtendMore'
+                }),
+                {
+                  onChange: this.handleAPIChange
+                }
+              )
+            : null}
         </div>
       );
     }
@@ -306,7 +324,7 @@ export default class TransferTableOption extends React.Component<
     return {
       type: 'action',
       actionType: 'dialog',
-      label: '添加表格列',
+      label: '设置表格列',
       level: 'enhance',
       dialog: {
         title: '设置表格列选项',
@@ -330,12 +348,14 @@ export default class TransferTableOption extends React.Component<
               {
                 type: 'input-text',
                 name: 'label',
-                placeholder: '标题'
+                placeholder: '标题',
+                required: true
               },
               {
                 type: 'input-text',
                 name: 'name',
-                placeholder: '绑定字段名'
+                placeholder: '绑定字段名',
+                required: true
               },
               {
                 type: 'select',
@@ -399,7 +419,7 @@ export default class TransferTableOption extends React.Component<
         {
           type: 'action',
           actionType: 'dialog',
-          label: '添加表格行',
+          label: '设置表格行',
           level: 'enhance',
           disabled: columns && columns.length === 0,
           block: true,
@@ -477,6 +497,7 @@ const TransferTableControl = BaseOptionControl(TransferTableOption);
 
 @FormItem({
   type: 'ae-transferTableControl',
+  strictMode: false,
   renderLabel: false
 })
 export class TransferTableControlRenderer extends TransferTableControl {}

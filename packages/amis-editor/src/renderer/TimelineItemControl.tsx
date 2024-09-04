@@ -6,13 +6,12 @@ import {findDOMNode} from 'react-dom';
 import cx from 'classnames';
 import uniqBy from 'lodash/uniqBy';
 import Sortable from 'sortablejs';
-import {render as amisRender, FormItem, Icon, InputBox} from 'amis';
-import {getI18nEnabled, tipedLabel} from 'amis-editor-core';
+import {render as amisRender, FormItem, Icon} from 'amis';
+import {getI18nEnabled} from 'amis-editor-core';
 import {autobind} from 'amis-editor-core';
 import {getSchemaTpl} from 'amis-editor-core';
 import type {FormControlProps} from 'amis-core';
-import {SchemaApi} from 'amis/lib/Schema';
-import {isObject} from 'lodash';
+import type {SchemaApi} from 'amis';
 
 type TimelineItem = {
   title: string;
@@ -30,7 +29,7 @@ export interface TimelineItemProps extends FormControlProps {
 
 export interface TimelineItemState {
   items: Array<Partial<TimelineItem>>;
-  source: 'custom' | 'api';
+  source: 'custom' | 'api' | 'variable';
   api: SchemaApi;
 }
 
@@ -48,14 +47,19 @@ export default class TimelineItemControl extends React.Component<
     this.state = {
       items: props.value,
       api: props.data.source,
-      source: props.data.source ? 'api' : 'custom'
+      source: props.data.source
+        ? typeof props.data.source === 'string' &&
+          props.data.source.match(/^\$\{.*\}$/)
+          ? 'variable'
+          : 'api'
+        : 'custom'
     };
   }
   /**
    * 切换选项类型
    */
   @autobind
-  handleSourceChange(source: 'custom' | 'api') {
+  handleSourceChange(source: 'custom' | 'api' | 'variable') {
     this.setState({source: source}, this.onChange);
   }
 
@@ -77,6 +81,11 @@ export default class TimelineItemControl extends React.Component<
       data.items = items.map(item => ({...item}));
     }
     if (source === 'api') {
+      const {items, api} = this.state;
+      data.items = items.map(item => ({...item}));
+      data.source = api;
+    }
+    if (source === 'variable') {
       const {items, api} = this.state;
       data.items = items.map(item => ({...item}));
       data.source = api;
@@ -300,13 +309,13 @@ export default class TimelineItemControl extends React.Component<
 
           // 换回来
           const parent = e.to as HTMLElement;
-          if (
-            e.newIndex < e.oldIndex &&
-            e.oldIndex < parent.childNodes.length - 1
-          ) {
-            parent.insertBefore(e.item, parent.childNodes[e.oldIndex + 1]);
-          } else if (e.oldIndex < parent.childNodes.length - 1) {
-            parent.insertBefore(e.item, parent.childNodes[e.oldIndex]);
+          if (e.oldIndex < parent.childNodes.length - 1) {
+            parent.insertBefore(
+              e.item,
+              parent.childNodes[
+                e.oldIndex > e.newIndex ? e.oldIndex + 1 : e.oldIndex
+              ]
+            );
           } else {
             parent.appendChild(e.item);
           }
@@ -340,10 +349,14 @@ export default class TimelineItemControl extends React.Component<
         {
           label: '接口获取',
           value: 'api'
+        },
+        {
+          label: '上下文变量',
+          value: 'variable'
         }
       ] as Array<{
         label: string;
-        value: 'custom' | 'api';
+        value: 'custom' | 'api' | 'variable';
       }>
     ).map(item => ({
       ...item,
@@ -361,11 +374,7 @@ export default class TimelineItemControl extends React.Component<
                 tooltip: labelRemark,
                 className: cx(`Form-lableRemark`, labelRemark?.className),
                 useMobileUI,
-                container: popOverContainer
-                  ? popOverContainer
-                  : env && env.getModalContainer
-                  ? env.getModalContainer
-                  : undefined
+                container: popOverContainer || env.getModalContainer
               })
             : null}
         </label>
@@ -531,7 +540,7 @@ export default class TimelineItemControl extends React.Component<
         label: '接口',
         name: 'source',
         className: 'ae-ExtendMore',
-        visibleOn: 'data.autoComplete !== false',
+        visibleOn: 'this.autoComplete !== false',
         value: api,
         onChange: this.handleAPIChange
       })
@@ -567,6 +576,19 @@ export default class TimelineItemControl extends React.Component<
             </div>
           </div>
         ) : null}
+
+        {source === 'variable'
+          ? render(
+              'variable',
+              getSchemaTpl('sourceBindControl', {
+                label: false,
+                className: 'ae-ExtendMore'
+              }),
+              {
+                onChange: this.handleAPIChange
+              }
+            )
+          : null}
         {this.renderApiPanel()}
       </div>
     );

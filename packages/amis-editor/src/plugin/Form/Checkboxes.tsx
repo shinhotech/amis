@@ -2,7 +2,10 @@ import {
   defaultValue,
   setSchemaTpl,
   getSchemaTpl,
-  valuePipeOut
+  valuePipeOut,
+  EditorNodeType,
+  EditorManager,
+  undefinedPipeOut
 } from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {
@@ -14,15 +17,20 @@ import {
 } from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 
+import type {Schema} from 'amis';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
+import {
+  OPTION_EDIT_EVENTS,
+  resolveOptionEventDataSchame,
+  resolveOptionType
+} from '../../util';
 
 export class CheckboxesControlPlugin extends BasePlugin {
+  static id = 'CheckboxesControlPlugin';
   // 关联渲染器名字
   rendererName = 'checkboxes';
   $schema = '/schemas/CheckboxesControlSchema.json';
-
-  order = -470;
 
   // 组件名称
   name = '复选框';
@@ -73,18 +81,26 @@ export class CheckboxesControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
+      dataSchema: (manager: EditorManager) => {
+        const {value} = resolveOptionEventDataSchame(manager, true);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value
+                }
+              }
             }
           }
-        }
-      ]
-    }
+        ];
+      }
+    },
+    ...OPTION_EDIT_EVENTS
   ];
 
   // 动作定义
@@ -97,7 +113,7 @@ export class CheckboxesControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -131,43 +147,46 @@ export class CheckboxesControlPlugin extends BasePlugin {
                   label: '可全选',
                   name: 'checkAll',
                   value: false,
-                  visibleOn: 'data.multiple',
+                  visibleOn: 'this.multiple',
                   onChange: (value: any, origin: any, item: any, form: any) => {
                     if (!value) {
                       // 可全选关闭时，默认全选也需联动关闭
                       form.setValueByName('defaultCheckAll', false);
+                      form.setValueByName('checkAllText', undefined);
                     }
                   }
                 }),
                 {
                   type: 'container',
                   className: 'ae-ExtendMore mb-2',
-                  visibleOn: 'data.checkAll',
+                  visibleOn: 'this.checkAll',
                   body: [
                     getSchemaTpl('switch', {
                       label: '默认全选',
                       name: 'defaultCheckAll',
                       value: false
-                    })
+                    }),
+                    {
+                      type: 'input-text',
+                      label: '全选文本',
+                      name: 'checkAllText'
+                    }
                   ]
                 }
               ],
-              getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema,
-                useSelectMode: true, // 改用 Select 设置模式
-                visibleOn: 'this.options && this.options.length > 0'
-              }),
               getSchemaTpl('joinValues', {
                 visibleOn: true
               }),
               getSchemaTpl('delimiter', {
-                visibleOn: 'data.joinValues === true'
+                visibleOn: 'this.joinValues === true'
               }),
               getSchemaTpl('extractValue'),
               getSchemaTpl('labelRemark'),
               getSchemaTpl('remark'),
               getSchemaTpl('description'),
-              getSchemaTpl('autoFillApi')
+              getSchemaTpl('autoFillApi', {
+                trigger: 'change'
+              })
             ]
           },
           {
@@ -176,27 +195,31 @@ export class CheckboxesControlPlugin extends BasePlugin {
               getSchemaTpl('optionControlV2', {
                 multiple: true
               }),
-              getSchemaTpl('creatable', {
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [getSchemaTpl('createBtnLabel'), getSchemaTpl('addApi')]
-                }
+              getSchemaTpl('valueFormula', {
+                rendererSchema: (schema: Schema) => ({
+                  ...schema,
+                  type: 'input-text'
+                }),
+                pipeOut: undefinedPipeOut,
+                // 默认值组件设计有些问题，自动发起了请求，接口数据作为了默认值选项，接口形式应该是设置静态值或者FX
+                needDeleteProps: ['source'],
+                // 当数据源是自定义静态选项时，不额外配置默认值，在选项上直接勾选即可，放开会有个bug：当去掉勾选时，默认值配置组件不清空，只是schema清空了value
+                visibleOn: 'this.selectFirst !== true && this.source != null'
               }),
-              getSchemaTpl('editable', {
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [getSchemaTpl('editApi')]
-                }
+              // 自定义选项模板
+              getSchemaTpl('optionsMenuTpl', {
+                manager: this.manager
               }),
-              getSchemaTpl('removable', {
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [getSchemaTpl('deleteApi')]
-                }
-              })
+              /** 新增选项 */
+              getSchemaTpl('optionAddControl', {
+                manager: this.manager
+              }),
+              /** 编辑选项 */
+              getSchemaTpl('optionEditControl', {
+                manager: this.manager
+              }),
+              /** 删除选项 */
+              getSchemaTpl('optionDeleteControl')
             ]
           },
           getSchemaTpl('status', {isFormItem: true}),
@@ -224,6 +247,56 @@ export class CheckboxesControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.joinValues === false) {
+      dataSchema = {
+        ...dataSchema,
+        type: 'object',
+        title: node.schema?.label || node.schema?.name,
+        properties: {
+          [node.schema?.labelField || 'label']: {
+            type: 'string',
+            title: '文本'
+          },
+          [node.schema?.valueField || 'value']: {
+            type,
+            title: '值'
+          }
+        }
+      };
+    }
+
+    if (node.schema?.multiple) {
+      if (node.schema?.extractValue) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name
+        };
+      } else if (node.schema?.joinValues === false) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name,
+          items: {
+            type: 'object',
+            title: '成员',
+            properties: dataSchema.properties
+          },
+          originalValue: dataSchema.originalValue
+        };
+      }
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(CheckboxesControlPlugin);

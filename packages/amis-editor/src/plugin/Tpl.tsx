@@ -14,7 +14,7 @@ setSchemaTpl(
   getSchemaTpl('textareaFormulaControl', {
     label: '文字内容',
     mode: 'normal',
-    visibleOn: 'data.wrapperComponent !== undefined',
+    visibleOn: 'this.wrapperComponent !== undefined',
     pipeIn: (value: any, data: any) => value || (data && data.html),
     name: 'tpl'
   })
@@ -49,7 +49,7 @@ setSchemaTpl('tpl:rich-text', {
   ],
   minRows: 5,
   language: 'html',
-  visibleOn: 'data.wrapperComponent === undefined',
+  visibleOn: 'this.wrapperComponent === undefined',
   pipeIn: (value: any, data: any) => value || (data && data.html),
   name: 'tpl'
 });
@@ -105,10 +105,13 @@ setSchemaTpl('tpl:wrapperComponent', {
 });
 
 export class TplPlugin extends BasePlugin {
+  static id = 'TplPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'tpl';
   $schema = '/schemas/TplSchema.json';
+
+  order = -200;
 
   // 组件名称
   name = '文字';
@@ -142,9 +145,15 @@ export class TplPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -158,9 +167,15 @@ export class TplPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -174,9 +189,15 @@ export class TplPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -207,9 +228,25 @@ export class TplPlugin extends BasePlugin {
                 ),
                 name: 'inline',
                 pipeIn: defaultValue(true),
-                hiddenOn: 'data.wrapperComponent !== ""'
+                hiddenOn: 'this.wrapperComponent !== ""'
               }),
+              {
+                type: 'input-number',
+                label: '最大显示行数',
+                name: 'maxLine',
+                min: 0
+              },
               getSchemaTpl('tpl:content'),
+              {
+                type: 'textarea',
+                name: 'editorSetting.mock.tpl',
+                mode: 'vertical',
+                label: tipedLabel(
+                  '填充假数据',
+                  '只在编辑区显示的假数据文本，运行时将显示文本实际内容'
+                ),
+                pipeOut: (value: any) => (value === '' ? undefined : value)
+              },
               getSchemaTpl('tpl:rich-text')
             ]
           },
@@ -219,7 +256,15 @@ export class TplPlugin extends BasePlugin {
       {
         title: '外观',
         body: getSchemaTpl('collapseGroup', [
-          ...getSchemaTpl('theme:common', ['layout'], ['font'])
+          ...getSchemaTpl('theme:common', {
+            exclude: ['layout'],
+            baseExtra: [
+              getSchemaTpl('theme:font', {
+                label: '文字',
+                name: 'themeCss.baseControlClassName.font'
+              })
+            ]
+          })
         ])
       },
       {

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/create-property.js"],
+  "sourcesContent": ["'use strict';\nvar DESCRIPTORS = require('../internals/descriptors');\nvar definePropertyModule = require('../internals/object-define-property');\nvar createPropertyDescriptor = require('../internals/create-property-descriptor');\n\nmodule.exports = function (object, key, value) {\n  if (DESCRIPTORS) definePropertyModule.f(object, key, createPropertyDescriptor(0, value));\n  else object[key] = value;\n};\n"],
+  "mappings": ";;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,cAAc;AAClB,QAAI,uBAAuB;AAC3B,QAAI,2BAA2B;AAE/B,WAAO,UAAU,SAAU,QAAQ,KAAK,OAAO;AAC7C,UAAI;AAAa,6BAAqB,EAAE,QAAQ,KAAK,yBAAyB,GAAG,KAAK,CAAC;AAAA;AAClF,eAAO,GAAG,IAAI;AAAA,IACrB;AAAA;AAAA;",
+  "names": []
+}

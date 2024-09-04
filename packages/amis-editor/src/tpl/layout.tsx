@@ -6,6 +6,7 @@ import {
 } from 'amis-editor-core';
 import isNumber from 'lodash/isNumber';
 import isString from 'lodash/isString';
+import compact from 'lodash/compact';
 
 /**
  * 布局相关配置项
@@ -52,20 +53,22 @@ setSchemaTpl(
       pipeOut: config?.pipeOut,
       onChange: (value: string, oldValue: string, model: any, form: any) => {
         if (value === 'static') {
-          form.setValueByName('style.inset', undefined);
-          form.setValueByName('style.zIndex', undefined);
-          form.setValueByName('originPosition', undefined);
+          form.deleteValueByName('style.inset');
+          form.deleteValueByName('style.zIndex');
+          form.deleteValueByName('originPosition');
         } else if (value === 'fixed' || value === 'absolute') {
-          // 默认使用右下角进行相对定位
+          form.setValueByName('style.zIndex', 1); // 避免被页面其他内容元素遮挡（导致不能选中）
           form.setValueByName('style.inset', 'auto 50px 50px auto');
+          // 默认使用右下角进行相对定位
           form.setValueByName('originPosition', 'right-bottom');
         } else if (value === 'relative') {
+          form.setValueByName('style.zIndex', 1);
           form.setValueByName('style.inset', 'auto');
-          form.setValueByName('originPosition', undefined);
+          form.deleteValueByName('originPosition');
         }
         if (value !== 'sticky') {
           // 非滚动吸附定位
-          form.setValueByName('stickyStatus', undefined);
+          form.deleteValueByName('stickyStatus');
         }
       },
       options: [
@@ -74,15 +77,15 @@ setSchemaTpl(
           value: 'static'
         },
         {
-          label: '相对(relative)',
+          label: '相对原位置定位(relative)',
           value: 'relative'
         },
         {
-          label: '固定(fixed)',
+          label: '视窗中悬浮(fixed)',
           value: 'fixed'
         },
         {
-          label: '绝对(absolute)',
+          label: '绝对定位(absolute)',
           value: 'absolute'
         }
       ]
@@ -129,7 +132,7 @@ setSchemaTpl(
       value: config?.value || 'auto',
       visibleOn:
         config?.visibleOn ??
-        'data.style && data.style.position && data.style.position !== "static"',
+        'this.style && this.style.position && this.style.position !== "static"',
       pipeIn: (value: any) => {
         let curValue = value || 'auto';
         if (isNumber(curValue)) {
@@ -196,7 +199,7 @@ setSchemaTpl(
       value: config?.value,
       visibleOn:
         config?.visibleOn ??
-        'data.style && data.style.position && data.style.position !== "static"',
+        'this.style && this.style.position && this.style.position !== "static"',
       pipeIn: config?.pipeIn,
       pipeOut: config?.pipeOut
     };
@@ -232,8 +235,14 @@ setSchemaTpl(
     isFlexItem?: boolean;
     pipeIn?: (value: any, data: any) => void;
     pipeOut?: (value: any, data: any) => void;
+    flexHide?: boolean;
   }) => {
-    const configOptions = [
+    const configOptions = compact([
+      !config?.flexHide && {
+        label: '弹性布局(flex)',
+        icon: 'flex-display',
+        value: 'flex'
+      },
       {
         label: '块级(block)',
         icon: 'block-display',
@@ -248,15 +257,10 @@ setSchemaTpl(
         label: '行内元素(inline)',
         icon: 'inline-display',
         value: 'inline'
-      },
-      {
-        label: '弹性布局(flex)',
-        icon: 'flex-display',
-        value: 'flex'
       }
-    ];
+    ]);
     const configSchema = {
-      type: 'button-icon-group',
+      type: 'icon-button-group',
       label:
         config?.label ||
         tipedLabel(
@@ -271,10 +275,10 @@ setSchemaTpl(
       pipeOut: config?.pipeOut,
       onChange: (value: string, oldValue: string, model: any, form: any) => {
         if (value !== 'flex' && value !== 'inline-flex') {
-          form.setValueByName('style.flexDirection', undefined);
-          form.setValueByName('style.justifyContent', undefined);
-          form.setValueByName('style.alignItems', undefined);
-          form.setValueByName('style.flexWrap', undefined);
+          form.deleteValueByName('style.flexDirection');
+          form.deleteValueByName('style.justifyContent');
+          form.deleteValueByName('style.alignItems');
+          form.deleteValueByName('style.flexWrap');
         }
       }
     };
@@ -579,31 +583,34 @@ setSchemaTpl(
         if (value === '1 1 auto') {
           // 弹性
           if (config?.isFlexColumnItem) {
-            form.setValueByName('style.overflowY', 'auto');
-            form.setValueByName('style.height', undefined);
+            // form.setValueByName('style.overflowY', 'auto');
+            form.deleteValueByName('style.height');
           } else {
-            form.setValueByName('style.overflowX', 'auto');
-            form.setValueByName('style.width', undefined);
+            // form.setValueByName('style.overflowX', 'auto');
+            form.deleteValueByName('style.width');
           }
         } else if (value === '0 0 150px') {
           // 固定
-          form.setValueByName('style.flexGrow', undefined);
+          form.deleteValueByName('style.flexGrow');
           form.setValueByName('style.flexBasis', '150px');
 
           if (config?.isFlexColumnItem) {
-            form.setValueByName('style.height', undefined);
+            form.deleteValueByName('style.height');
           } else {
-            form.setValueByName('style.width', undefined);
+            form.deleteValueByName('style.width');
           }
         } else if (value === '0 0 auto') {
           // 适配
-          form.setValueByName('style.flexGrow', undefined);
-          form.setValueByName('style.flexBasis', undefined);
+          form.deleteValueByName('style.flexGrow');
+          form.deleteValueByName('style.flexBasis');
+          form.deleteValueByName('style.overflowX');
+          form.deleteValueByName('style.overflowY');
+          form.deleteValueByName('style.overflow');
 
           if (config?.isFlexColumnItem) {
-            form.setValueByName('style.height', undefined);
+            form.deleteValueByName('style.height');
           } else {
-            form.setValueByName('style.width', undefined);
+            form.deleteValueByName('style.width');
           }
         }
       }
@@ -616,6 +623,7 @@ setSchemaTpl(
   'layout:flex-basis',
   (config?: {
     label?: string;
+    tooltip?: string;
     name?: string;
     value?: string;
     visibleOn?: string;
@@ -627,7 +635,8 @@ setSchemaTpl(
       type: 'input-number',
       label: tipedLabel(
         config?.label || '默认宽度',
-        '在分配多余空间之前，其默认占据的主轴空间（main size）'
+        config?.tooltip ||
+          '在分配多余空间之前，其默认占据的主轴空间（main size）'
       ),
       name: config?.name || 'style.flexBasis',
       value: config?.value || 'auto',
@@ -672,7 +681,7 @@ setSchemaTpl(
       name: config?.name || 'style.flexGrow',
       value: config?.value || 1,
       visibleOn:
-        config?.visibleOn || 'data.style && data.style.flex !== "0 0 auto"',
+        config?.visibleOn || 'this.style && this.style.flex !== "0 0 auto"',
       pipeIn: config?.pipeIn,
       pipeOut: config?.pipeOut
     };
@@ -714,11 +723,11 @@ setSchemaTpl(
       onChange: (value: boolean, oldValue: boolean, model: any, form: any) => {
         if (value) {
           // 固定宽度时，剔除最大宽度、最小宽度
-          form.setValueByName('style.maxWidth', undefined);
-          form.setValueByName('style.minWidth', undefined);
+          form.deleteValueByName('style.maxWidth');
+          form.deleteValueByName('style.minWidth');
         } else {
           // 非固定宽度时，剔除宽度数值
-          form.setValueByName('style.width', undefined);
+          form.deleteValueByName('style.width');
         }
         if (config?.onChange) {
           config.onChange(value);
@@ -746,8 +755,8 @@ setSchemaTpl(
       name: config?.name || 'style.width',
       value: config?.value || '300px',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && data.isFixedWidth`
-        : 'data.isFixedWidth',
+        ? `(${config?.visibleOn}) && this.isFixedWidth`
+        : 'this.isFixedWidth',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -819,8 +828,8 @@ setSchemaTpl(
       value: config?.value,
       min: '${style.minWidth | toInt}',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && !data.isFixedWidth`
-        : '!data.isFixedWidth',
+        ? `(${config?.visibleOn}) && !this.isFixedWidth`
+        : '!this.isFixedWidth',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -858,8 +867,8 @@ setSchemaTpl(
       value: config?.value,
       max: '${style.maxWidth | toInt}',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && !data.isFixedWidth`
-        : '!data.isFixedWidth',
+        ? `(${config?.visibleOn}) && !this.isFixedWidth`
+        : '!this.isFixedWidth',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -891,9 +900,9 @@ setSchemaTpl(
       type: 'select',
       label:
         config?.label ||
-        tipedLabel(' x轴滚动模式', '用于设置水平方向的滚动模式'),
+        tipedLabel('水平内容超出', '用于设置水平方向的滚动模式'),
       name: config?.name || 'style.overflowX',
-      value: config?.value || 'auto',
+      value: config?.value || 'visible',
       visibleOn: config?.visibleOn,
       pipeIn: config?.pipeIn,
       pipeOut: config?.pipeOut,
@@ -907,7 +916,7 @@ setSchemaTpl(
           value: 'hidden'
         },
         {
-          label: '滚动显示',
+          label: '水平滚动',
           value: 'scroll'
         },
         {
@@ -954,11 +963,11 @@ setSchemaTpl(
       onChange: (value: boolean, oldValue: boolean, model: any, form: any) => {
         if (value) {
           // 固定高度时，剔除最大高度、最小高度
-          form.setValueByName('style.maxHeight', undefined);
-          form.setValueByName('style.minHeight', undefined);
+          form.deleteValueByName('style.maxHeight');
+          form.deleteValueByName('style.minHeight');
         } else {
           // 非固定高度时，剔除高度数值
-          form.setValueByName('style.height', undefined);
+          form.deleteValueByName('style.height');
         }
         if (config?.onChange) {
           config.onChange(value);
@@ -986,8 +995,8 @@ setSchemaTpl(
       name: config?.name || 'style.height',
       value: config?.value || '300px',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && data.isFixedHeight`
-        : 'data.isFixedHeight',
+        ? `(${config?.visibleOn}) && this.isFixedHeight`
+        : 'this.isFixedHeight',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -1025,8 +1034,8 @@ setSchemaTpl(
       value: config?.value,
       min: '${style.minHeight | toInt}',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && !data.isFixedHeight`
-        : '!data.isFixedHeight',
+        ? `(${config?.visibleOn}) && !this.isFixedHeight`
+        : '!this.isFixedHeight',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -1064,8 +1073,8 @@ setSchemaTpl(
       value: config?.value,
       max: '${style.maxHeight | toInt}',
       visibleOn: config?.visibleOn
-        ? `${config?.visibleOn} && !data.isFixedHeight`
-        : '!data.isFixedHeight',
+        ? `(${config?.visibleOn}) && !this.isFixedHeight`
+        : '!this.isFixedHeight',
       clearable: true,
       unitOptions: config?.unitOptions ?? LayoutUnitOptions,
       pipeIn: config?.pipeIn,
@@ -1097,9 +1106,9 @@ setSchemaTpl(
       type: 'select',
       label:
         config?.label ||
-        tipedLabel(' y轴滚动模式', '用于设置垂直方向的滚动模式'),
+        tipedLabel('垂直内容超出', '用于设置垂直方向的滚动模式'),
       name: config?.name || 'style.overflowY',
-      value: config?.value || 'auto',
+      value: config?.value || 'visible',
       visibleOn: config?.visibleOn,
       pipeIn: config?.pipeIn,
       pipeOut: config?.pipeOut,
@@ -1113,7 +1122,7 @@ setSchemaTpl(
           value: 'hidden'
         },
         {
-          label: '滚动显示',
+          label: '垂直滚动',
           value: 'scroll'
         },
         {
@@ -1125,7 +1134,7 @@ setSchemaTpl(
   }
 );
 
-// 居中显示
+// 对齐方式
 setSchemaTpl(
   'layout:margin-center',
   (config?: {
@@ -1146,11 +1155,11 @@ setSchemaTpl(
           '通过 margin 数值来设置对齐方式，其中 margin: 0 auto 用于设置居中对齐'
         ),
       name: config?.name || 'style.margin',
-      value: config?.value || '0',
+      value: config?.value,
       inputClassName: 'inline-flex justify-between',
       visibleOn:
         config?.visibleOn ??
-        'data.isFixedWidth || data.style && data.style.maxWidth',
+        'this.isFixedWidth || this.style && this.style.maxWidth',
       options: [
         {
           label: '靠左',
@@ -1165,6 +1174,16 @@ setSchemaTpl(
           value: 'auto 0px auto auto'
         }
       ],
+      pipeIn: config?.pipeIn
+        ? config?.pipeIn
+        : (value: any, data: any) => {
+            let themeCssValue =
+              data.data?.themeCss?.baseControlClassName?.[
+                'padding-and-margin:default'
+              ]?.margin;
+            return value || themeCssValue;
+          },
+      pipeOut: config?.pipeOut,
       onChange: (value: string, oldValue: string, model: any, form: any) => {
         if (
           form?.data?.style?.position === 'fixed' ||
@@ -1194,7 +1213,7 @@ setSchemaTpl(
             } else {
               form.setValueByName('style.inset', 'auto 0px auto auto');
             }
-            form.setValueByName('style.transform', undefined);
+            form.deleteValueByName('style.transform');
           } else {
             // 靠左
             if (form.data?.sorptionPosition === 'top') {
@@ -1206,11 +1225,11 @@ setSchemaTpl(
             } else {
               form.setValueByName('style.inset', 'auto auto auto 0px');
             }
-            form.setValueByName('style.transform', undefined);
+            form.deleteValueByName('style.transform');
           }
         } else {
           // 靠左
-          form.setValueByName('style.transform', undefined);
+          form.deleteValueByName('style.transform');
         }
       }
     };
@@ -1241,7 +1260,7 @@ setSchemaTpl(
       value: config?.value || 'right-bottom',
       visibleOn:
         config?.visibleOn ??
-        'data.style && data.style.position && (data.style.position === "fixed" || data.style.position === "absolute")',
+        'this.style && this.style.position && (this.style.position === "fixed" || this.style.position === "absolute")',
       pipeIn: config?.pipeIn,
       pipeOut: config?.pipeOut,
       options: [
@@ -1332,13 +1351,17 @@ setSchemaTpl('layout:sticky', {
   inputClassName: 'inline-flex justify-between',
   onChange: (value: boolean, oldValue: boolean, model: any, form: any) => {
     if (value) {
+      const inset = form.getValueByName('style.inset');
+      if (!inset || inset === 'auto') {
+        form.setValueByName('stickyPosition', 'auto');
+        form.setValueByName('style.inset', '0px auto 0px auto');
+      }
       form.setValueByName('style.position', 'sticky');
-      form.setValueByName('style.inset', '0px auto auto auto');
       form.setValueByName('style.zIndex', 10);
     } else {
       form.setValueByName('style.position', 'static');
-      form.setValueByName('style.inset', undefined);
-      form.setValueByName('style.zIndex', undefined);
+      form.deleteValueByName('style.inset');
+      form.deleteValueByName('style.zIndex');
     }
   }
 });
@@ -1349,7 +1372,7 @@ setSchemaTpl('layout:stickyPosition', {
   size: 'xs',
   label: tipedLabel('吸附位置', '用于设置滚动吸附时的位置'),
   name: 'stickyPosition',
-  visibleOn: 'data.stickyStatus',
+  visibleOn: 'this.stickyStatus',
   options: [
     {
       label: '吸顶',
@@ -1471,6 +1494,28 @@ setSchemaTpl(
   }
 );
 
+setSchemaTpl(
+  'layout:flex-layout',
+  (config?: {
+    name?: string;
+    label?: string;
+    visibleOn?: string;
+    strictMode?: boolean;
+    pipeIn?: (value: any, data: any) => void;
+    pipeOut?: (value: any, data: any) => void;
+  }) => {
+    return {
+      type: 'flex-layout',
+      mode: 'default',
+      name: config?.name || 'layout',
+      label: config?.label ?? false,
+      visibleOn: config?.visibleOn,
+      pipeIn: config?.pipeIn,
+      pipeOut: config?.pipeOut,
+      strictMode: config?.strictMode
+    };
+  }
+);
 // flex相关配置项（整合版）
 setSchemaTpl(
   'layout:flex-setting',
@@ -1481,16 +1526,33 @@ setSchemaTpl(
     direction?: string;
     justify?: string;
     alignItems?: string;
+    pipeIn?: (value: any, data: any) => void;
+    pipeOut?: (value: any, data: any) => void;
   }) => {
     return {
-      type: 'flex-setting',
+      type: 'flex-layout-setting',
       name: config?.name || 'style',
       mode: 'vertical', // horizontal、vertical
       label: config?.label ?? false,
       visibleOn: config?.visibleOn,
       direction: config?.direction,
       justify: config?.justify,
-      alignItems: config?.alignItems
+      alignItems: config?.alignItems,
+      pipeIn: config?.pipeIn,
+      pipeOut: config?.pipeOut
+    };
+  }
+);
+
+// 子配置项包裹容器
+setSchemaTpl(
+  'layout:wrapper-contanier',
+  (config: {visibleOn?: string; className?: string; body: Array<any>}) => {
+    return {
+      type: 'container',
+      className: `config-wrapper-contanier ${config.className || ''}`,
+      body: config.body,
+      visibleOn: config?.visibleOn
     };
   }
 );

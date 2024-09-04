@@ -29,6 +29,7 @@ import wizard from './feat/wizard.svg';
 import anchorNav from './container/anchor-nav.svg';
 import collapse from './container/collapse.svg';
 import container from './container/container.svg';
+import swtichContainer from './container/switch-container.svg';
 import flexContainer from './container/flex-container.svg';
 import formGroup from './container/form-group.svg';
 import grid from './container/grid.svg';
@@ -104,6 +105,7 @@ import inputRepeat from './form/input-repeat.svg';
 import inputRichText from './form/input-rich-text.svg';
 import inputTag from './form/input-tag.svg';
 import inputText from './form/input-text.svg';
+import InputSignature from './form/input-signature.svg';
 
 import inputTime from './form/input-time.svg';
 import inputTree from './form/input-tree.svg';
@@ -154,6 +156,11 @@ import layout_3_2 from './layout/layout3-2.svg';
 import layout_free_container from './layout/layout-free-container.svg';
 import layout_fixed_top from './layout/layout-fixed-top.svg';
 
+// 其他类 icon
+import inputAddFx from './other/+fx.svg';
+import inputFx from './other/fx.svg';
+import modalSetting from './other/modal-setting.svg';
+
 // 属性配置面板/显示类型
 import block from './display/block.svg';
 import inline from './display/inline.svg';
@@ -179,6 +186,12 @@ import jSpaceAround from './display/jSpaceAround.svg';
 // 主题
 import themeCss from './theme/css.svg';
 
+// CRUD相关
+import ColumnSetting from './crud/column-setting.svg';
+import ColumnDelete from './crud/column-delete.svg';
+import ColumnAdd from './crud/column-add.svg';
+import ShareLink from './crud/share-link.svg';
+
 // 功能类组件 icon x 11
 registerIcon('audio-plugin', audio);
 registerIcon('custom-plugin', custom);
@@ -197,6 +210,7 @@ registerIcon('anchor-nav-plugin', anchorNav);
 registerIcon('collapse-plugin', collapse);
 registerIcon('flex-container-plugin', flexContainer);
 registerIcon('container-plugin', container);
+registerIcon('switch-container-plugin', swtichContainer);
 registerIcon('form-group-plugin', formGroup);
 registerIcon('panel-plugin', panel);
 registerIcon('grid-plugin', grid);
@@ -270,6 +284,7 @@ registerIcon('input-rich-text-plugin', inputRichText);
 registerIcon('input-tag-plugin', inputTag);
 registerIcon('input-text-plugin', inputText);
 registerIcon('input-time-range-plugin', inputTimeRange);
+registerIcon('input-signature-plugin', InputSignature);
 
 registerIcon('input-time-plugin', inputTime);
 registerIcon('input-tree-plugin', inputTree);
@@ -301,6 +316,7 @@ registerIcon('formula-plugin', formula);
 registerIcon('property-sheet-plugin', propertySheet);
 registerIcon('tooltip-plugin', tooltip);
 registerIcon('divider-plugin', divider);
+registerIcon('modal-setting', modalSetting);
 
 // 常见布局组件 icon x 13
 registerIcon('layout-absolute-plugin', layout_absolute);
@@ -318,6 +334,9 @@ registerIcon('layout-3-1-plugin', layout_3_1);
 registerIcon('layout-3-2-plugin', layout_3_2);
 registerIcon('layout-free-container', layout_free_container);
 registerIcon('layout-fixed-top', layout_fixed_top);
+
+registerIcon('input-add-fx', inputAddFx);
+registerIcon('input-fx', inputFx);
 
 // 属性配置面板/显示类型
 registerIcon('inline-display', inline);
@@ -343,5 +362,11 @@ registerIcon('jSpaceAround', jSpaceAround);
 
 // 主题
 registerIcon('theme-css', themeCss);
+
+// CRUD相关
+registerIcon('column-setting', ColumnSetting);
+registerIcon('column-delete', ColumnDelete);
+registerIcon('column-add', ColumnAdd);
+registerIcon('share-link', ShareLink);
 
 export {Icon};

@@ -5,11 +5,17 @@
  */
 
 import React from 'react';
-import {ClassName, localeable, LocaleProps, Schema} from 'amis-core';
+import {
+  ClassName,
+  localeable,
+  LocaleProps,
+  Schema,
+  TestIdBuilder
+} from 'amis-core';
 import Transition, {ENTERED, ENTERING} from 'react-transition-group/Transition';
-import {themeable, ThemeProps} from 'amis-core';
+import {themeable, ThemeProps, noop} from 'amis-core';
 import {uncontrollable} from 'amis-core';
-import {generateIcon, isObjectShallowModified} from 'amis-core';
+import {isObjectShallowModified} from 'amis-core';
 import {autobind, guid} from 'amis-core';
 import {Icon} from './icons';
 import debounce from 'lodash/debounce';
@@ -45,19 +51,63 @@ export interface TabProps extends ThemeProps {
   iconPosition?: 'left' | 'right';
   disabled?: boolean | string;
   eventKey: string | number;
+  prevKey?: string | number;
+  nextKey?: string | number;
+  tip?: string;
   tab?: Schema;
   className?: string;
+  tabClassName?: string;
   activeKey?: string | number;
   reload?: boolean;
   mountOnEnter?: boolean;
   unmountOnExit?: boolean;
   toolbar?: React.ReactNode;
   children?: React.ReactNode | Array<React.ReactNode>;
+  swipeable?: boolean;
+  onSelect?: (eventKey: string | number) => void;
+  testIdBuilder?: TestIdBuilder;
 }
 
 class TabComponent extends React.PureComponent<TabProps> {
   contentDom: any;
+  touch: any = {};
+  touchStartTime: number;
   contentRef = (ref: any) => (this.contentDom = ref);
+
+  @autobind
+  onTouchStart(event: React.TouchEvent) {
+    this.touch.startX = event.touches[0].clientX;
+    this.touch.startY = event.touches[0].clientY;
+    this.touchStartTime = Date.now();
+  }
+
+  @autobind
+  onTouchMove(event: React.TouchEvent) {
+    const touch = event.touches[0];
+    const newState = {...this.touch};
+
+    newState.deltaX = touch.clientX < 0 ? 0 : touch.clientX - newState.startX;
+    newState.deltaY = touch.clientY - newState.startY;
+    newState.offsetX = Math.abs(newState.deltaX);
+    newState.offsetY = Math.abs(newState.deltaY);
+    this.touch = newState;
+  }
+
+  @autobind
+  onTouchEnd() {
+    const duration = Date.now() - this.touchStartTime;
+    const speed = this.touch.deltaX / duration;
+    const shouldSwipe = Math.abs(speed) > 0.25;
+    const {prevKey, nextKey, onSelect} = this.props;
+
+    if (shouldSwipe) {
+      if (this.touch.deltaX > 0) {
+        prevKey !== undefined && onSelect?.(prevKey);
+      } else {
+        nextKey && onSelect?.(nextKey);
+      }
+    }
+  }
 
   render() {
     const {
@@ -68,7 +118,10 @@ class TabComponent extends React.PureComponent<TabProps> {
       eventKey,
       activeKey,
       children,
-      className
+      className,
+      swipeable,
+      mobileUI,
+      testIdBuilder
     } = this.props;
 
     return (
@@ -91,6 +144,11 @@ class TabComponent extends React.PureComponent<TabProps> {
                 'Tabs-pane',
                 className
               )}
+              onTouchStart={swipeable && mobileUI ? this.onTouchStart : noop}
+              onTouchMove={swipeable && mobileUI ? this.onTouchMove : noop}
+              onTouchEnd={swipeable && mobileUI ? this.onTouchEnd : noop}
+              onTouchCancel={swipeable && mobileUI ? this.onTouchEnd : noop}
+              {...testIdBuilder?.getTestId()}
             >
               {children}
             </div>
@@ -132,6 +190,7 @@ export interface TabsProps extends ThemeProps, LocaleProps {
   collapseBtnLabel?: string;
   popOverContainer?: any;
   children?: React.ReactNode | Array<React.ReactNode>;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface IDragInfo {
@@ -271,6 +330,28 @@ export class Tabs extends React.Component<TabsProps, any> {
     if (!this.scroll && !this.draging && isTabsModified) {
       this.computedWidth();
     }
+
+    // 移动端取消箭头切换，改为滚动切换激活项居中
+    const {classPrefix: ns, activeKey, mobileUI} = this.props;
+    if (mobileUI && preProps.activeKey !== activeKey) {
+      const {classPrefix: ns} = this.props;
+      const dom = findDOMNode(this) as HTMLElement;
+      const activeTab = dom.querySelector(
+        `.${ns}Tabs-link.is-active`
+      ) as HTMLElement;
+      const parentWidth = (activeTab.parentNode?.parentNode as any).offsetWidth;
+      const offsetLeft = activeTab.offsetLeft;
+      const offsetWidth = activeTab.offsetWidth;
+      if (activeTab.parentNode) {
+        (activeTab.parentNode as any).scrollLeft =
+          offsetLeft > parentWidth
+            ? (offsetLeft / parentWidth) * parentWidth -
+              parentWidth / 2 +
+              offsetWidth / 2
+            : offsetLeft - parentWidth / 2 + offsetWidth / 2;
+      }
+    }
+
     this.scroll = false;
   }
 
@@ -317,8 +398,8 @@ export class Tabs extends React.Component<TabsProps, any> {
     }
     const {activeKey, children} = this.props;
     const currentKey = key !== undefined ? key : activeKey;
-    const currentIndex = (children as any[])?.findIndex(
-      (item: any) => item.props.eventKey === currentKey
+    const currentIndex = (children as any[])?.findIndex((item: any) =>
+      item === null ? false : item.props.eventKey === currentKey
     );
     const li = this.navMain.current?.children || [];
     const currentLi = li[currentIndex] as HTMLElement;
@@ -515,7 +596,8 @@ export class Tabs extends React.Component<TabsProps, any> {
       draggable,
       showTip,
       showTipClassName,
-      editable
+      editable,
+      testIdBuilder
     } = this.props;
 
     const {
@@ -527,6 +609,7 @@ export class Tabs extends React.Component<TabsProps, any> {
       toolbar,
       tabClassName,
       closable: tabClosable,
+      tip,
       hash
     } = child.props;
 
@@ -535,7 +618,7 @@ export class Tabs extends React.Component<TabsProps, any> {
     const activeKey =
       activeKeyProp === undefined && index === 0 ? eventKey : activeKeyProp;
 
-    const iconElement = generateIcon(cx, icon, 'Icon');
+    const iconElement = <Icon cx={cx} icon={icon} className="Icon" />;
 
     const link = (
       <a title={typeof title === 'string' ? title : undefined}>
@@ -559,22 +642,26 @@ export class Tabs extends React.Component<TabsProps, any> {
             {icon ? (
               iconPosition === 'right' ? (
                 <>
-                  {title} {iconElement}
+                  <span className={cx('Tabs-link-text mr-1')}>{title}</span>
+                  {iconElement}
                 </>
               ) : (
                 <>
-                  {iconElement} {title}
+                  {iconElement}
+                  <span className={cx('Tabs-link-text ml-1')}>{title}</span>
                 </>
               )
             ) : (
-              title
+              <span className={cx('Tabs-link-text')}>{title}</span>
             )}
             {React.isValidElement(toolbar) ? toolbar : null}
           </>
         )}
       </a>
     );
-
+    const tabTestIdBuidr = testIdBuilder?.getChild(
+      `tab-${typeof title === 'string' ? title : index}`
+    );
     return (
       <li
         className={cx(
@@ -586,13 +673,16 @@ export class Tabs extends React.Component<TabsProps, any> {
         key={this.generateTabKey(hash, eventKey, index)}
         onClick={() => (disabled ? '' : this.handleSelect(eventKey))}
         onDoubleClick={() => {
-          editable && this.handleStartEdit(index, title);
+          editable &&
+            typeof title === 'string' &&
+            this.handleStartEdit(index, title);
         }}
+        {...tabTestIdBuidr?.getChild('link').getTestId()}
       >
         {showTip ? (
           <TooltipWrapper
             placement="top"
-            tooltip={title}
+            tooltip={tip ?? (typeof title === 'string' ? title : '')}
             trigger="hover"
             tooltipClassName={showTipClassName}
           >
@@ -610,6 +700,7 @@ export class Tabs extends React.Component<TabsProps, any> {
               this.props.onClose &&
                 this.props.onClose(index, eventKey ?? index);
             }}
+            {...tabTestIdBuidr?.getChild('close').getTestId()}
           >
             <Icon icon="close" className={cx('Tabs-link-close-icon')} />
           </span>
@@ -648,7 +739,7 @@ export class Tabs extends React.Component<TabsProps, any> {
   }
 
   renderArrow(type: 'left' | 'right') {
-    const {mode: dMode, tabsMode} = this.props;
+    const {mode: dMode, tabsMode, testIdBuilder} = this.props;
     const mode = tabsMode || dMode;
     if (['vertical', 'sidebar'].includes(mode)) {
       return;
@@ -664,8 +755,9 @@ export class Tabs extends React.Component<TabsProps, any> {
           'Tabs-linksContainer-arrow--' + type,
           disabled && 'Tabs-linksContainer-arrow--disabled'
         )}
+        {...testIdBuilder?.getChild(`arrow-${type}`).getTestId()}
       >
-        <i className={'iconfont icon-arrow-' + type} />
+        <Icon icon="right-arrow-bold" className="icon" />
       </div>
     ) : null;
   }
@@ -760,7 +852,9 @@ export class Tabs extends React.Component<TabsProps, any> {
       addable,
       draggable,
       sidePosition,
-      addBtnText
+      addBtnText,
+      mobileUI,
+      testIdBuilder
     } = this.props;
 
     const {isOverflow} = this.state;
@@ -776,6 +870,7 @@ export class Tabs extends React.Component<TabsProps, any> {
           <div
             className={cx('Tabs-addable')}
             onClick={() => this.handleAddBtn()}
+            {...testIdBuilder?.getChild('add-tab').getTestId()}
           >
             <Icon icon="plus" className={cx('Tabs-addable-icon')} />
             {addBtnText}
@@ -796,6 +891,7 @@ export class Tabs extends React.Component<TabsProps, any> {
           className
         )}
         style={style}
+        {...testIdBuilder?.getTestId()}
       >
         {!['vertical', 'sidebar', 'chrome'].includes(mode) ? (
           <div
@@ -810,11 +906,14 @@ export class Tabs extends React.Component<TabsProps, any> {
                 'Tabs-linksContainer',
                 isOverflow && 'Tabs-linksContainer--overflow'
               )}
+              {...testIdBuilder?.getChild('links').getTestId()}
             >
-              {this.renderArrow('left')}
+              {!mobileUI ? this.renderArrow('left') : null}
               <div className={cx('Tabs-linksContainer-main')}>
                 <ul
-                  className={cx('Tabs-links', linksClassName)}
+                  className={cx('Tabs-links', linksClassName, {
+                    'is-mobile': mobileUI
+                  })}
                   role="tablist"
                   ref={this.navMain}
                 >
@@ -823,13 +922,19 @@ export class Tabs extends React.Component<TabsProps, any> {
                   {!isOverflow && toolButtons}
                 </ul>
               </div>
-              {this.renderArrow('right')}
+              {!mobileUI ? this.renderArrow('right') : null}
             </div>
             {isOverflow && toolButtons}
           </div>
         ) : (
           <div className={cx('Tabs-linksWrapper')}>
-            <ul className={cx('Tabs-links', linksClassName)} role="tablist">
+            <ul
+              className={cx('Tabs-links', linksClassName, {
+                'is-mobile': mobileUI
+              })}
+              role="tablist"
+              {...testIdBuilder?.getChild('links').getTestId()}
+            >
               {this.renderNavs()}
               {additionBtns}
               {toolbar}
@@ -843,7 +948,11 @@ export class Tabs extends React.Component<TabsProps, any> {
           })}
         </div>
         {draggable && (
-          <div className={cx('Tabs-drag-tip')} ref={this.dragTipRef} />
+          <div
+            className={cx('Tabs-drag-tip')}
+            ref={this.dragTipRef}
+            {...testIdBuilder?.getChild('drag').getTestId()}
+          />
         )}
       </div>
     );

@@ -10,6 +10,7 @@ import {
 import {ValidatorTag} from '../../validator';
 
 export class InputGroupControlPlugin extends BasePlugin {
+  static id = 'InputGroupControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'input-group';
@@ -21,6 +22,7 @@ export class InputGroupControlPlugin extends BasePlugin {
   icon = 'fa fa-object-group';
   pluginIcon = 'input-group-plugin';
   description = '输入组合，支持多种类型的控件组合';
+  searchKeywords = '输入框组合';
   docLink = '/amis/zh-CN/components/form/input-group';
   tags = ['表单项'];
   scaffold = {

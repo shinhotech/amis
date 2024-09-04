@@ -1,12 +1,19 @@
 import React from 'react';
-import {getSchemaTpl} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  getSchemaTpl,
+  tipedLabel
+} from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {BasePlugin, BaseEventContext} from 'amis-editor-core';
 
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
+import {resolveOptionEventDataSchame, resolveOptionType} from '../../util';
 
 export class TabsTransferPlugin extends BasePlugin {
+  static id = 'TabsTransferPlugin';
   // 关联渲染器名字
   rendererName = 'tabs-transfer';
   $schema = '/schemas/TransferControlSchema.json';
@@ -22,16 +29,15 @@ export class TabsTransferPlugin extends BasePlugin {
   scaffold = {
     label: '组合穿梭器',
     type: 'tabs-transfer',
-    name: 'a',
-    sortable: true,
-    searchable: true,
+    name: 'tabsTransfer',
+    selectMode: 'tree',
     options: [
       {
         label: '成员',
-        selectMode: 'tree',
         children: [
           {
             label: '法师',
+            value: 'fashi',
             children: [
               {
                 label: '诸葛亮',
@@ -41,6 +47,7 @@ export class TabsTransferPlugin extends BasePlugin {
           },
           {
             label: '战士',
+            value: 'zhanshi',
             children: [
               {
                 label: '曹操',
@@ -54,6 +61,7 @@ export class TabsTransferPlugin extends BasePlugin {
           },
           {
             label: '打野',
+            value: 'daye',
             children: [
               {
                 label: '李白',
@@ -73,10 +81,10 @@ export class TabsTransferPlugin extends BasePlugin {
       },
       {
         label: '用户',
-        selectMode: 'chained',
         children: [
           {
             label: '法师',
+            value: 'fashi2',
             children: [
               {
                 label: '诸葛亮',
@@ -86,6 +94,7 @@ export class TabsTransferPlugin extends BasePlugin {
           },
           {
             label: '战士',
+            value: 'zhanshi2',
             children: [
               {
                 label: '曹操',
@@ -99,6 +108,7 @@ export class TabsTransferPlugin extends BasePlugin {
           },
           {
             label: '打野',
+            value: 'daye2',
             children: [
               {
                 label: '李白',
@@ -137,21 +147,25 @@ export class TabsTransferPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+      dataSchema: (manager: EditorManager) => {
+        const {value, items} = resolveOptionEventDataSchame(manager, true);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value,
+                  items
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     },
     {
       eventName: 'tab-change',
@@ -161,9 +175,15 @@ export class TabsTransferPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.key': {
-              type: 'string',
-              title: '当前激活的选项卡索引'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                key: {
+                  type: 'string',
+                  title: '激活的索引'
+                }
+              }
             }
           }
         }
@@ -266,19 +286,11 @@ export class TabsTransferPlugin extends BasePlugin {
                 required: true
               }),
               getSchemaTpl('label'),
-
-              getSchemaTpl('searchable'),
-
-              getSchemaTpl('api', {
-                label: '检索接口',
-                name: 'searchApi'
-              }),
-
               {
-                label: '查询时勾选展示模式',
-                name: 'searchResultMode',
+                label: '左侧选项展示',
+                name: 'selectMode',
                 type: 'select',
-                mode: 'normal',
+                value: 'tree',
                 options: [
                   {
                     label: '列表形式',
@@ -298,22 +310,33 @@ export class TabsTransferPlugin extends BasePlugin {
                   }
                 ]
               },
-
-              getSchemaTpl('sortable'),
-
-              {
-                label: '左侧选项标题',
-                name: 'selectTitle',
-                type: 'input-text',
-                inputClassName: 'is-inline '
-              },
-
               {
                 label: '右侧结果标题',
                 name: 'resultTitle',
                 type: 'input-text',
-                inputClassName: 'is-inline '
-              }
+                inputClassName: 'is-inline ',
+                placeholder: '已选项'
+              },
+              getSchemaTpl('sortable'),
+              getSchemaTpl('searchable', {
+                onChange: (value: any, origin: any, item: any, form: any) => {
+                  if (!value) {
+                    form.setValues({
+                      searchApi: undefined
+                    });
+                  }
+                }
+              }),
+
+              getSchemaTpl('apiControl', {
+                label: tipedLabel(
+                  '检索接口',
+                  '可以通过接口获取检索结果，检索值可以通过变量\\${term}获取，如："https://xxx/search?name=\\${term}"'
+                ),
+                mode: 'normal',
+                name: 'searchApi',
+                visibleOn: '!!searchable'
+              })
             ]
           },
           {
@@ -323,7 +346,14 @@ export class TabsTransferPlugin extends BasePlugin {
                 $ref: 'options',
                 name: 'options'
               },
-              getSchemaTpl('source'),
+              getSchemaTpl('apiControl', {
+                label: tipedLabel(
+                  '获取选项接口',
+                  '可以通过接口获取动态选项，一次拉取全部'
+                ),
+                mode: 'normal',
+                name: 'source'
+              }),
               getSchemaTpl(
                 'loadingConfig',
                 {
@@ -333,15 +363,11 @@ export class TabsTransferPlugin extends BasePlugin {
               ),
               getSchemaTpl('joinValues'),
               getSchemaTpl('delimiter'),
-              getSchemaTpl('extractValue'),
-              getSchemaTpl('autoFillApi', {
-                visibleOn:
-                  '!this.autoFill || this.autoFill.scene && this.autoFill.action'
-              }),
-              getSchemaTpl('autoFill', {
-                visibleOn:
-                  '!this.autoFill || !this.autoFill.scene && !this.autoFill.action'
-              })
+              getSchemaTpl('extractValue')
+              // getSchemaTpl('autoFillApi', {
+              //   visibleOn:
+              //     '!this.autoFill || this.autoFill.scene && this.autoFill.action'
+              // })
             ]
           },
           {
@@ -366,6 +392,45 @@ export class TabsTransferPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.extractValue) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name
+      };
+    } else if (node.schema?.joinValues === false) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name,
+        items: {
+          type: 'object',
+          title: '成员',
+          properties: {
+            [node.schema?.labelField || 'label']: {
+              type: 'string',
+              title: '文本'
+            },
+            [node.schema?.valueField || 'value']: {
+              type,
+              title: '值'
+            }
+          }
+        },
+        originalValue: dataSchema.originalValue
+      };
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(TabsTransferPlugin);

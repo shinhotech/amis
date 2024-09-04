@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/add-to-unscopables.js"],
+  "sourcesContent": ["'use strict';\nvar wellKnownSymbol = require('../internals/well-known-symbol');\nvar create = require('../internals/object-create');\nvar defineProperty = require('../internals/object-define-property').f;\n\nvar UNSCOPABLES = wellKnownSymbol('unscopables');\nvar ArrayPrototype = Array.prototype;\n\n// Array.prototype[@@unscopables]\n// https://tc39.es/ecma262/#sec-array.prototype-@@unscopables\nif (ArrayPrototype[UNSCOPABLES] === undefined) {\n  defineProperty(ArrayPrototype, UNSCOPABLES, {\n    configurable: true,\n    value: create(null)\n  });\n}\n\n// add a key to Array.prototype[@@unscopables]\nmodule.exports = function (key) {\n  ArrayPrototype[UNSCOPABLES][key] = true;\n};\n"],
+  "mappings": ";;;;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,kBAAkB;AACtB,QAAI,SAAS;AACb,QAAI,iBAAiB,iCAA+C;AAEpE,QAAI,cAAc,gBAAgB,aAAa;AAC/C,QAAI,iBAAiB,MAAM;AAI3B,QAAI,eAAe,WAAW,MAAM,QAAW;AAC7C,qBAAe,gBAAgB,aAAa;AAAA,QAC1C,cAAc;AAAA,QACd,OAAO,OAAO,IAAI;AAAA,MACpB,CAAC;AAAA,IACH;AAGA,WAAO,UAAU,SAAU,KAAK;AAC9B,qBAAe,WAAW,EAAE,GAAG,IAAI;AAAA,IACrC;AAAA;AAAA;",
+  "names": []
+}

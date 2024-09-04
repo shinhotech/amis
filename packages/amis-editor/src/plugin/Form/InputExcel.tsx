@@ -14,6 +14,7 @@ import {formItemControl} from '../../component/BaseControl';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 
 export class ExcelControlPlugin extends BasePlugin {
+  static id = 'ExcelControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-excel';
   $schema = '/schemas/ExcelControlSchema.json';
@@ -44,6 +45,8 @@ export class ExcelControlPlugin extends BasePlugin {
   };
   panelTitle = '上传 Excel';
 
+  panelJustify = true;
+
   notRenderFormZone = true;
 
   // 事件定义
@@ -56,9 +59,15 @@ export class ExcelControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: 'excel 解析后的数据'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: 'excel解析后的数据'
+                }
+              }
             }
           }
         }
@@ -76,7 +85,7 @@ export class ExcelControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'setValue',
@@ -116,7 +125,7 @@ export class ExcelControlPlugin extends BasePlugin {
             getSchemaTpl('switch', {
               name: 'includeEmpty',
               label: '是否包含空内容',
-              visibleOn: 'data.parseMode === "array"'
+              visibleOn: 'this.parseMode === "array"'
             })
           ]
         }

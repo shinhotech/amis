@@ -6,7 +6,7 @@
 
 import React from 'react';
 import Html from './Html';
-import {uncontrollable} from 'amis-core';
+import {EnvContext, uncontrollable} from 'amis-core';
 import {findDOMNode} from 'react-dom';
 import Tooltip from './Tooltip';
 import {ClassNamesFn, themeable} from 'amis-core';
@@ -27,7 +27,7 @@ export interface TooltipObject {
   /**
    * 浮层出现位置
    */
-  placement?: 'top' | 'right' | 'bottom' | 'left';
+  placement?: 'top' | 'right' | 'bottom' | 'left' | 'auto';
   /**
    * 主题样式
    */
@@ -80,13 +80,22 @@ export interface TooltipObject {
    * 文字提示浮层CSS类名
    */
   tooltipClassName?: string;
+
+  /**
+   * 文字提示浮层Body的CSS类名
+   */
+  tooltipBodyClassName?: string;
+  /**
+   * html xss filter
+   */
+  filterHtml?: (input: string) => string;
 }
 
 export interface TooltipWrapperProps {
   tooltip?: string | TooltipObject;
   classPrefix: string;
   classnames: ClassNamesFn;
-  placement: 'top' | 'right' | 'bottom' | 'left';
+  placement: 'top' | 'right' | 'bottom' | 'left' | 'auto';
   container?: HTMLElement | (() => HTMLElement | null | undefined);
   trigger: Trigger | Array<Trigger>;
   rootClose: boolean;
@@ -100,6 +109,7 @@ export interface TooltipWrapperProps {
    */
   onVisibleChange?: (visible: boolean) => void;
   children?: React.ReactNode | Array<React.ReactNode>;
+  disabled?: boolean;
 }
 
 interface TooltipWrapperState {
@@ -295,12 +305,14 @@ export class TooltipWrapper extends React.Component<
       trigger,
       rootClose,
       tooltipClassName,
+      tooltipBodyClassName,
       style,
       disabled = false,
       offset,
       tooltipTheme = 'light',
       showArrow = true,
-      children
+      children,
+      filterHtml
     } = tooltipObj;
 
     const childProps: any = {
@@ -342,6 +354,7 @@ export class TooltipWrapper extends React.Component<
           className={tooltipClassName}
           tooltipTheme={tooltipTheme}
           showArrow={showArrow}
+          bodyClassName={tooltipBodyClassName}
           onMouseEnter={
             ~triggers.indexOf('hover') ? this.tooltipMouseEnter : () => {}
           }
@@ -352,7 +365,10 @@ export class TooltipWrapper extends React.Component<
           {children ? (
             <>{typeof children === 'function' ? children() : children}</>
           ) : (
-            <Html html={typeof content === 'string' ? content : ''} />
+            <Html
+              html={typeof content === 'string' ? content : ''}
+              filterHtml={filterHtml}
+            />
           )}
         </Tooltip>
       </Overlay>

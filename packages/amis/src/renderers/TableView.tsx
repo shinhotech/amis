@@ -3,7 +3,14 @@
  */
 
 import React from 'react';
-import {Renderer, RendererProps, resolveMappingObject} from 'amis-core';
+import {
+  Renderer,
+  RendererProps,
+  resolveMappingObject,
+  CustomStyle,
+  setThemeClassName,
+  isVisible
+} from 'amis-core';
 import {BaseSchema, SchemaObject} from '../Schema';
 
 // 为了方便编辑器，目前考虑不区分 th 和 td，但因为可以控制展现，所以能实现一样的效果，同时后续这个组件还承担复杂布局的功能，不适合用 th
@@ -62,6 +69,10 @@ export type TdObject = {
    * 自定义样式
    */
   style?: object;
+
+  visibleOn?: string;
+
+  hiddenOn?: string;
 };
 
 /**
@@ -84,6 +95,10 @@ export type TrObject = {
   tds: TdObject[];
 
   style?: object;
+
+  visibleOn?: string;
+
+  hiddenOn?: string;
 };
 
 /**
@@ -96,7 +111,7 @@ export type ColObject = {
 
 /**
  * 表格展现渲染器
- * 文档：https://baidu.gitee.io/amis/docs/components/table-view
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/table-view
  */
 export interface TableViewSchema extends BaseSchema {
   /**
@@ -171,13 +186,13 @@ export default class TableView extends React.Component<TableViewProps, object> {
   }
 
   renderTd(td: TdObject, colIndex: number, rowIndex: number) {
-    const {border, borderColor, render, style, padding} = this.props;
+    const {border, borderColor, render, data, padding} = this.props;
     const key = `td-${colIndex}`;
     let styleBorder;
     if (border) {
       styleBorder = `1px solid ${borderColor}`;
     }
-    return (
+    return isVisible(td, data) ? (
       <td
         style={{
           border: styleBorder,
@@ -198,7 +213,7 @@ export default class TableView extends React.Component<TableViewProps, object> {
       >
         {this.renderTdBody(td.body)}
       </td>
-    );
+    ) : null;
   }
 
   renderTdBody(body?: SchemaObject) {
@@ -215,14 +230,15 @@ export default class TableView extends React.Component<TableViewProps, object> {
 
   renderTr(tr: TrObject, rowIndex: number) {
     const key = `tr-${rowIndex}`;
-    return (
+    const {data} = this.props;
+    return isVisible(tr, data) ? (
       <tr
         style={{height: tr.height, background: tr.background, ...tr.style}}
         key={key}
       >
         {this.renderTds(tr.tds || [], rowIndex)}
       </tr>
-    );
+    ) : null;
   }
 
   renderTrs(trs: TrObject[]) {
@@ -261,18 +277,68 @@ export default class TableView extends React.Component<TableViewProps, object> {
   }
 
   render() {
-    const {width, trs, classnames: cx, className} = this.props;
+    const {
+      width,
+      trs = [],
+      classnames: cx,
+      className,
+      id,
+      wrapperCustomStyle,
+      env,
+      themeCss,
+      style
+    } = this.props;
 
-    return (
+    const renderNode = (
       <table
-        className={cx('TableView', className)}
+        className={cx(
+          'TableView',
+          className,
+          setThemeClassName({
+            ...this.props,
+            name: 'baseControlClassName',
+            id,
+            themeCss
+          }),
+          setThemeClassName({
+            ...this.props,
+            name: 'wrapperCustomStyle',
+            id,
+            themeCss: wrapperCustomStyle
+          })
+        )}
         style={{width: width, borderCollapse: 'collapse'}}
+        data-id={id}
       >
         {this.renderCaption()}
         {this.renderCols()}
         <tbody>{this.renderTrs(trs)}</tbody>
+        <CustomStyle
+          {...this.props}
+          config={{
+            wrapperCustomStyle,
+            id,
+            themeCss,
+            classNames: [
+              {
+                key: 'baseControlClassName'
+              }
+            ]
+          }}
+          env={env}
+        />
       </table>
     );
+
+    if (style && Object.keys(style).length) {
+      return (
+        <div className="ae-TableViewEditor" style={style}>
+          {renderNode}
+        </div>
+      );
+    }
+
+    return renderNode;
   }
 }
 

@@ -23,7 +23,7 @@ import {getSchemaTpl, tipedLabel} from 'amis-editor-core';
 
 import type {Option} from 'amis';
 import type {FormControlProps} from 'amis-core';
-import {SchemaApi, SchemaObject} from 'amis/lib/Schema';
+import type {SchemaApi} from 'amis';
 
 export type OptionControlItem = Option & {checked?: boolean; _key?: string};
 
@@ -32,13 +32,15 @@ export interface OptionControlProps extends FormControlProps {
   showIconField?: boolean; // 是否有图标字段
 }
 
+export type SourceType = 'custom' | 'api' | 'apicenter' | 'variable';
+
 export interface OptionControlState {
   options: Array<OptionControlItem>;
   api: SchemaApi;
   labelField: string;
   valueField: string;
   iconField: string;
-  source: 'custom' | 'api' | 'apicenter';
+  source: SourceType;
   modalVisible: boolean;
 }
 
@@ -58,28 +60,33 @@ export default class TreeOptionControl extends React.Component<
 
   constructor(props: OptionControlProps) {
     super(props);
-    const {source, labelField, valueField, showIconField, iconField} =
-      props.data || {};
+    const {source, labelField, valueField, showIconField, iconField} = {
+      ...props.data
+    } as any;
     this.state = {
       options: this.transformOptions(props),
       api: source,
       labelField: labelField,
       valueField: valueField,
       iconField: showIconField ? iconField : undefined,
-      source: source ? 'api' : 'custom',
+      source: source
+        ? /\$\{(.*?)\}/g.test(source)
+          ? 'variable'
+          : 'api'
+        : 'custom',
       modalVisible: false
     };
+
     this.sortables = [];
   }
 
   transformOptions(props: OptionControlProps) {
-    const {
-      data: {options}
-    } = props;
-    if (!options || !options.length) {
+    const {value} = props;
+
+    if (!value || !Array.isArray(value) || !value.length) {
       return [{...defaultOption}];
     }
-    return options;
+    return value;
   }
 
   /**
@@ -105,7 +112,7 @@ export default class TreeOptionControl extends React.Component<
    * 更新options字段的统一出口
    */
   onChange() {
-    const {source} = this.state;
+    const {source, api, labelField, valueField, iconField} = this.state;
     const {onBulkChange} = this.props;
     const data: Partial<OptionControlProps> = {
       source: undefined,
@@ -119,13 +126,13 @@ export default class TreeOptionControl extends React.Component<
       data.options = this.pretreatOptions(options);
     }
 
-    if (source === 'api' || source === 'apicenter') {
-      const {api, labelField, valueField, iconField} = this.state;
+    if (source === 'api' || source === 'apicenter' || source === 'variable') {
       data.source = api;
       data.labelField = labelField || undefined;
       data.valueField = valueField || undefined;
       data.iconField = iconField;
     }
+
     onBulkChange && onBulkChange(data);
     return;
   }
@@ -134,8 +141,8 @@ export default class TreeOptionControl extends React.Component<
    * 切换选项类型
    */
   @autobind
-  handleSourceChange(source: 'custom' | 'api' | 'apicenter') {
-    this.setState({source: source}, this.onChange);
+  handleSourceChange(source: SourceType) {
+    this.setState({api: '', source: source}, this.onChange);
   }
 
   renderHeader() {
@@ -160,10 +167,14 @@ export default class TreeOptionControl extends React.Component<
           label: '外部接口',
           value: 'api'
         },
-        ...(hasApiCenter ? [{label: 'API中心', value: 'apicenter'}] : [])
+        ...(hasApiCenter ? [{label: 'API中心', value: 'apicenter'}] : []),
+        {
+          label: '上下文变量',
+          value: 'variable'
+        }
       ] as Array<{
         label: string;
-        value: 'custom' | 'api' | 'apicenter';
+        value: SourceType;
       }>
     ).map(item => ({
       ...item,
@@ -181,11 +192,7 @@ export default class TreeOptionControl extends React.Component<
                 tooltip: labelRemark,
                 className: cx(`Form-lableRemark`, labelRemark?.className),
                 useMobileUI,
-                container: popOverContainer
-                  ? popOverContainer
-                  : env && env.getModalContainer
-                  ? env.getModalContainer
-                  : undefined
+                container: popOverContainer || env.getModalContainer
               })
             : null}
         </label>
@@ -224,18 +231,20 @@ export default class TreeOptionControl extends React.Component<
   @autobind
   handleDelete(pathStr: string, index: number) {
     const options = cloneDeep(this.state.options);
-    if (options.length === 1) {
-      toast.warning('至少保留一个节点', {closeButton: true});
+
+    if (!pathStr.includes('-') && options.length === 1) {
+      toast.warning('至少保留一个根节点', {closeButton: true});
       return;
     }
+
     const path = pathStr.split('-');
     if (path.length === 1) {
       options.splice(index, 1);
     } else {
       const {parentPath} = this.getNodePath(pathStr);
-      const parentNode = get(options, parentPath, {});
+      const parentNode: OptionControlItem = get(options, parentPath, {});
       parentNode?.children?.splice(index, 1);
-      if (!parentNode?.children.length) {
+      if (parentNode?.children?.length === 0) {
         // 去除僵尸子节点
         delete parentNode.children;
       }
@@ -269,7 +278,7 @@ export default class TreeOptionControl extends React.Component<
     } else {
       const index = path[path.length - 1];
       const {parentPath} = this.getNodePath(pathStr);
-      const parentNode = get(options, parentPath, {});
+      const parentNode: OptionControlItem = get(options, parentPath, {});
       parentNode.children?.splice(+index + 1, 0, {...defaultOption});
       set(options, parentPath, parentNode);
     }
@@ -574,9 +583,6 @@ export default class TreeOptionControl extends React.Component<
   renderApiPanel() {
     const {render, showIconField = false} = this.props;
     const {source, api, labelField, valueField, iconField} = this.state;
-    if (source === 'custom') {
-      return null;
-    }
 
     return render(
       'api',
@@ -584,7 +590,7 @@ export default class TreeOptionControl extends React.Component<
         label: '接口',
         name: 'source',
         className: 'ae-ExtendMore',
-        visibleOn: 'data.autoComplete !== false',
+        visibleOn: 'this.autoComplete !== false',
         value: api,
         onChange: this.handleAPIChange,
         sourceType: source,
@@ -624,7 +630,7 @@ export default class TreeOptionControl extends React.Component<
 
   render() {
     const {source} = this.state;
-    const {className} = this.props;
+    const {className, render} = this.props;
 
     return (
       <div className={cx('ae-TreeOptionControl', className)}>
@@ -648,7 +654,22 @@ export default class TreeOptionControl extends React.Component<
           </div>
         ) : null}
 
-        {this.renderApiPanel()}
+        {source === 'api' || source === 'apicenter'
+          ? this.renderApiPanel()
+          : null}
+
+        {source === 'variable'
+          ? render(
+              'variable',
+              getSchemaTpl('sourceBindControl', {
+                label: false,
+                className: 'ae-ExtendMore'
+              }),
+              {
+                onChange: this.handleAPIChange
+              }
+            )
+          : null}
       </div>
     );
   }

@@ -114,6 +114,8 @@ export interface ComboProps<T = any>
   scaffold?: Record<string, any>;
   addButtonClassName?: string;
   addButtonText?: string;
+  addButtonLevel?: string;
+  addButtonSize?: string;
   addable?: boolean;
   // draggable?: boolean;
   // draggableTip?: string;
@@ -138,6 +140,8 @@ export function Combo({
   itemsWrapperClassName,
   itemClassName,
   addButtonClassName,
+  addButtonLevel,
+  addButtonSize,
   itemRender,
   translate: __,
   classnames: cx,
@@ -210,17 +214,18 @@ export function Combo({
     rules: finalRules
   });
 
-  const {trigger} = useFormContext();
+  const {trigger, setValue} = useFormContext();
 
   // useFieldArray 的 update 会更新行 id，导致重新渲染
   // 正在编辑中的元素失去焦点，所以自己写一个
   const lightUpdate = React.useCallback(
     (index: number, value: any) => {
-      const arr = control._getFieldArray(name);
-      arr[index] = {...value};
-      control._updateFieldArray(name, arr);
-      trigger(name);
-      control._subjects.watch.next({});
+      // const arr = control._getFieldArray(name);
+      // arr[index] = {...value};
+      // control._updateFieldArray(name, arr);
+      // trigger(name);
+      // control._subjects.watch.next({});
+      setValue(`${name}.${index}`, value);
     },
     [control]
   );
@@ -271,7 +276,9 @@ export function Combo({
           <div className={cx(`Combo-toolbar`)}>
             <Button
               className={cx(`Combo-addBtn`, addButtonClassName)}
+              level={addButtonLevel ?? 'primary'}
               onClick={() => append({...scaffold})}
+              size={(addButtonSize as any) ?? 'sm'}
             >
               <Icon icon="plus" className="icon" />
               <span>{__(addButtonText || 'add')}</span>
@@ -326,7 +333,13 @@ export function ComboItem({
   classnames: cx,
   formRef
 }: ComboItemProps) {
-  const methods = useSubForm(value, translate, data => update(index, data));
+  const indexRef = React.useRef(index);
+  React.useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+  const methods = useSubForm(value, translate, (data: any) =>
+    update(indexRef.current!, data)
+  );
   React.useEffect(() => {
     formRef?.(methods, index);
     return () => {
@@ -342,7 +355,10 @@ export function ComboItem({
     child = (
       <div className={cx('Form-row')}>
         {child.map((child, index) => (
-          <div className={cx('Form-col')} key={child.key || index}>
+          <div
+            className={cx('Form-col', child?.props.columnClassName)}
+            key={child.key || index}
+          >
             {child}
           </div>
         ))}

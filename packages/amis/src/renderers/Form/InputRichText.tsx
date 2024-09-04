@@ -2,20 +2,21 @@ import React from 'react';
 import {
   FormItem,
   FormControlProps,
-  FormBaseControl,
   buildApi,
-  qsstringify
+  qsstringify,
+  resolveEventData,
+  autobind
 } from 'amis-core';
+import isEqual from 'lodash/isEqual';
 import cx from 'classnames';
 import {LazyComponent} from 'amis-core';
-import {tokenize} from 'amis-core';
 import {normalizeApi} from 'amis-core';
-import {ucFirst} from 'amis-core';
+import {ucFirst, anyChanged} from 'amis-core';
 import type {FormBaseControlSchema, SchemaApi} from '../../Schema';
 
 /**
  * RichText
- * 文档：https://baidu.gitee.io/amis/docs/components/form/input-rich-text
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/input-rich-text
  */
 export interface RichTextControlSchema extends FormBaseControlSchema {
   type: 'input-rich-text';
@@ -103,20 +104,55 @@ export default class RichTextControl extends React.Component<
   };
 
   state = {
+    config: null,
     focused: false
   };
-  config: any = null;
+
   constructor(props: RichTextProps) {
     super(props);
 
-    const finnalVendor =
-      props.vendor || (props.env.richTextToken ? 'froala' : 'tinymce');
     this.handleFocus = this.handleFocus.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
     this.handleChange = this.handleChange.bind(this);
+
+    this.state.config = this.getConfig(props);
+  }
+
+  componentDidUpdate(prevProps: Readonly<RichTextProps>) {
+    const props = this.props;
+    const finnalVendor =
+      props.vendor || (props.env.richTextToken ? 'froala' : 'tinymce');
+
+    if (finnalVendor === 'froala') {
+      if (
+        !isEqual(prevProps.options, props.options) ||
+        !isEqual(prevProps.editorClass, props.editorClass) ||
+        !isEqual(prevProps.placeholder, props.placeholder) ||
+        !isEqual(prevProps.buttons, props.buttons)
+      ) {
+        this.setState({
+          config: this.getConfig(props)
+        });
+      }
+    } else if (finnalVendor === 'tinymce') {
+      if (
+        !isEqual(prevProps.options, props.options) ||
+        !isEqual(prevProps.fileField, props.fileField)
+      ) {
+        this.setState({
+          config: this.getConfig(props)
+        });
+      }
+    }
+  }
+
+  getConfig(props: RichTextProps) {
+    const finnalVendor =
+      props.vendor || (props.env.richTextToken ? 'froala' : 'tinymce');
+
     const imageReceiver = normalizeApi(
       props.receiver,
-      props.receiver.method || 'post'
+      props.receiver?.method || 'post'
     );
     imageReceiver.data = imageReceiver.data || {};
     const imageApi = buildApi(imageReceiver, props.data, {
@@ -131,7 +167,7 @@ export default class RichTextControl extends React.Component<
       const videoApi = buildApi(videoReceiver, props.data, {
         method: props.videoReceiver.method || 'post'
       });
-      this.config = {
+      return {
         imageAllowedTypes: ['jpeg', 'jpg', 'png', 'gif'],
         imageDefaultAlign: 'left',
         imageEditButtons: props.imageEditable
@@ -172,16 +208,14 @@ export default class RichTextControl extends React.Component<
           blur: this.handleBlur
         },
         language:
-          !this.props.locale || this.props.locale === 'zh-CN' ? 'zh_cn' : ''
+          !this.props.locale || this.props.locale === 'zh-CN' ? 'zh_cn' : '',
+        ...(props.buttons ? {toolbarButtons: props.buttons} : {})
       };
-
-      if (props.buttons) {
-        this.config.toolbarButtons = props.buttons;
-      }
     } else {
       const fetcher = props.env.fetcher;
-      this.config = {
+      return {
         ...props.options,
+        onLoaded: this.handleTinyMceLoaded,
         images_upload_handler: (blobInfo: any, progress: any) =>
           new Promise(async (resolve, reject) => {
             const formData = new FormData();
@@ -203,6 +237,15 @@ export default class RichTextControl extends React.Component<
             );
 
             try {
+              if (!imageApi.url) {
+                var reader = new FileReader();
+                reader.readAsDataURL(blobInfo.blob());
+                reader.onloadend = function () {
+                  var base64data = reader.result;
+                  resolve(base64data);
+                };
+                return;
+              }
               const receiver = {
                 adaptor: (payload: object) => {
                   return {
@@ -250,18 +293,31 @@ export default class RichTextControl extends React.Component<
     });
   }
 
-  handleChange(
+  async handleChange(
     value: any,
     submitOnChange?: boolean,
     changeImmediately?: boolean
   ) {
-    const {onChange, disabled} = this.props;
+    const {onChange, disabled, dispatchEvent} = this.props;
 
     if (disabled) {
       return;
     }
 
+    const rendererEvent = await dispatchEvent(
+      'change',
+      resolveEventData(this.props, {value})
+    );
+    if (rendererEvent?.prevented) {
+      return;
+    }
     onChange?.(value, submitOnChange, changeImmediately);
+  }
+
+  @autobind
+  handleTinyMceLoaded(tinymce: any) {
+    const env = this.props.env;
+    return env?.loadTinymcePlugin?.(tinymce);
   }
 
   render() {
@@ -272,6 +328,7 @@ export default class RichTextControl extends React.Component<
       value,
       onChange,
       disabled,
+      static: isStatic,
       size,
       vendor,
       env,
@@ -281,6 +338,19 @@ export default class RichTextControl extends React.Component<
     } = this.props;
 
     const finnalVendor = vendor || (env.richTextToken ? 'froala' : 'tinymce');
+
+    if (isStatic) {
+      return (
+        <div
+          className={cx(`${ns}RichTextControl`, className, {
+            'is-focused': this.state.focused,
+            'is-disabled': disabled,
+            [`${ns}RichTextControl--border${ucFirst(borderMode)}`]: borderMode
+          })}
+          dangerouslySetInnerHTML={{__html: env.filterHtml(value)}}
+        ></div>
+      );
+    }
 
     return (
       <div
@@ -296,7 +366,7 @@ export default class RichTextControl extends React.Component<
           onModelChange={this.handleChange}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
-          config={this.config}
+          config={this.state.config}
           disabled={disabled}
           locale={locale}
           translate={translate}
@@ -308,6 +378,7 @@ export default class RichTextControl extends React.Component<
 
 @FormItem({
   type: 'input-rich-text',
-  sizeMutable: false
+  sizeMutable: false,
+  detectProps: ['options', 'buttons']
 })
 export class RichTextControlRenderer extends RichTextControl {}

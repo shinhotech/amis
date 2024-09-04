@@ -1,4 +1,5 @@
 import {SchemaNode} from '../types';
+import {extendObject} from '../utils';
 import {RendererEvent} from '../utils/renderer-event';
 import {
   RendererAction,
@@ -9,10 +10,18 @@ import {
 
 export interface IDrawerAction extends ListenerAction {
   actionType: 'drawer';
+  // 兼容历史，保留。不建议用args
   args: {
     drawer: SchemaNode;
   };
-  drawer?: SchemaNode; // 兼容历史
+  drawer?: SchemaNode;
+
+  /**
+   * 是否等待确认结果
+   */
+  waitForAction?: boolean;
+
+  outputVar?: string;
 }
 
 /**
@@ -28,15 +37,45 @@ export class DrawerAction implements RendererAction {
     renderer: ListenerContext,
     event: RendererEvent<any>
   ) {
-    renderer.props.onAction?.(
-      event,
-      {
-        actionType: 'drawer',
-        drawer: action.args?.drawer || action.drawer,
-        reload: 'none'
-      },
-      action.data
-    );
+    // 防止editor preview模式下执行
+    if ((action as any).$$id !== undefined) {
+      return;
+    }
+    let ret = renderer.handleAction
+      ? renderer.handleAction(
+          event,
+          {
+            actionType: 'drawer',
+            drawer: action.drawer,
+            reload: 'none',
+            data: action.rawData
+          },
+          action.data
+        )
+      : renderer.props.onAction?.(
+          event,
+          {
+            actionType: 'drawer',
+            drawer: action.drawer,
+            reload: 'none',
+            data: action.rawData
+          },
+          action.data
+        );
+
+    event.pendingPromise.push(ret);
+    if (action.waitForAction) {
+      const {confirmed, value} = await ret;
+
+      event.setData(
+        extendObject(event.data, {
+          [action.outputVar || 'drawerResponse']: {
+            confirmed,
+            value
+          }
+        })
+      );
+    }
   }
 }
 

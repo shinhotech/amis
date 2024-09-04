@@ -1,5 +1,6 @@
 import React from 'react';
 import {getPropValue, FormControlProps} from 'amis-core';
+import {ErrorBoundary} from 'amis-core';
 
 function renderCommonStatic(props: any, defaultValue: string) {
   const {type, render, staticSchema} = props;
@@ -22,6 +23,7 @@ function renderCommonStatic(props: any, defaultValue: string) {
     case 'transfer-picker':
     case 'tabs-transfer':
     case 'tabs-transfer-picker':
+    case 'picker':
       return render('static-select', {type: 'words'}, staticProps);
 
     case 'input-date':
@@ -132,7 +134,21 @@ export function supportStatic<T extends FormControlProps>() {
           body = renderCommonStatic(props, displayValue);
         }
 
-        return <div className={cx(`${ns}Form-static`, className)}>{body}</div>;
+        return (
+          <ErrorBoundary
+            customErrorMsg={`拦截到${props.$schema.type}渲染错误`}
+            fallback={() => {
+              return (
+                <div className="renderer-error-boundary">
+                  {props.$schema?.type}
+                  渲染发生错误，详细错误信息请查看控制台输出。
+                </div>
+              );
+            }}
+          >
+            <div className={cx(`${ns}Form-static`, className)}>{body}</div>
+          </ErrorBoundary>
+        );
       }
 
       return original.apply(this, args);
@@ -142,11 +158,21 @@ export function supportStatic<T extends FormControlProps>() {
 }
 
 function renderStaticDateTypes(props: any) {
-  const {render, type, inputFormat, timeFormat, format, value} = props;
+  const {
+    render,
+    type,
+    inputFormat,
+    valueFormat,
+    timeFormat,
+    displayFormat,
+    format,
+    value
+  } = props;
   return render('static-input-date', {
     type: 'date',
     value,
-    format: type === 'time' && timeFormat ? timeFormat : inputFormat,
-    valueFormat: format
+    format:
+      type === 'time' && timeFormat ? timeFormat : displayFormat ?? inputFormat,
+    valueFormat: valueFormat || format
   });
 }

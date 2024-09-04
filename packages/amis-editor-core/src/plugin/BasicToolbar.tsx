@@ -38,6 +38,7 @@ export class BasicToolbarPlugin extends BasePlugin {
 
       if ((node.draggable || draggableContainer) && !isSorptionContainer) {
         toolbars.push({
+          id: 'drag',
           iconSvg: 'drag-btn',
           icon: 'fa fa-arrows',
           tooltip: '按住拖动调整位置',
@@ -121,12 +122,14 @@ export class BasicToolbarPlugin extends BasePlugin {
 
       if (
         !host?.memberImmutable(regionNode.region) &&
-        store.panels.some(Panel => Panel.key === 'renderers')
+        store.panels.some(Panel => Panel.key === 'renderers') &&
+        store.toolbarMode === 'default'
       ) {
         const nextId = parent[idx + 1]?.$$id;
 
         toolbars.push(
           {
+            id: 'insert-before',
             iconSvg: 'left-arrow-to-left',
             tooltip: '向前插入组件',
             // level: 'special',
@@ -146,6 +149,7 @@ export class BasicToolbarPlugin extends BasePlugin {
               )
           },
           {
+            id: 'insert-after',
             iconSvg: 'arrow-to-right',
             tooltip: '向后插入组件',
             // level: 'special',
@@ -173,6 +177,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       (node.info.plugin.popOverBody || node.info.plugin.popOverBodyCreator)
     ) {
       toolbars.push({
+        id: 'edit',
         icon: 'fa fa-pencil',
         tooltip: '编辑',
         placement: 'bottom',
@@ -193,6 +198,7 @@ export class BasicToolbarPlugin extends BasePlugin {
 
     if (node.removable || node.removable === undefined) {
       toolbars.push({
+        id: 'delete',
         iconSvg: 'delete-btn',
         icon: 'fa',
         tooltip: '删除',
@@ -201,28 +207,41 @@ export class BasicToolbarPlugin extends BasePlugin {
         onClick: this.manager.del.bind(this.manager, id)
       });
     }
+    if (store.toolbarMode === 'default') {
+      toolbars.push({
+        id: 'more',
+        iconSvg: 'more-btn',
+        icon: 'fa fa-cog',
+        tooltip: '更多',
+        placement: 'bottom',
+        order: 1000,
+        onClick: e => {
+          if (!e.defaultPrevented) {
+            const info = (
+              e.target as HTMLElement
+            ).parentElement!.getBoundingClientRect();
 
-    toolbars.push({
-      iconSvg: 'more-btn',
-      icon: 'fa fa-cog',
-      tooltip: '更多',
-      placement: 'bottom',
-      order: 1000,
-      onClick: e => {
-        if (!e.defaultPrevented) {
-          const info = (
-            e.target as HTMLElement
-          ).parentElement!.getBoundingClientRect();
-          this.manager.openContextMenu(id, '', {
-            x: window.scrollX + info.left + info.width - 155,
-            y: window.scrollY + info.top + info.height + 8
-          });
+            // 150 是 contextMenu 的宽度
+            // 默认右对齐
+            let x = window.scrollX + info.left + info.width - 150;
+
+            // 显示不全是改成左对齐
+            if (x < 0) {
+              x = window.scrollX + info.left;
+            }
+
+            this.manager.openContextMenu(id, '', {
+              x: x,
+              y: window.scrollY + info.top + info.height + 8
+            });
+          }
         }
-      }
-    });
+      });
+    }
 
     if (info.scaffoldForm?.canRebuild ?? info.plugin.scaffoldForm?.canRebuild) {
       toolbars.push({
+        id: 'build',
         iconSvg: 'harmmer',
         tooltip: `快速构建「${info.plugin.name}」`,
         placement: 'bottom',
@@ -246,20 +265,29 @@ export class BasicToolbarPlugin extends BasePlugin {
 
     if (selections.length) {
       // 多选时的右键菜单
-      menus.push({
-        label: '重复一份',
-        icon: 'copy-icon',
-        disabled: selections.some(item => !item.node.duplicatable),
-        onSelect: () => manager.duplicate(selections.map(item => item.id))
-      });
+      if (store.toolbarMode === 'default') {
+        menus.push({
+          id: 'copy',
+          label: '重复一份',
+          icon: 'copy-icon',
+          disabled: selections.some(item => !item.node.duplicatable),
+          onSelect: () => manager.duplicate(selections.map(item => item.id))
+        });
+      }
 
       menus.push({
+        id: 'unselect',
         label: '取消多选',
         icon: 'cancel-icon',
-        onSelect: () => store.setActiveId(id)
+        onSelect: () =>
+          store.setActiveId(
+            id,
+            region || node.childRegions.find(i => i.region)?.region
+          )
       });
 
       menus.push({
+        id: 'delete',
         label: '删除',
         icon: 'delete-icon',
         disabled: selections.some(item => !item.node.removable),
@@ -281,23 +309,30 @@ export class BasicToolbarPlugin extends BasePlugin {
         });
         */
         menus.push({
+          id: 'insert',
           label: '插入组件',
           onHighlight: (isOn: boolean) => isOn && store.setHoverId(id, region),
           onSelect: () => store.showInsertRendererPanel()
         });
 
         menus.push({
+          id: 'clear',
           label: '清空',
           onSelect: () => manager.emptyRegion(id, region)
         });
 
         menus.push({
+          id: 'paste',
           label: '粘贴',
           onSelect: () => manager.paste(id, region)
         });
       }
     } else {
+      if (store.toolbarMode === 'mini') {
+        return;
+      }
       menus.push({
+        id: 'select',
         label: `选中${first.label}`,
         disabled: store.activeId === first.id,
         data: id,
@@ -326,6 +361,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       }
 
       menus.push({
+        id: 'unselect',
         label: '取消选中',
         disabled: !store.activeId || store.activeId !== id,
         onSelect: () => store.setActiveId('')
@@ -334,23 +370,27 @@ export class BasicToolbarPlugin extends BasePlugin {
       menus.push('|');
 
       menus.push({
+        id: 'copy',
         label: '重复一份',
         disabled: !node.duplicatable,
         onSelect: () => manager.duplicate(id)
       });
 
       menus.push({
+        id: 'copy-config',
         label: '复制配置',
         onSelect: () => manager.copy(id)
       });
 
       menus.push({
+        id: 'cat-config',
         label: '剪切配置',
         disabled: !node.removable,
         onSelect: () => manager.cut(id)
       });
 
       menus.push({
+        id: 'paste-config',
         label: '粘贴配置',
         disabled:
           !Array.isArray(parent) ||
@@ -361,6 +401,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       });
 
       menus.push({
+        id: 'delete',
         label: '删除',
         disabled: !node.removable,
         className: 'text-danger',
@@ -372,6 +413,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       const idx = Array.isArray(parent) ? parent.indexOf(schema) : -1;
 
       menus.push({
+        id: 'move-forward',
         label: '向前移动',
         disabled: !(Array.isArray(parent) && idx > 0) || !node.moveable,
         // || !node.prevSibling,
@@ -379,6 +421,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       });
 
       menus.push({
+        id: 'move-backward',
         label: '向后移动',
         disabled:
           !(Array.isArray(parent) && idx < parent.length - 1) || !node.moveable,
@@ -450,12 +493,14 @@ export class BasicToolbarPlugin extends BasePlugin {
       // });
 
       menus.push({
+        id: 'undo',
         label: '撤销（Undo）',
         disabled: !store.canUndo,
         onSelect: () => store.undo()
       });
 
       menus.push({
+        id: 'redo',
         label: '重做（Redo）',
         disabled: !store.canRedo,
         onSelect: () => store.redo()
@@ -499,6 +544,7 @@ export class BasicToolbarPlugin extends BasePlugin {
       if (first.childRegions.length && renderersPanel) {
         if (first.childRegions.length > 1) {
           menus.push({
+            id: 'insert',
             label: '插入组件',
             children: first.childRegions.map(region => ({
               label: `${region.label}`,
@@ -510,6 +556,7 @@ export class BasicToolbarPlugin extends BasePlugin {
           });
         } else {
           menus.push({
+            id: 'insert',
             label: '插入组件',
             data: first.childRegions[0].region,
             onHighlight: (isOn: boolean, region: string) =>
@@ -518,8 +565,17 @@ export class BasicToolbarPlugin extends BasePlugin {
           });
         }
       }
+      if (node.type === 'container') {
+        menus.push({
+          id: 'clear',
+          label: '清空容器',
+          disabled: !node.schema.body?.length,
+          onSelect: () => manager.emptyRegion(id, 'body')
+        });
+      }
 
       menus.push({
+        id: 'replace',
         label: '替换组件',
         disabled:
           !node.host ||
@@ -536,8 +592,9 @@ export class BasicToolbarPlugin extends BasePlugin {
       (info.plugin.scaffoldForm?.canRebuild || info.scaffoldForm?.canRebuild)
     ) {
       menus.push({
+        id: 'build',
         label: `快速构建「${info.plugin.name}」`,
-        disabled: schema.$$commonSchema,
+        disabled: schema.$$commonSchema || schema.$$formSchema,
         onSelect: () =>
           this.manager.reScaffold(
             id,
@@ -574,7 +631,6 @@ export class BasicToolbarPlugin extends BasePlugin {
         menus: menus,
         render: this.manager.makeSchemaFormRender({
           body: [
-            // @ts-ignore amis中有问题，可选参数搞成了必选，改完了可以去掉这行
             {
               type: 'button-group',
               buttons: menus
@@ -584,7 +640,7 @@ export class BasicToolbarPlugin extends BasePlugin {
                   type: 'button',
                   onClick: (menu as MenuItem).onSelect
                 }))
-            }
+            } as any
           ],
           panelById: store.activeId
         })

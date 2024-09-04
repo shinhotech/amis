@@ -1,5 +1,9 @@
 .#{$ns}List {
   position: relative;
+  // 黑科技，让 scrollIntoView 能够跑正确的位置
+  // margin-top: calc(var(--affix-offset-top) * -1);
+  // padding-top: var(--affix-offset-top);
+  scroll-margin-top: var(--affix-offset-top);
 
   &-items {
     border-radius: var(--List-borderRadius);
@@ -12,7 +16,8 @@
     @include clearfix();
     display: flex;
     flex-wrap: wrap;
-    margin: 0 var(--List-toolbar-marginX) var(--List-toolbar-marginY);
+    padding: var(--List-toolbar-marginY) var(--List-toolbar-marginX)
+      var(--List-toolbar-marginY);
   }
 
   &-actions {
@@ -42,18 +47,12 @@
   }
 
   &-fixedTop {
-    position: absolute;
+    position: sticky;
     background: var(--white);
-    z-index: -1;
-    opacity: 0;
-    box-shadow: var(--List-fixedTop-boxShadow);
+    z-index: $zindex-sticky;
+    top: var(--affix-offset-top);
+    // box-shadow: var(--List-fixedTop-boxShadow);
     // padding: var(--gap-sm);
-
-    &.in {
-      position: fixed;
-      opacity: 1;
-      z-index: $zindex-affix;
-    }
 
     .#{$ns}Cards-toolbar {
       margin-bottom: 0;
@@ -83,6 +82,14 @@
     text-align: center;
     min-height: var(--List-placeholder-height);
     line-height: var(--List-placeholder-height);
+  }
+
+  &-footToolbar--affix,
+  &-footer--affix {
+    position: sticky;
+    bottom: var(--affix-offset-bottom);
+    background: var(--Table-bg);
+    z-index: $zindex-sticky;
   }
 }
 

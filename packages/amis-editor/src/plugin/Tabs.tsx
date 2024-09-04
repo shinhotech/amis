@@ -24,6 +24,7 @@ import {
 } from '../renderer/event-control/helper';
 
 export class TabsPlugin extends BasePlugin {
+  static id = 'TabsPlugin';
   // 关联渲染器名字
   rendererName = 'tabs';
   $schema = '/schemas/TabsSchema.json';
@@ -33,7 +34,7 @@ export class TabsPlugin extends BasePlugin {
   isBaseComponent = true;
   description = '选项卡，可以将内容分组用选项卡的形式展示，降低用户使用成本。';
   docLink = '/amis/zh-CN/components/tabs';
-  tags = ['容器'];
+  tags = ['布局容器'];
   icon = 'fa fa-folder-o';
   pluginIcon = 'tabs-plugin';
   scaffold = {
@@ -41,13 +42,14 @@ export class TabsPlugin extends BasePlugin {
     tabs: [
       {
         title: '选项卡1',
-        body: '内容1'
+        body: []
       },
       {
         title: '选项卡2',
-        body: '内容2'
+        body: []
       }
-    ]
+    ],
+    mountOnEnter: true
   };
   previewSchema = {
     ...this.scaffold
@@ -74,9 +76,15 @@ export class TabsPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选项卡索引'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '选项卡索引'
+                }
+              }
             }
           }
         }
@@ -102,18 +110,6 @@ export class TabsPlugin extends BasePlugin {
         );
       },
       schema: getArgsWrapper(
-        /*
-        {
-          type: 'input-formula',
-          variables: '${variables}',
-          evalMode: false,
-          variableMode: 'tabs',
-          label: '激活项',
-          size: 'lg',
-          name: 'activeKey',
-          mode: 'horizontal'
-        }
-        */
         getSchemaTpl('formulaControl', {
           name: 'activeKey',
           label: '激活项',
@@ -128,7 +124,7 @@ export class TabsPlugin extends BasePlugin {
   panelJustify = true;
   panelBodyCreator = (context: BaseEventContext) => {
     const isNewTabMode =
-      'data.tabsMode !=="vertical" && data.tabsMode !=="sidebar" && data.tabsMode !=="chrome"';
+      'this.tabsMode !=="vertical" && this.tabsMode !=="sidebar" && this.tabsMode !=="chrome"';
 
     return getSchemaTpl('tabs', [
       {
@@ -149,11 +145,13 @@ export class TabsPlugin extends BasePlugin {
                 minLength: 1,
                 scaffold: {
                   title: '选项卡',
-                  body: {
-                    type: 'tpl',
-                    tpl: '内容',
-                    inline: false
-                  }
+                  body: [
+                    {
+                      type: 'tpl',
+                      tpl: '内容',
+                      inline: false
+                    }
+                  ]
                 },
                 items: [
                   getSchemaTpl('title', {
@@ -175,11 +173,24 @@ export class TabsPlugin extends BasePlugin {
 
               {
                 label: tipedLabel(
-                  '默认选项卡',
-                  '默认显示某个选项卡，选项卡配置hash时使用hash，否则使用索引值，支持获取变量，如：<code>tab\\${id}</code>、<code>\\${id}</code>'
+                  '初始选项卡',
+                  '组件初始化时激活的选项卡，优先级高于激活的选项卡，不可响应上下文数据，选项卡配置hash时使用hash，否则使用索引值，支持获取变量，如：<code>tab\\${id}</code>、<code>\\${id}</code>'
+                ),
+                type: 'input-text',
+                name: 'defaultKey',
+                placeholder: '初始默认激活的选项卡',
+                pipeOut: (data: string) =>
+                  data === '' || isNaN(Number(data)) ? data : Number(data)
+              },
+
+              {
+                label: tipedLabel(
+                  '激活的选项卡',
+                  '默认显示某个选项卡，可响应上下文数据，选项卡配置hash时使用hash，否则使用索引值，支持获取变量，如：<code>tab\\${id}</code>、<code>\\${id}</code>'
                 ),
                 type: 'input-text',
                 name: 'activeKey',
+                placeholder: '默认激活的选项卡',
                 pipeOut: (data: string) =>
                   data === '' || isNaN(Number(data)) ? data : Number(data)
               }
@@ -189,13 +200,11 @@ export class TabsPlugin extends BasePlugin {
           {
             title: '高级',
             body: [
-              getSchemaTpl('expressionFormulaControl', {
-                evalMode: true,
+              getSchemaTpl('sourceBindControl', {
                 label: tipedLabel(
                   '关联数据',
                   '根据该数据来动态重复渲染所配置的选项卡'
-                ),
-                name: 'source'
+                )
               }),
               getSchemaTpl('switch', {
                 name: 'mountOnEnter',
@@ -275,7 +284,7 @@ export class TabsPlugin extends BasePlugin {
                   label: '标题区位置',
                   name: 'sidePosition',
                   pipeIn: defaultValue('left'),
-                  visibleOn: 'data.tabsMode === "sidebar"',
+                  visibleOn: 'this.tabsMode === "sidebar"',
                   clearValueOnHidden: true
                 })
               ]
@@ -301,7 +310,7 @@ export class TabsPlugin extends BasePlugin {
                 getSchemaTpl('className', {
                   name: 'showTipClassName',
                   label: '提示',
-                  visibleOn: 'data.showTip',
+                  visibleOn: 'this.showTip',
                   clearValueOnHidden: true
                 })
               ]
@@ -362,7 +371,7 @@ export class TabsPlugin extends BasePlugin {
                         label: '位置',
                         name: 'iconPosition',
                         pipeIn: defaultValue('left'),
-                        visibleOn: 'data.icon',
+                        visibleOn: 'this.icon',
                         clearValueOnHidden: true
                       })
                     ]

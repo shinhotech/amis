@@ -11,13 +11,9 @@
   }
 
   > .#{$ns}TagControl-popover {
-    // box-shadow: none;
     padding: 0;
-    border: none;
     width: 100%;
-    margin-top: calc(
-      var(--Form-select-popoverGap) - var(--Form-select-outer-borderWidth)
-    );
+    margin-top: px2rem(4px);
 
     &.#{$ns}PopOver--leftBottomLeftTop {
       top: 100% !important;
@@ -106,9 +102,14 @@
       }
     }
   }
+  &.is-error > .#{$ns}ResultBox {
+    border-color: var(--Form-input-onError-borderColor);
+    background: var(--Form-input-onError-bg);
+  }
 }
 
-.#{$ns}TagControl-popover {
+.#{$ns}TagControl-popover,
+.#{$ns}ListMenu-popover {
   &.#{$ns}PopOver--leftBottomLeftTop > .#{$ns}ListMenu {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -117,6 +118,13 @@
   &.#{$ns}PopOver--leftTopLeftBottom > .#{$ns}ListMenu {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+  }
+
+  .#{$ns}ListMenu {
+    padding: px2rem(4px) 0;
+    max-height: var(--inputTag-popover-maxHeight);
+    overflow: auto;
+    user-select: none;
   }
 
   .#{$ns}ListMenu-item {

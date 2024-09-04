@@ -3,11 +3,10 @@ import {registerEditorPlugin} from 'amis-editor-core';
 import {DateRangeControlPlugin} from './InputDateRange';
 
 export class DateTimeRangeControlPlugin extends DateRangeControlPlugin {
+  static id = 'DateTimeRangeControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-datetime-range';
   $schema = '/schemas/DateTimeRangeControlSchema.json';
-
-  order = -440;
 
   // 组件名称
   icon = 'fa fa-calendar';

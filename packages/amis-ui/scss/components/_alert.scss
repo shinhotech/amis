@@ -38,6 +38,7 @@
 
   &-content {
     flex: 1;
+    min-width: 0;
 
     .#{$ns}Alert-title {
       color: var(--alert-base-title-color);
@@ -48,8 +49,13 @@
     }
 
     .#{$ns}Alert-desc {
+      min-height: #{px2rem(24px)};
       line-height: #{px2rem(24px)};
     }
+  }
+
+  &-actions {
+    margin-right: var(--Alert-actions-marginRight);
   }
 
   &-close {

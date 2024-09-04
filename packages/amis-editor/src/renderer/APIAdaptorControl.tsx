@@ -6,9 +6,10 @@ import React from 'react';
 import cx from 'classnames';
 import {autobind, getSchemaTpl, setSchemaTpl} from 'amis-editor-core';
 import {tipedLabel} from 'amis-editor-core';
-import {FormControlProps, render} from 'amis-core';
+import {FormControlProps} from 'amis-core';
 import {FormItem, Icon, TooltipWrapper} from 'amis';
 import {TooltipObject} from 'amis-ui/lib/components/TooltipWrapper';
+
 interface AdaptorFuncParam {
   label: string;
   tip?: string | TooltipObject;
@@ -53,7 +54,6 @@ export default class APIAdaptorControl extends React.Component<
   APIAdaptorControlProps,
   APIAdaptorControlState
 > {
-
   static defaultProps: Pick<APIAdaptorControlProps, 'params'> = {
     params: []
   };
@@ -65,14 +65,6 @@ export default class APIAdaptorControl extends React.Component<
     };
   }
 
-  componentDidUpdate(prevProps: Readonly<APIAdaptorControlProps>): void {
-    if (this.props.value !== prevProps.value) {
-      this.setState({
-        switch: !!this.props.value
-      });
-    }
-  }
-
   @autobind
   onChange(value: any = '') {
     this.props.onChange?.(value);
@@ -80,6 +72,7 @@ export default class APIAdaptorControl extends React.Component<
 
   // 生成tooltip 的参数
   genTooltipProps(content: any, othersProps?: TooltipObject) {
+    const {render} = this.props;
     return {
       tooltipTheme: 'light',
       trigger: 'hover',
@@ -89,13 +82,15 @@ export default class APIAdaptorControl extends React.Component<
       ...(typeof content === 'string'
         ? {content}
         : {
-          content: ' ', // amis缺陷，必须有这个字段，否则显示不出来
-          children: () => content
-        }
-      ),
-      ...this.props.tooltipProps || {},
-      ...othersProps || {}
-    }
+            content: ' ', // amis缺陷，必须有这个字段，否则显示不出来
+            children: () =>
+              React.isValidElement(content)
+                ? content
+                : render('content', content)
+          }),
+      ...(this.props.tooltipProps || {}),
+      ...(othersProps || {})
+    };
   }
 
   renderEditor() {
@@ -108,63 +103,33 @@ export default class APIAdaptorControl extends React.Component<
       params = [],
       allowFullscreen,
       value,
-      name,
       editorPlaceholder,
       editorDesc,
-      mergeParams
+      mergeParams,
+      mode
     } = this.props;
 
-    const lastParams = typeof mergeParams === 'function'
-      ? mergeParams(params) : params;
-
-    return render('api-adaptor-control-editor', [
-      {
-        type: 'container',
-        className: 'ae-AdaptorControl-func-header',
-        body: [
-          '<span class="mtk6">function&nbsp;</span>',
-          '<span class="mtk1 bracket-highlighting-0">(</span>',
-          ...lastParams.map(({label, tip}, index) => {
-            return [
-              {
-                type: 'button',
-                level: 'link',
-                label,
-                className: 'ae-AdaptorControl-func-arg',
-                ...tip ? {tooltip: this.genTooltipProps(tip)} : {}
-              },
-              ...(index === lastParams.length - 1
-                ? [] : ['<span class="mtk1">,&nbsp;</span>']
-              )
-            ]
-          }).flat(),
-          '<span class="mtk1 bracket-highlighting-0">)&nbsp;{</span>'
-        ]
-      },
-      {
-        label: '',
-        mode: 'normal',
-        name: '__editor_' + name,
-        type: 'js-editor',
-        className: 'ae-AdaptorControl-func-editor',
-        allowFullscreen,
-        value,
-        placeholder: editorPlaceholder || '',
-        onChange: (value: any) => {
-          this.onChange(value);
-        }
-      },
-      {
-        type: 'container',
-        body: '<span class="mtk1 bracket-highlighting-0">}</span>',
-        className: 'ae-AdaptorControl-func-footer'
-      },
-      {
-        type: 'container',
-        className: 'cxd-Form-description',
-        body: editorDesc
-      }
-    ]);
+    return (
+      <>
+        {render(
+          'api-adaptor-control-editor',
+          {
+            type: 'ae-functionEditorControl',
+            name: 'functionEditorControl',
+            placeholder: editorPlaceholder,
+            desc: editorDesc,
+            allowFullscreen,
+            params,
+            mode: mode || 'normal'
+          },
+          {
+            value,
+            mergeParams,
+            onChange: this.onChange
+          }
+        )}
+      </>
+    );
   }
 
   renderSwitch() {
@@ -190,20 +155,22 @@ export default class APIAdaptorControl extends React.Component<
             });
           }
         },
-        ...switchTip ? [
-          <TooltipWrapper
-            key="TooltipWrapper"
-            tooltip={this.genTooltipProps(switchTip, {
-              placement: 'right'
-            })}
-          >
-            <Icon
-              icon="editor-help"
-              className="icon"
-              color="#84868c"
-            />
-          </TooltipWrapper>
-        ] : []
+        ...(switchTip
+          ? [
+              <TooltipWrapper
+                key="TooltipWrapper"
+                tooltip={
+                  this.genTooltipProps(switchTip, {
+                    placement: 'right'
+                  }) as any
+                }
+              >
+                <span className="leading-3 cursor-pointer">
+                  <Icon icon="editor-help" className="icon" color="#84868c" />
+                </span>
+              </TooltipWrapper>
+            ]
+          : [])
       ]
     });
   }
@@ -216,7 +183,7 @@ export default class APIAdaptorControl extends React.Component<
         {this.renderSwitch()}
         {this.renderEditor()}
       </div>
-    )
+    );
   }
 }
 @FormItem({
@@ -230,13 +197,16 @@ export class APIAdaptorControlRenderer extends APIAdaptorControl {}
  * @param size 渲染区域的width, height, 代码区域是异步渲染，tooltip时计算会偏移
  * @returns
  */
-const genCodeSchema = (code: string, size?: string[]) => ({
+export const genCodeSchema = (code: string, size?: string[]) => ({
   type: 'container',
-  ...!size ? {}
-    : {style: {
-      width: size[0],
-      height: size[1]
-    }},
+  ...(!size
+    ? {}
+    : {
+        style: {
+          width: size[0],
+          height: size[1]
+        }
+      }),
   body: {
     type: 'code',
     language: 'typescript',
@@ -246,8 +216,7 @@ const genCodeSchema = (code: string, size?: string[]) => ({
 });
 
 // 请求适配器 示例代码
-export const requestAdaptorDefaultCode =
-`api.data.count = api.data.count + 1;
+export const requestAdaptorDefaultCode = `api.data.count = api.data.count + 1;
 return api;`;
 
 // 适配器 适配器 api 参数说明
@@ -259,9 +228,21 @@ export const adaptorApiStruct = `{
   ...
 }`;
 
-export const adaptorApiStructTooltip =
-  render(genCodeSchema(adaptorApiStruct, ['350px', '128px']))
-;
+// 适配器 适配器 context 参数说明
+export const adaptorContextStruct = `{
+  // 上下文数据
+  [key: string]: any;
+}`;
+
+export const adaptorApiStructTooltip = genCodeSchema(adaptorApiStruct, [
+  '350px',
+  '128px'
+]);
+
+export const adaptorContextStructTooltip = genCodeSchema(adaptorContextStruct, [
+  '350px',
+  '128px'
+]);
 
 // 适配器 response 参数说明
 export const adaptorResponseStruct = `{
@@ -273,13 +254,13 @@ export const adaptorResponseStruct = `{
   ...
 }`;
 
-export const adaptorResponseStructTooltip =
-  render(genCodeSchema(adaptorResponseStruct, ['345px', '144px']))
-;
+export const adaptorResponseStructTooltip = genCodeSchema(
+  adaptorResponseStruct,
+  ['345px', '144px']
+);
 
 // 接收适配器 示例代码
-export const adaptorDefaultCode =
-`// API响应或自定义处理后需要符合以下格式
+export const adaptorDefaultCode = `// API响应或自定义处理后需要符合以下格式
 return {
     status: 0, // 0 表示请求成功，否则按错误处理
     msg: '请求成功',
@@ -291,8 +272,7 @@ return {
     }
 }`;
 
-export const validateApiAdaptorDefaultCode =
-`// 校验成功
+export const validateApiAdaptorDefaultCode = `// 校验成功
 return {
     status: 0
 };
@@ -399,9 +379,8 @@ setSchemaTpl('apiRequestAdaptor', {
     &nbsp;1. <span style="color: #108CEE">api</span>：接口的schema配置对象<br/>
     &nbsp;2. <span style="color: #108CEE">api.data</span>：请求数据<br/>
     &nbsp;3. <span style="color: #108CEE">api.query</span>：请求查询参数<br/>
-    &nbsp;4. <span style="color: #108CEE">api.body</span>：请求体（针对POST/PUT/PATCH）<br/>
-    &nbsp;5. <span style="color: #108CEE">api.headers</span>：请求头<br/>
-    &nbsp;6. <span style="color: #108CEE">api.url</span>：请求地址<br/>`
+    &nbsp;4. <span style="color: #108CEE">api.headers</span>：请求头<br/>
+    &nbsp;5. <span style="color: #108CEE">api.url</span>：请求地址<br/>`
   ),
   name: 'requestAdaptor',
   type: 'ae-apiAdaptorControl',
@@ -411,6 +390,10 @@ setSchemaTpl('apiRequestAdaptor', {
     {
       label: 'api',
       tip: adaptorApiStructTooltip
+    },
+    {
+      label: 'context',
+      tip: adaptorContextStructTooltip
     }
   ]
 });
@@ -441,11 +424,11 @@ setSchemaTpl('apiAdaptor', {
     }
   ],
   editorPlaceholder: adaptorDefaultCode,
-  switchTip: render(adaptorEditorDescSchema)
+  switchTip: adaptorEditorDescSchema
 });
 
 setSchemaTpl('validateApiAdaptor', {
   ...getSchemaTpl('apiAdaptor'),
   editorPlaceholder: validateApiAdaptorDefaultCode,
-  switchTip: render(validateApiAdaptorEditorDescSchema)
+  switchTip: validateApiAdaptorEditorDescSchema
 });

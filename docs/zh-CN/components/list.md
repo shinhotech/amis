@@ -292,17 +292,604 @@ interface ListBodyField {
 
 ## 事件表
 
-当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`来获取事件产生的数据（`< 2.3.2 及以下版本 为 ${event.data.[事件参数名]}`），详细请查看[事件动作](../../docs/concepts/event-action)。
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`或`${event.data.[事件参数名]}`来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
 
 > `[name]`表示当前组件绑定的名称，即`name`属性，如果没有配置`name`属性，则通过`value`取值。
 
-| 事件名称  | 事件参数      | 说明                                                                                                                                         | 版本    |
-| --------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| itemClick | `item: IItem` | 单行被点击时触发，[`IItem`](./list#iitem)为点击行的信息。注意`itemAction`和`onEvent`是互斥的，List 组件中的`onEvent`会覆盖`itemAction`的行为 | `2.4.0` |
+| 事件名称  | 事件参数      | 说明                                                                                                                         | 版本    |
+| --------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------- |
+| itemClick | `item: IItem` | 单行被点击时触发，`IItem`为点击行的信息。注意`itemAction`和`onEvent`是互斥的，List 组件中的`onEvent`会覆盖`itemAction`的行为 | `2.4.0` |
 
-### IItem
+**IItem**
 
 | 属性名 | 类型                  | 默认值 | 说明                |
 | ------ | --------------------- | ------ | ------------------- |
 | data   | `Record<string, any>` |        | 当前行所在数据域    |
 | index  | `number`              |        | 行索引值，从 0 开始 |
+
+### itemClick
+
+```schema: scope="body"
+{
+  "type": "service",
+  "api": "/api/mock2/sample?perPage=5",
+  "body": [
+    {
+      "type": "list",
+      "source": "$rows",
+      "listItem": {
+        "body": [
+          {
+            "type": "hbox",
+            "columns": [
+              {
+                "label": "Engine",
+                "name": "engine"
+              },
+              {
+                "name": "version",
+                "label": "Version"
+              }
+            ]
+          }
+        ]
+      },
+      "onEvent": {
+        "itemClick": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "msg": "${event.data.item.index} ${event.data.item.data.engine}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+## 动作表
+
+> 6.4.0 或更高版本
+
+当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，动作配置可以通过`args: {动作配置项名称: xxx}`来配置具体的参数，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
+
+| 动作名称        | 动作配置                                                                                                                                | 说明                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| select          | `args.index` 可选，指定行数，支持表达式 <br /> `args.condition` 可选，通过表达式指定更新哪些行，支持条件组合 index`                     | 设置列表的选中项     |
+| selectAll       | -                                                                                                                                       | 设置列表全部项选中   |
+| clearAll        | -                                                                                                                                       | 清空列表所有选中项   |
+| initDrag        | -                                                                                                                                       | 开启列表拖拽排序功能 |
+| cancelDrag      | -                                                                                                                                       | 放弃列表拖拽排序功能 |
+| setValue        | `args.value`: object <br />`args.index` 可选，指定行数，支持表达式 <br /> `args.condition` 可选，通过表达式指定更新哪些行，支持条件组合 | 更新列表记录         |
+| submitQuickEdit |                                                                                                                                         | 快速编辑数据提交     |
+
+### select
+
+- `args.index` 可选，指定行数，支持表达式
+- `args.condition` 可选，通过表达式指定更新哪些行，支持条件组合
+
+```schema: scope="body"
+[
+    {
+    "type": "button-toolbar",
+    "className": "m-b",
+    "buttons": [
+    {
+        "name": "trigger1",
+        "id": "trigger1",
+        "type": "action",
+        "label": "选中前两个",
+        "onEvent": {
+        "click": {
+            "actions": [
+            {
+                "actionType": "select",
+                "componentId": "list-select",
+                "args": {
+                    "index": "0,1"
+                }
+            }
+            ]
+        }
+        }
+    }
+    ]
+},
+{
+    "type": "service",
+    "api": "/api/mock2/sample?perPage=5",
+    "body": [
+    {
+      "id": "list-select",
+      "type": "list",
+      "source": "$rows",
+      "selectable": true,
+      "multiple": true,
+      "listItem": {
+        "body": [
+          {
+            "type": "hbox",
+            "columns": [
+              {
+                "label": "Engine",
+                "name": "engine"
+              },
+
+              {
+                "name": "version",
+                "label": "Version"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+]
+```
+
+### selectAll
+
+```schema: scope="body"
+[
+    {
+    "type": "button-toolbar",
+    "className": "m-b",
+    "buttons": [
+    {
+        "name": "trigger2",
+        "id": "trigger2",
+        "type": "action",
+        "label": "设置列表全部项选中",
+        "onEvent": {
+        "click": {
+            "actions": [
+            {
+                "actionType": "selectAll",
+                "componentId": "list-select",
+                "description": "点击设置指定列表全部内容选中"
+            }
+            ]
+        }
+        }
+    }
+    ]
+},
+{
+    "type": "service",
+    "api": "/api/mock2/sample?perPage=10",
+    "body": [
+    {
+        "id": "list-select",
+        "type": "list",
+        "source": "$rows",
+        "selectable": true,
+        "multiple": true,
+        "listItem": {
+        "body": [
+          {
+            "type": "hbox",
+            "columns": [
+              {
+                "label": "Engine",
+                "name": "engine"
+              },
+
+              {
+                "name": "version",
+                "label": "Version"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ]
+}
+]
+```
+
+### clearAll
+
+```schema: scope="body"
+[
+    {
+    "type": "button-toolbar",
+    "className": "m-b",
+    "buttons": [
+    {
+        "name": "trigger3",
+        "id": "trigger3",
+        "type": "action",
+        "label": "清空列表全部选中项",
+        "onEvent": {
+        "click": {
+            "actions": [
+            {
+                "actionType": "clearAll",
+                "componentId": "list-select",
+                "description": "点击设置指定列表全部选中项清空"
+            }
+            ]
+        }
+        }
+    }
+    ]
+},
+{
+    "type": "service",
+    "api": "/api/mock2/sample?perPage=10",
+    "body": [
+    {
+        "id": "list-select",
+        "type": "list",
+        "source": "$rows",
+        "selectable": true,
+        "multiple": true,
+        "listItem": {
+        "body": [
+          {
+            "type": "hbox",
+            "columns": [
+              {
+                "label": "Engine",
+                "name": "engine"
+              },
+
+              {
+                "name": "version",
+                "label": "Version"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ]
+}
+]
+```
+
+### initDrag & cancelDrag
+
+```schema: scope="body"
+[
+    {
+    "type": "button-toolbar",
+    "className": "m-b",
+    "buttons": [
+    {
+        "name": "trigger4",
+        "id": "trigger4",
+        "type": "action",
+        "label": "开启列表行排序",
+        "onEvent": {
+        "click": {
+            "actions": [
+            {
+                "actionType": "initDrag",
+                "componentId": "list-select",
+                "description": "点击开启列表行排序功能"
+            }
+            ]
+        }
+        }
+    },
+    {
+        "name": "trigger5",
+        "id": "trigger5",
+        "type": "action",
+        "label": "取消列表行排序",
+        "onEvent": {
+        "click": {
+            "actions": [
+            {
+                "actionType": "cancelDrag",
+                "componentId": "list-select",
+                "description": "点击取消列表行排序功能"
+            }
+            ]
+        }
+        }
+    }
+    ]
+},
+{
+    "type": "service",
+    "api": "/api/mock2/sample?perPage=10",
+    "body": [
+    {
+        "id": "list-select",
+        "type": "list",
+        "source": "$rows",
+        "listItem": {
+        "body": [
+          {
+            "type": "hbox",
+            "columns": [
+              {
+                "label": "Engine",
+                "name": "engine"
+              },
+
+              {
+                "name": "version",
+                "label": "Version"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ]
+}
+]
+```
+
+### setValue
+
+#### 更新列表记录
+
+```schema: scope="body"
+[
+    {
+      "type": "button",
+      "label": "更新列表记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "actionType": "setValue",
+              "componentId": "list_setvalue",
+              "args": {
+                "value": {
+                  "rows": [
+                    {
+                        "engine": "Trident - f12fj",
+                        "browser": "Internet Explorer 4.0",
+                        "platform": "Win 95+",
+                        "version": "4",
+                        "grade": "X",
+                        "badgeText": "默认",
+                        "id": 1
+                    },
+                    {
+                        "engine": "Trident - oqvc0e",
+                        "browser": "Internet Explorer 5.0",
+                        "platform": "Win 95+",
+                        "version": "5",
+                        "grade": "C",
+                        "badgeText": "危险",
+                        "id": 2
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "清空列表",
+      "className": "ml-2",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "actionType": "setValue",
+              "componentId": "list_setvalue",
+              "args": {
+                "value": {
+                  "rows": []
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "service",
+      "id": "u:b25a8ef0050b",
+      "api": {
+        "method": "get",
+        "url": "/api/mock2/sample?perPage=5"
+      },
+      "body": [
+        {
+          "type": "list",
+          "id": "list_setvalue",
+          "title": "引擎列表",
+          "source": "$rows",
+          "listItem": {
+            "body": [
+              {
+                "type": "hbox",
+                "columns": [
+                  {
+                    "label": "Engine",
+                    "name": "engine"
+                  },
+
+                  {
+                    "name": "version",
+                    "label": "Version"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+]
+```
+
+#### 更新指定行记录
+
+可以通过指定`index`或者`condition`来分别更新指定索引的行记录和指定满足条件（条件表达式或者 ConditionBuilder）的行记录，另外`replace`同样生效，即可以完全替换指定行记录，也可以对指定行记录做合并。
+
+```schema
+{
+    "type": "page",
+    "data": {
+        i: '1,3'
+    },
+    body: [
+    {
+        "type": "button",
+        "label": "更新index为1和3的行记录",
+        "onEvent": {
+          "click": {
+            "actions": [
+              {
+                "actionType": "setValue",
+                "componentId": "list_setvalue_item",
+                "args": {
+                  "value": {
+                    "engine": "amis",
+                    "browser": "Chrome",
+                    "platform": "Mac Pro",
+                    "version": "8",
+                    "grade": "Y",
+                    "badgeText": "你好！",
+                    "id": 1234
+                  },
+                  "index": "${i}"
+                }
+              }
+            ]
+          }
+        }
+    },
+    {
+        "type": "button",
+        "label": "更新index为1和3的行记录(替换)",
+        "onEvent": {
+          "click": {
+            "actions": [
+              {
+                "actionType": "setValue",
+                "componentId": "list_setvalue_item",
+                "args": {
+                  "value": {
+                    "engine": "amis",
+                    "id": 1234
+                  },
+                  "index": "${i}",
+                  "replace": true
+                }
+              }
+            ]
+          }
+        }
+    },
+    {
+        "type": "button",
+        "label": "更新version=7的行记录",
+        "onEvent": {
+          "click": {
+            "actions": [
+              {
+                "actionType": "setValue",
+                "componentId": "list_setvalue_item",
+                "args": {
+                  "value": {
+                    "engine": "amis",
+                    "browser": "Chrome",
+                    "platform": "Mac Pro",
+                    "version": "4",
+                    "grade": "Y",
+                    "badgeText": "你好！",
+                    "id": 1234
+                  },
+                  "condition": "${version === '7'}"
+                }
+              }
+            ]
+          }
+        }
+    },
+    {
+        "type": "button",
+        "label": "更新version=4的行记录",
+        "onEvent": {
+          "click": {
+            "actions": [
+              {
+                "actionType": "setValue",
+                "componentId": "list_setvalue_item",
+                "args": {
+                  "value": {
+                    "engine": "amis",
+                    "browser": "Chrome",
+                    "platform": "Mac Pro",
+                    "version": "4",
+                    "grade": "Y",
+                    "badgeText": "你好！",
+                    "id": 1234
+                  },
+                  "condition": {
+                      conjunction: 'and',
+                      children: [
+                        {
+                          left: {
+                            type: 'field',
+                            field: 'version'
+                          },
+                          op: 'equal',
+                          right: "4"
+                        }
+                      ]
+                    }
+                }
+              }
+            ]
+          }
+        }
+    },
+    {
+      "type": "service",
+      "id": "u:b25a8ef0050b",
+      "api": {
+        "method": "get",
+        "url": "/api/mock2/sample?perPage=5"
+      },
+      "body": [
+        {
+          "type": "list",
+          "id": "list_setvalue_item",
+          "title": "引擎列表",
+          "source": "$rows",
+          "listItem": {
+            "body": [
+              {
+                "type": "hbox",
+                "columns": [
+                  {
+                    "label": "Engine",
+                    "name": "engine"
+                  },
+
+                  {
+                    "name": "version",
+                    "label": "Version"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+    ]
+}
+```

@@ -1,6 +1,6 @@
 {
   "name": "amis-editor-core",
-  "version": "5.2.5-alpha.16",
+  "version": "6.8.0",
   "description": "amis 可视化编辑器",
   "main": "lib/index.js",
   "module": "esm/index.js",
@@ -28,6 +28,7 @@
   "scripts": {
     "test": "echo \"Warnings: no test specified\"",
     "build": "npm run clean-dist && NODE_ENV=production rollup -c",
+    "build-esm": "npm run clean-dist && NODE_ENV=production rollup -c rollup.esm.config.js",
     "clean-dist": "rimraf lib/* esm/*",
     "i18n:update": "npx i18n update --config=./i18nConfig.js",
     "i18n:translate": "npx i18n translate --config=./i18nConfig.js --l=en-US",
@@ -46,6 +47,7 @@
     "static"
   ],
   "dependencies": {
+    "amis-theme-editor-helper": "*",
     "axios": "0.21.1",
     "deep-diff": "1.0.2",
     "json-ast-comments": "^1.1.0",
@@ -53,11 +55,12 @@
     "mobx": "^4.5.0",
     "mobx-react": "^6.3.1",
     "mobx-state-tree": "^3.17.3",
+    "react-frame-component": "^5.2.6",
     "react-json-view": "^1.21.3",
     "sortablejs": "^1.14.0"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.15.3",
+    "@fortawesome/fontawesome-free": "^6.1.1",
     "@rollup/plugin-commonjs": "^22.0.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
@@ -65,7 +68,7 @@
     "@svgr/rollup": "^6.2.1",
     "@types/async": "^2.0.45",
     "@types/classnames": "^2.2.3",
-    "@types/codemirror": "^5.60.5",
+    "@types/codemirror": "5.60.10",
     "@types/deep-diff": "^1.0.0",
     "@types/history": "^4.6.0",
     "@types/hoist-non-react-statics": "^3.0.1",
@@ -83,8 +86,7 @@
     "concurrently": "^6.2.0",
     "css-loader": "^6.2.0",
     "faker": "^5.5.3",
-    "husky": "^7.0.0",
-    "lint-staged": "^12.1.2",
+    "i18n-command": "^0.0.23-beta.15",
     "mini-css-extract-plugin": "^2.3.0",
     "postcss-import": "^14.1.0",
     "postcss-minify": "^1.1.0",
@@ -93,8 +95,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-overlays": "5.1.1",
-    "react-router": "5.2.0",
-    "react-router-dom": "5.2.0",
+    "react-router": "5.2.1",
+    "react-router-dom": "5.3.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.73.0",
     "rollup-plugin-auto-external": "^2.0.0",
@@ -113,8 +115,8 @@
     "amis": "*",
     "amis-core": "*",
     "amis-formula": "*",
-    "amis-ui": "*",
     "amis-theme-editor-helper": "*",
+    "amis-ui": "*",
     "i18n-runtime": "*",
     "react": ">=16.8.6",
     "react-dom": ">=16.8.6"

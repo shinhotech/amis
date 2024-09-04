@@ -3,19 +3,22 @@ import {
   Renderer,
   RendererProps,
   filter,
-  IconCheckedSchema,
   autobind,
   createObject,
-  insertCustomStyle
+  CustomStyle,
+  setThemeClassName
 } from 'amis-core';
 import {BaseSchema, SchemaTpl} from '../Schema';
-import {BadgeObject, withBadge} from 'amis-ui';
-import {getIcon} from 'amis-ui';
-import {isObject} from 'lodash';
+import {
+  BadgeObject,
+  withBadge,
+  Icon as IconUI,
+  IconCheckedSchema
+} from 'amis-ui';
 
 /**
- * Icon 图表渲染器
- * 文档：https://baidu.gitee.io/amis/docs/components/icon
+ * Icon 图标渲染器
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/icon
  */
 export interface IconSchema extends BaseSchema {
   type: 'icon';
@@ -46,129 +49,70 @@ export class Icon extends React.Component<IconProps, object> {
   @autobind
   handleClick(e: React.MouseEvent<any>) {
     const {dispatchEvent, data} = this.props;
-    dispatchEvent(
-      'click',
-      createObject(data, {
-        nativeEvent: e
-      })
-    );
+    dispatchEvent(e, data);
   }
 
   @autobind
   handleMouseEnter(e: React.MouseEvent<any>) {
     const {dispatchEvent, data} = this.props;
-    dispatchEvent(
-      e,
-      createObject(data, {
-        nativeEvent: e
-      })
-    );
+    dispatchEvent(e, data);
   }
 
   @autobind
   handleMouseLeave(e: React.MouseEvent<any>) {
     const {dispatchEvent, data} = this.props;
-    dispatchEvent(
-      e,
-      createObject(data, {
-        nativeEvent: e
-      })
-    );
+    dispatchEvent(e, data);
   }
 
   render() {
     const {
-      vendor,
       classnames: cx,
       className,
-      style,
       data,
-      css,
-      id
+      id,
+      themeCss,
+      env,
+      wrapperCustomStyle
     } = this.props;
     let icon = this.props.icon;
 
-    insertCustomStyle(
-      css,
-      [
-        {
-          key: 'className',
-          value: className
-        }
-      ],
-      id
-    );
-
-    if (typeof icon !== 'string') {
-      if (
-        isObject(icon) &&
-        typeof (icon as IconCheckedSchema).id === 'string' &&
-        (icon as IconCheckedSchema).id.startsWith('svg-')
-      ) {
-        return (
-          <svg
-            className={cx('icon', className)}
-            style={style}
-            onClick={this.handleClick}
-            onMouseEnter={this.handleMouseEnter}
-            onMouseLeave={this.handleMouseLeave}
-          >
-            <use
-              xlinkHref={`#${(icon as IconCheckedSchema).id.replace(
-                /^svg-/,
-                ''
-              )}`}
-            ></use>
-          </svg>
-        );
-      }
-
-      return;
+    if (typeof icon === 'string') {
+      icon = filter(this.props.icon, data);
     }
 
-    icon = filter(icon, data);
-
-    let CustomIcon = getIcon(icon);
-    if (CustomIcon) {
-      return (
-        <CustomIcon
-          className={cx(className, `icon-${icon}`)}
-          style={style}
+    return (
+      <>
+        <IconUI
+          {...this.props}
+          icon={icon}
           onClick={this.handleClick}
           onMouseEnter={this.handleMouseEnter}
           onMouseLeave={this.handleMouseLeave}
+          className={cx(
+            className,
+            setThemeClassName({...this.props, name: 'className', id, themeCss}),
+            setThemeClassName({
+              ...this.props,
+              name: 'wrapperCustomStyle',
+              id,
+              themeCss: wrapperCustomStyle
+            })
+          )}
         />
-      );
-    }
-
-    const isURLIcon = icon?.indexOf('.') !== -1;
-    let iconPrefix = '';
-    if (vendor === 'iconfont') {
-      iconPrefix = `iconfont icon-${icon}`;
-    } else if (vendor === 'fa') {
-      //默认是fontawesome v4，兼容之前配置
-      iconPrefix = `${vendor} ${vendor}-${icon}`;
-    } else {
-      // 如果vendor为空，则不设置前缀,这样可以支持fontawesome v5、fontawesome v6或者其他框架
-      iconPrefix = `${icon}`;
-    }
-    return isURLIcon ? (
-      <img
-        className={cx('Icon')}
-        src={icon}
-        style={style}
-        onClick={this.handleClick}
-        onMouseEnter={this.handleMouseEnter}
-        onMouseLeave={this.handleMouseLeave}
-      />
-    ) : (
-      <i
-        className={cx(iconPrefix, className)}
-        style={style}
-        onClick={this.handleClick}
-        onMouseEnter={this.handleMouseEnter}
-        onMouseLeave={this.handleMouseLeave}
-      />
+        <CustomStyle
+          {...this.props}
+          config={{
+            themeCss: themeCss,
+            classNames: [
+              {
+                key: 'className'
+              }
+            ],
+            id
+          }}
+          env={env}
+        />
+      </>
     );
   }
 }

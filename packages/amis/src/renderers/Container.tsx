@@ -3,9 +3,12 @@ import merge from 'lodash/merge';
 import {
   Renderer,
   RendererProps,
+  autobind,
   buildStyle,
   isPureVariable,
-  resolveVariableAndFilter
+  resolveVariableAndFilter,
+  CustomStyle,
+  setThemeClassName
 } from 'amis-core';
 import {DndContainer as DndWrapper} from 'amis-ui';
 import {BaseSchema, SchemaClassName, SchemaCollection} from '../Schema';
@@ -62,7 +65,7 @@ export interface ContainerDraggableConfig {
 
 /**
  * Container 容器渲染器。
- * 文档：https://baidu.gitee.io/amis/docs/components/container
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/container
  */
 export interface ContainerSchema extends BaseSchema {
   /**
@@ -128,6 +131,24 @@ export default class Container<T> extends React.Component<
     }
   };
 
+  @autobind
+  handleClick(e: React.MouseEvent<any>) {
+    const {dispatchEvent, data} = this.props;
+    dispatchEvent(e, data);
+  }
+
+  @autobind
+  handleMouseEnter(e: React.MouseEvent<any>) {
+    const {dispatchEvent, data} = this.props;
+    dispatchEvent(e, data);
+  }
+
+  @autobind
+  handleMouseLeave(e: React.MouseEvent<any>) {
+    const {dispatchEvent, data} = this.props;
+    dispatchEvent(e, data);
+  }
+
   renderBody(): JSX.Element | null {
     const {
       children,
@@ -136,7 +157,8 @@ export default class Container<T> extends React.Component<
       classnames: cx,
       bodyClassName,
       disabled,
-      wrapperBody
+      wrapperBody,
+      testIdBuilder
     } = this.props;
 
     const isWrapperBody = wrapperBody ?? true;
@@ -151,7 +173,10 @@ export default class Container<T> extends React.Component<
 
     if (isWrapperBody) {
       return (
-        <div className={cx('Container-body', bodyClassName)}>
+        <div
+          className={cx('Container-body', bodyClassName)}
+          {...testIdBuilder?.getTestId()}
+        >
           {containerBody}
         </div>
       );
@@ -169,7 +194,12 @@ export default class Container<T> extends React.Component<
       style,
       data,
       draggable,
-      draggableConfig
+      draggableConfig,
+      id,
+      wrapperCustomStyle,
+      env,
+      themeCss,
+      baseControlClassName
     } = this.props;
     const finalDraggable: boolean = isPureVariable(draggable)
       ? resolveVariableAndFilter(draggable, data, '| raw')
@@ -187,11 +217,41 @@ export default class Container<T> extends React.Component<
         className={cx(
           'Container',
           size && size !== 'none' ? `Container--${size}` : '',
-          className
+          className,
+          setThemeClassName({
+            ...this.props,
+            name: 'baseControlClassName',
+            id,
+            themeCss
+          }),
+          setThemeClassName({
+            ...this.props,
+            name: 'wrapperCustomStyle',
+            id,
+            themeCss: wrapperCustomStyle
+          })
         )}
+        onClick={this.handleClick}
+        onMouseEnter={this.handleMouseEnter}
+        onMouseLeave={this.handleMouseLeave}
         style={buildStyle(style, data)}
+        data-id={id}
       >
         {this.renderBody()}
+        <CustomStyle
+          {...this.props}
+          config={{
+            wrapperCustomStyle,
+            id,
+            themeCss,
+            classNames: [
+              {
+                key: 'baseControlClassName'
+              }
+            ]
+          }}
+          env={env}
+        />
       </Component>
     );
 

@@ -8,11 +8,13 @@ import Alert2 from './Alert2';
 import BaiduMapPicker from './BaiduMapPicker';
 import GaodeMapPicker from './GaodeMapPicker';
 import {LocaleProps, localeable} from 'amis-core';
+import PopUp from './PopUp';
 
 export interface LocationProps extends ThemeProps, LocaleProps {
   vendor: 'baidu' | 'gaode' | 'tenxun';
   coordinatesType: 'bd09' | 'gcj02';
   placeholder: string;
+  getLocationPlaceholder: string;
   clearable: boolean;
   ak: string;
   value?: {
@@ -26,6 +28,8 @@ export interface LocationProps extends ThemeProps, LocaleProps {
   popoverClassName?: string;
   onChange: (value: any) => void;
   popOverContainer?: any;
+  autoSelectCurrentLoc?: boolean;
+  onlySelectCurrentLoc?: boolean;
 }
 
 export interface LocationState {
@@ -39,9 +43,11 @@ export class LocationPicker extends React.Component<
 > {
   static defaultProps = {
     placeholder: 'LocationPicker.placeholder',
+    getLocationPlaceholder: 'LocationPicker.getLocation',
     clearable: false
   };
   domRef: React.RefObject<HTMLDivElement> = React.createRef();
+  tempValue: any;
   state = {
     isFocused: false,
     isOpened: false
@@ -93,6 +99,7 @@ export class LocationPicker extends React.Component<
         },
         fn
       );
+    this.tempValue = this.props.value;
   }
 
   @autobind
@@ -127,6 +134,23 @@ export class LocationPicker extends React.Component<
     this.props.onChange(value);
   }
 
+  @autobind
+  handleTempChange(value: any) {
+    if (value) {
+      value = {
+        ...value,
+        vendor: this.props.vendor
+      };
+    }
+    this.tempValue = value;
+  }
+
+  @autobind
+  handleConfirm() {
+    this.props.onChange(this.tempValue);
+    this.close();
+  }
+
   render() {
     const {
       classnames: cx,
@@ -135,11 +159,15 @@ export class LocationPicker extends React.Component<
       popoverClassName,
       disabled,
       placeholder,
+      getLocationPlaceholder,
       clearable,
       popOverContainer,
       vendor,
       coordinatesType,
-      ak
+      ak,
+      mobileUI,
+      autoSelectCurrentLoc,
+      onlySelectCurrentLoc
     } = this.props;
     const __ = this.props.translate;
     const {isFocused, isOpened} = this.state;
@@ -152,6 +180,8 @@ export class LocationPicker extends React.Component<
               ak={ak}
               value={value}
               coordinatesType={coordinatesType}
+              autoSelectCurrentLoc={autoSelectCurrentLoc}
+              onlySelectCurrentLoc={onlySelectCurrentLoc}
               onChange={this.handleChange}
             />
           );
@@ -165,9 +195,9 @@ export class LocationPicker extends React.Component<
             />
           );
         default:
-          return (<Alert2>{__(`${vendor} 地图控件不支持`, {vendor})}</Alert2>);
+          return <Alert2>{__(`{{vendor}} 地图控件不支持`, {vendor})}</Alert2>;
       }
-    })()
+    })();
 
     return (
       <div
@@ -178,6 +208,7 @@ export class LocationPicker extends React.Component<
         className={cx(
           `LocationPicker`,
           {
+            'is-mobile': mobileUI,
             'is-disabled': disabled,
             'is-focused': isFocused,
             'is-active': isOpened
@@ -191,7 +222,7 @@ export class LocationPicker extends React.Component<
           <span className={cx('LocationPicker-value')}>{value.address}</span>
         ) : (
           <span className={cx('LocationPicker-placeholder')}>
-            {__(placeholder)}
+            {__(onlySelectCurrentLoc ? getLocationPlaceholder : placeholder)}
           </span>
         )}
 
@@ -205,22 +236,59 @@ export class LocationPicker extends React.Component<
           <Icon icon="location" className="icon" />
         </a>
 
-        <Overlay
-          target={this.getTarget}
-          container={popOverContainer || this.getParent}
-          rootClose={false}
-          show={isOpened}
-        >
-          <PopOver
-            className={cx('LocationPicker-popover', popoverClassName)}
+        {mobileUI ? (
+          <PopUp
+            className={cx(`LocationPicker-popup`)}
+            container={popOverContainer || this.getParent}
+            isShow={isOpened}
             onHide={this.close}
-            overlay
-            onClick={this.handlePopOverClick}
-            style={{width: this.getTarget()?.offsetWidth}}
+            showConfirm
+            onConfirm={this.handleConfirm}
           >
-            {picker}
-          </PopOver>
-        </Overlay>
+            <div className={cx('LocationPicker-popup-inner')}>
+              {vendor === 'baidu' ? (
+                <BaiduMapPicker
+                  ak={ak}
+                  value={value}
+                  coordinatesType={coordinatesType}
+                  autoSelectCurrentLoc={autoSelectCurrentLoc}
+                  onlySelectCurrentLoc={onlySelectCurrentLoc}
+                  onChange={this.handleTempChange}
+                />
+              ) : (
+                <Alert2>{__('{{vendor}} 地图控件不支持', {vendor})}</Alert2>
+              )}
+            </div>
+          </PopUp>
+        ) : (
+          <Overlay
+            target={this.getTarget}
+            container={popOverContainer || this.getParent}
+            rootClose={false}
+            show={isOpened}
+          >
+            <PopOver
+              className={cx('LocationPicker-popover', popoverClassName)}
+              onHide={this.close}
+              overlay
+              onClick={this.handlePopOverClick}
+              style={{width: this.getTarget()?.offsetWidth}}
+            >
+              {vendor === 'baidu' ? (
+                <BaiduMapPicker
+                  ak={ak}
+                  value={value}
+                  coordinatesType={coordinatesType}
+                  autoSelectCurrentLoc={autoSelectCurrentLoc}
+                  onlySelectCurrentLoc={onlySelectCurrentLoc}
+                  onChange={this.handleChange}
+                />
+              ) : (
+                <Alert2>{__('{{vendor}} 地图控件不支持', {vendor})}</Alert2>
+              )}
+            </PopOver>
+          </Overlay>
+        )}
       </div>
     );
   }

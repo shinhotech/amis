@@ -7,6 +7,7 @@ import {BasePlugin} from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 
 export class TasksPlugin extends BasePlugin {
+  static id = 'TasksPlugin';
   // 关联渲染器名字
   rendererName = 'tasks';
   $schema = '/schemas/TasksSchema.json';
@@ -15,6 +16,7 @@ export class TasksPlugin extends BasePlugin {
   name = '异步任务';
   isBaseComponent = true;
   description = '用来做异步任务呈现或者操作。';
+  searchKeywords = '任务操作集合';
   docLink = '/amis/zh-CN/components/tasks';
   tags = ['功能'];
   icon = '';
@@ -96,7 +98,7 @@ export class TasksPlugin extends BasePlugin {
             type: 'input-number',
             min: 3000,
             step: 500,
-            visibleOn: 'data.checkApi',
+            visibleOn: 'this.checkApi',
             pipeIn: defaultValue(3000),
             label: '定时检测间隔'
           },

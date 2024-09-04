@@ -10,7 +10,6 @@ import ReactDOM from 'react-dom';
 import {themeable, ThemeProps} from 'amis-core';
 import Transition, {ENTERED, ENTERING} from 'react-transition-group/Transition';
 import {Icon, hasIcon} from './icons';
-import {generateIcon} from 'amis-core';
 import {types} from 'mobx-state-tree';
 import {observable, reaction} from 'mobx';
 
@@ -36,6 +35,8 @@ export interface SpinnerProps extends ThemeProps, SpinnerExtraProps {
   tipPlacement?: 'top' | 'right' | 'bottom' | 'left'; // spinner文案位置
   delay?: number; // 延迟显示
   overlay?: boolean; // 是否显示遮罩层，有children属性才生效
+  /** 是否处于禁用状态 */
+  disabled?: boolean;
 }
 
 export interface SpinnerExtraProps {
@@ -103,7 +104,7 @@ const store = SpinnerSharedStore.create({});
 
 export class Spinner extends React.Component<
   SpinnerProps,
-  {spinning: boolean; showMarker: boolean}
+  {spinning: boolean; showMarker: boolean; idDarkBg: boolean}
 > {
   static defaultProps = {
     show: true,
@@ -115,12 +116,14 @@ export class Spinner extends React.Component<
     tipPlacement: 'bottom' as 'bottom',
     delay: 0,
     overlay: false,
-    loadingConfig: {}
+    loadingConfig: {},
+    disabled: false
   };
 
   state = {
     spinning: false,
-    showMarker: true
+    showMarker: true,
+    idDarkBg: false
   };
 
   parent: HTMLElement | null = null;
@@ -157,6 +160,19 @@ export class Spinner extends React.Component<
     if (this.parent && this.state.showMarker) {
       this.setState({showMarker: false});
     }
+    if (this.parent) {
+      const backgroundColor = getComputedStyle(this.parent).getPropertyValue(
+        'background-color'
+      );
+      const rgba = backgroundColor.match(/\d+/g)?.map(Number) || [];
+
+      const brightness = (rgba[0] * 299 + rgba[1] * 587 + rgba[2] * 114) / 1000;
+      rgba[3] = rgba[3] ?? 1; // 没有设置颜色时取到的是 rgba(0, 0, 0, 0)
+
+      if (brightness < 200 && rgba[3] > 0.4) {
+        this.setState({idDarkBg: true});
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -191,10 +207,11 @@ export class Spinner extends React.Component<
       icon: iconConfig,
       tip,
       tipPlacement = '',
-      loadingConfig
+      loadingConfig,
+      disabled
     } = this.props;
-    // 调整挂载位置时使用默认loading
-    const icon = loadingConfig?.root ? iconConfig : '';
+    // 定义了挂载位置时只能使用默认icon
+    const icon = loadingConfig?.root ? undefined : iconConfig;
     const isCustomIcon = icon && React.isValidElement(icon);
     const timeout = {enter: delay, exit: 0};
 
@@ -242,21 +259,17 @@ export class Spinner extends React.Component<
                       `Spinner-icon`,
                       {
                         [`Spinner-icon--${size}`]: ['lg', 'sm'].includes(size),
-                        [`Spinner-icon--default`]: !icon,
-                        [`Spinner-icon--simple`]: !isCustomIcon && icon,
-                        [`Spinner-icon--custom`]: isCustomIcon
+                        'Spinner-icon--default': !icon,
+                        'Spinner-icon--simple': !isCustomIcon && icon,
+                        'Spinner-icon--custom': isCustomIcon,
+                        'Spinner-icon--disabled': disabled
                       },
-                      spinnerClassName
+                      spinnerClassName,
+                      this.state.idDarkBg && 'Spinner-icon--darkBg'
                     )}
                   >
                     {icon ? (
-                      isCustomIcon ? (
-                        icon
-                      ) : hasIcon(icon as string) ? (
-                        <Icon icon={icon} className="icon" />
-                      ) : (
-                        generateIcon(cx, icon as string, 'icon')
-                      )
+                      <Icon cx={cx} icon={icon} className="icon" />
                     ) : null}
                   </div>
                   {tip ? <span className={cx(`Spinner-tip`)}>{tip}</span> : ''}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/function-uncurry-this-clause.js"],
+  "sourcesContent": ["'use strict';\nvar classofRaw = require('../internals/classof-raw');\nvar uncurryThis = require('../internals/function-uncurry-this');\n\nmodule.exports = function (fn) {\n  // Nashorn bug:\n  //   https://github.com/zloirock/core-js/issues/1128\n  //   https://github.com/zloirock/core-js/issues/1130\n  if (classofRaw(fn) === 'Function') return uncurryThis(fn);\n};\n"],
+  "mappings": ";;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,aAAa;AACjB,QAAI,cAAc;AAElB,WAAO,UAAU,SAAU,IAAI;AAI7B,UAAI,WAAW,EAAE,MAAM;AAAY,eAAO,YAAY,EAAE;AAAA,IAC1D;AAAA;AAAA;",
+  "names": []
+}

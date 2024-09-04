@@ -35,6 +35,7 @@ export class ChainedSelection extends BaseSelection<
   componentDidMount() {
     const defaultSelectedIndex = this.props.defaultSelectedIndex;
 
+    // todo 以后支持自动展开
     if (defaultSelectedIndex !== undefined) {
       this.setState({
         selected: [`${defaultSelectedIndex}`]
@@ -43,7 +44,7 @@ export class ChainedSelection extends BaseSelection<
   }
 
   selectOption(option: Option, depth: number, id: string) {
-    const {onDeferLoad} = this.props;
+    const {onDeferLoad, deferField = 'defer'} = this.props;
 
     const selected = this.state.selected.concat();
     selected.splice(depth, selected.length - depth);
@@ -53,7 +54,7 @@ export class ChainedSelection extends BaseSelection<
       {
         selected
       },
-      option.defer && onDeferLoad ? () => onDeferLoad(option) : undefined
+      option[deferField] && onDeferLoad ? () => onDeferLoad(option) : undefined
     );
   }
 
@@ -71,9 +72,11 @@ export class ChainedSelection extends BaseSelection<
       itemClassName,
       itemRender,
       multiple,
-      labelField
+      labelField,
+      testIdBuilder
     } = this.props;
     const valueArray = this.valueArray;
+    const itemTIB = testIdBuilder?.getChild(`item-${option.value || index}`);
 
     return (
       <div
@@ -95,6 +98,7 @@ export class ChainedSelection extends BaseSelection<
             disabled={disabled || option.disabled}
             labelClassName={labelClassName}
             description={option.description}
+            testIdBuilder={itemTIB}
           />
         ) : null}
 
@@ -105,7 +109,8 @@ export class ChainedSelection extends BaseSelection<
             checked: !!~valueArray.indexOf(option),
             onChange: () => this.toggleOption(option),
             disabled: disabled || option.disabled,
-            labelField
+            labelField,
+            classnames: cx
           })}
         </div>
       </div>
@@ -127,11 +132,14 @@ export class ChainedSelection extends BaseSelection<
       itemRender,
       multiple,
       labelField,
-      loadingConfig
+      deferField = 'defer',
+      loadingConfig,
+      testIdBuilder
     } = this.props;
     const valueArray = this.valueArray;
+    const itemTIB = testIdBuilder?.getChild(`item-${option.value || index}`);
 
-    if (Array.isArray(option.children) || option.defer) {
+    if (Array.isArray(option.children) || option[deferField]) {
       return (
         <div
           style={styles}
@@ -144,6 +152,7 @@ export class ChainedSelection extends BaseSelection<
             ~this.state.selected.indexOf(id) ? 'is-active' : ''
           )}
           onClick={() => this.selectOption(option, depth, id)}
+          {...itemTIB?.getTestId()}
         >
           <div className={cx('ChainedSelection-itemLabel')}>
             {itemRender(option, {
@@ -152,11 +161,12 @@ export class ChainedSelection extends BaseSelection<
               checked: !!~this.state.selected.indexOf(id),
               onChange: () => this.selectOption(option, depth, id),
               disabled: disabled || option.disabled,
-              labelField
+              labelField,
+              classnames: cx
             })}
           </div>
 
-          {option.defer && option.loading ? (
+          {option[deferField] && option.loading ? (
             <Spinner loadingConfig={loadingConfig} size="sm" show />
           ) : null}
         </div>
@@ -226,7 +236,8 @@ export class ChainedSelection extends BaseSelection<
       translate: __,
       virtualThreshold = 1000,
       itemHeight = 32,
-      virtualListHeight
+      virtualListHeight,
+      testIdBuilder
     } = this.props;
 
     this.valueArray = BaseSelection.value2array(value, options, option2value);

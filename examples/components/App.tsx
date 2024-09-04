@@ -14,7 +14,7 @@ import {
 } from 'amis';
 import {eachTree} from 'amis-core';
 import 'amis-ui/lib/locale/en-US';
-import {withRouter} from 'react-router';
+import {withRouter} from 'react-router-dom';
 // @ts-ignore
 import DocSearch from './DocSearch';
 import Doc from './Doc';
@@ -23,8 +23,6 @@ import DocNavCN from './DocNavCN';
 import Example from './Example';
 import CSSDocs from './CssDocs';
 import Components from './Components';
-import SHComponents from './ShComponents';
-
 import {
   BrowserRouter as Router,
   Route,
@@ -33,6 +31,7 @@ import {
   Link,
   NavLink
 } from 'react-router-dom';
+import SHComponents from './ShComponents';
 declare const _hmt: any;
 
 let ContextPath = '';
@@ -60,6 +59,11 @@ const themes = [
     label: 'ang',
     ns: 'a-',
     value: 'ang'
+  },
+  {
+    label: '暗黑',
+    ns: 'dark-',
+    value: 'dark'
   }
 ];
 
@@ -138,8 +142,9 @@ class BackTop extends React.PureComponent {
     );
   }
 }
+
 // @ts-ignore
-@withRouter // @ts-ignore
+@withRouter
 export class App extends React.PureComponent<{
   location: Location;
 }> {
@@ -280,6 +285,7 @@ export class App extends React.PureComponent<{
             >
               组件
             </NavLink>
+
             <NavLink
               to={`${ContextPath}/zh-CN/sh-components`}
               activeClassName="is-active"
@@ -298,12 +304,21 @@ export class App extends React.PureComponent<{
             >
               示例
             </NavLink>
-            <a
-              href="https://github.com/fex-team/amis-editor-demo"
-              target="_blank"
-            >
-              编辑器
-            </a>
+            {process.env.NODE_ENV === 'development' ? (
+              <>
+                <a href={`/packages/amis-ui/#/basic/button`}>UI控件</a>
+                <a href={`/packages/amis-editor/`}>编辑器</a>
+              </>
+            ) : (
+              <>
+                <a
+                  href="https://github.com/fex-team/amis-editor-demo"
+                  target="_blank"
+                >
+                  编辑器
+                </a>
+              </>
+            )}
             {/* <a href="https://suda.bce.baidu.com" target="_blank">
               爱速搭
             </a> */}
@@ -389,7 +404,7 @@ export class App extends React.PureComponent<{
             </div>
             <a
               className="gh-icon"
-              href="https://github.com/shinhotech/amis"
+              href="https://github.com/baidu/amis"
               target="_blank"
             >
               <i className="fa fa-github" />
@@ -882,7 +897,6 @@ export function navigations2route(
 
 export default function entry() {
   // PathPrefix = pathPrefix || DocPathPrefix;
-
   return (
     <Router>
       <Switch>

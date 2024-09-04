@@ -2,7 +2,14 @@
  * @file 把一些功能性的东西放在了这个里面，辅助 compoennt/Editor.tsx 组件的。
  * 编辑器非 UI 相关的东西应该放在这。
  */
-import {getRenderers, RenderOptions, mapTree} from 'amis-core';
+import {reaction} from 'mobx';
+import {isAlive} from 'mobx-state-tree';
+import {parse, stringify} from 'json-ast-comments';
+import debounce from 'lodash/debounce';
+import findIndex from 'lodash/findIndex';
+import omit from 'lodash/omit';
+import {openContextMenus, toast, alert, DataScope, DataSchema} from 'amis';
+import {getRenderers, RenderOptions, JSONTraverse} from 'amis-core';
 import {
   PluginInterface,
   BasicPanelItem,
@@ -29,14 +36,14 @@ import {
   DeleteEventContext,
   RendererPluginEvent,
   PluginEvents,
-  PluginActions
+  PluginActions,
+  BasePlugin
 } from './plugin';
 import {
   EditorStoreType,
   PopOverFormContext,
   SubEditorContext
 } from './store/editor';
-
 import {
   autobind,
   camelize,
@@ -48,28 +55,21 @@ import {
   isObject,
   isLayoutPlugin,
   JSONPipeOut,
+  scrollToActive,
+  JSONPipeIn,
   generateNodeId,
-  JSONTraverse
+  JSONGetNodesById
 } from './util';
-import {reaction} from 'mobx';
 import {hackIn, makeSchemaFormRender, makeWrapper} from './component/factory';
 import {env} from './env';
-import debounce from 'lodash/debounce';
-import sortBy from 'lodash/sortBy';
-import reverse from 'lodash/reverse';
-import cloneDeep from 'lodash/cloneDeep';
-import {openContextMenus, toast, alert, DataScope, DataSchema} from 'amis';
-import {parse, stringify} from 'json-ast-comments';
 import {EditorNodeType} from './store/node';
 import {EditorProps} from './component/Editor';
-import findIndex from 'lodash/findIndex';
 import {EditorDNDManager} from './dnd';
 import {VariableManager} from './variable';
-import {IScopedContext} from 'amis';
-import {SchemaObject, SchemaCollection} from 'amis/lib/Schema';
-import type {RendererConfig} from 'amis-core/lib/factory';
-import isPlainObject from 'lodash/isPlainObject';
-import {omit} from 'lodash';
+
+import type {IScopedContext} from 'amis';
+import type {SchemaObject, SchemaCollection} from 'amis';
+import type {RendererConfig} from 'amis-core';
 
 export interface EditorManagerConfig
   extends Omit<EditorProps, 'value' | 'onChange'> {}
@@ -77,6 +77,8 @@ export interface EditorManagerConfig
 export interface PluginClass {
   new (manager: EditorManager, options?: any): PluginInterface;
   id?: string;
+  /** 优先级，值为整数，当存在两个ID相同的Plugin时，数字更大的优先级更高 */
+  priority?: number;
   scene?: Array<string>;
 }
 
@@ -102,28 +104,66 @@ export function autoPreRegisterEditorCustomPlugins() {
 }
 
 /**
- * 注册Editor插件。
+ * 注册Editor插件
+ * 备注: 支持覆盖原有组件，注册新的组件时需配置 priority。
  * @param editor
  */
 export function registerEditorPlugin(klass: PluginClass) {
   // 处理插件身上的场景信息
   const scene = Array.from(new Set(['global'].concat(klass.scene || 'global')));
   klass.scene = scene;
-  let isExitPlugin: any = null;
+
+  let exsitedPluginIdx: any = null;
   if (klass.prototype && klass.prototype.isNpmCustomWidget) {
-    isExitPlugin = builtInPlugins.find(item =>
+    exsitedPluginIdx = builtInPlugins.findIndex(item =>
       Array.isArray(item)
         ? item[0].prototype.name === klass.prototype.name
         : item.prototype.name === klass.prototype.name
     );
   } else {
     // 待进一步优化
-    isExitPlugin = builtInPlugins.find(item => item === klass);
+    exsitedPluginIdx = builtInPlugins.findIndex(item => item === klass);
   }
-  if (!isExitPlugin) {
-    builtInPlugins.push(klass);
+
+  /** 先给新加入的plugin加一个ID */
+  if (!~exsitedPluginIdx) {
+    klass.id = klass.id || klass.name || guid();
+  }
+
+  /** 因为class的继承关系，未设置ID的子class会和父class共用ID, 只有设置了priority的时候才会执行同ID去重 */
+  if (klass.priority == null || !Number.isInteger(klass.priority)) {
+    if (!~exsitedPluginIdx) {
+      builtInPlugins.push(klass);
+    } else {
+      console.warn(`注册插件「${klass.id}」异常，已存在同名插件：`, klass);
+    }
   } else {
-    console.warn(`注册插件异常，已存在同名插件：`, klass);
+    exsitedPluginIdx = ~exsitedPluginIdx
+      ? exsitedPluginIdx
+      : builtInPlugins.findIndex(
+          item =>
+            !Array.isArray(item) &&
+            item.id === klass.id &&
+            item?.prototype instanceof BasePlugin
+        );
+
+    if (!~exsitedPluginIdx) {
+      builtInPlugins.push(klass);
+    } else {
+      const current = builtInPlugins[exsitedPluginIdx] as PluginClass;
+
+      /** 同ID的插件根据优先级决定是否update */
+      const currentPriority =
+        current.priority && Number.isInteger(current.priority)
+          ? current.priority
+          : 0;
+
+      if (klass.priority > currentPriority) {
+        builtInPlugins.splice(exsitedPluginIdx, 1, klass);
+      } else {
+        console.warn(`注册插件「${klass.id}」异常，已存在同名插件：`, klass);
+      }
+    }
   }
 }
 
@@ -132,7 +172,9 @@ export function registerEditorPlugin(klass: PluginClass) {
  */
 export function getEditorPlugins(options: any = {}) {
   const {scene = 'global'} = options;
-  return builtInPlugins.filter(item => item.scene?.includes(scene));
+  return builtInPlugins.filter(item =>
+    (Array.isArray(item) ? item[0] : item).scene?.includes(scene)
+  );
 }
 
 /**
@@ -161,9 +203,6 @@ export class EditorManager {
   private clipboardData: string;
   readonly hackIn: any;
 
-  // 用于记录amis渲染器的上下文数据
-  amisStore: Object = {};
-
   // 广播事件集
   readonly broadcasts: RendererPluginEvent[] = [];
   // 插件事件集
@@ -172,7 +211,6 @@ export class EditorManager {
   readonly pluginActions: PluginActions = {};
 
   dataSchema: DataSchema;
-  readonly isInFrame: boolean = false;
 
   /** 变量管理 */
   readonly variableManager;
@@ -182,8 +220,6 @@ export class EditorManager {
     readonly store: EditorStoreType,
     readonly parent?: EditorManager
   ) {
-    const isInFrame = !!parent;
-    this.isInFrame = isInFrame;
     // 传给 amis 渲染器的默认 env
     this.env = {
       ...env, // 默认的 env 中带 jumpTo
@@ -194,47 +230,74 @@ export class EditorManager {
       this,
       this.env.beforeDispatchEvent
     );
-    this.hackIn = parent?.hackIn || hackIn;
+    this.hackIn = hackIn;
     // 自动加载预先注册的自定义组件
     autoPreRegisterEditorCustomPlugins();
-    const scene = config.scene || 'global';
-    this.plugins =
-      parent?.plugins ||
-      (config.disableBultinPlugin ? [] : builtInPlugins) // 页面设计器注册的插件列表
-        .concat(this.normalizeScene(config?.plugins))
-        .filter(p => {
-          p = Array.isArray(p) ? p[0] : p;
-          return config.disablePluginList
-            ? typeof config.disablePluginList === 'function'
-              ? !config.disablePluginList(p.id || '', p)
-              : !config.disablePluginList.includes(p.id || 'unkown')
-            : true;
-        })
-        .map(Editor => {
-          let pluginOptions: Record<string, any> = {};
-          if (Array.isArray(Editor)) {
-            pluginOptions =
-              typeof Editor[1] === 'function' ? Editor[1]() : Editor[1];
-            Editor = Editor[0];
-          }
 
-          const plugin = new Editor(this, pluginOptions); // 进行一次实例化
-          plugin.order = plugin.order ?? 0;
+    /** 在顶层对外部注册的Plugin和builtInPlugins合并去重 */
+    const externalPlugins = (config?.plugins || []).forEach(external => {
+      if (
+        Array.isArray(external) ||
+        !external.priority ||
+        !Number.isInteger(external.priority)
+      ) {
+        return;
+      }
 
-          // 记录动作定义
-          if (plugin.rendererName) {
-            this.pluginEvents[plugin.rendererName] = plugin.events || [];
-            this.pluginActions[plugin.rendererName] = plugin.actions || [];
-          }
+      const idx = builtInPlugins.findIndex(
+        builtIn =>
+          !Array.isArray(builtIn) &&
+          !Array.isArray(external) &&
+          builtIn.id === external.id &&
+          builtIn?.prototype instanceof BasePlugin
+      );
 
-          return plugin;
-        })
-        .sort((a, b) => a.order! - b.order!); // 按order排序【升序】
+      if (~idx) {
+        const current = builtInPlugins[idx] as PluginClass;
+        const currentPriority =
+          current.priority && Number.isInteger(current.priority)
+            ? current.priority
+            : 0;
+        /** 同ID Plugin根据优先级决定是否替换掉Builtin中的Plugin */
+        if (external.priority > currentPriority) {
+          builtInPlugins.splice(idx, 1);
+        }
+      }
+    });
+
+    this.plugins = (config.disableBultinPlugin ? [] : builtInPlugins) // 页面设计器注册的插件列表
+      .concat(this.normalizeScene(config?.plugins))
+      .filter(p => {
+        p = Array.isArray(p) ? p[0] : p;
+        return config.disablePluginList
+          ? typeof config.disablePluginList === 'function'
+            ? !config.disablePluginList(p.id || '', p)
+            : !config.disablePluginList.includes(p.id || 'unkown')
+          : true;
+      })
+      .map(Editor => {
+        let pluginOptions: Record<string, any> = {};
+        if (Array.isArray(Editor)) {
+          pluginOptions =
+            typeof Editor[1] === 'function' ? Editor[1]() : Editor[1];
+          Editor = Editor[0];
+        }
+
+        const plugin = new Editor(this, pluginOptions); // 进行一次实例化
+        plugin.order = plugin.order ?? 0;
+
+        // 记录动作定义
+        if (plugin.rendererName) {
+          this.pluginEvents[plugin.rendererName] = plugin.events || [];
+          this.pluginActions[plugin.rendererName] = plugin.actions || [];
+        }
+
+        return plugin;
+      })
+      .sort((a, b) => a.order! - b.order!); // 按order排序【升序】
     this.hackRenderers();
-    this.dnd = parent?.dnd || new EditorDNDManager(this, store);
-    this.dataSchema =
-      parent?.dataSchema || new DataSchema(config.schemas || []);
-    this.dataSchema.current.tag = '系统变量';
+    this.dnd = new EditorDNDManager(this, store);
+    this.dataSchema = new DataSchema(config.schemas || []);
 
     /** 初始化变量管理 */
     this.variableManager = new VariableManager(
@@ -242,10 +305,6 @@ export class EditorManager {
       config?.variables,
       config?.variableOptions
     );
-
-    if (isInFrame) {
-      return;
-    }
 
     this.toDispose.push(
       // 当前节点区域数量发生变化，重新构建孩子渲染器列表。
@@ -275,6 +334,7 @@ export class EditorManager {
           this.buildToolbars();
           await this.buildRenderers();
           this.buildPanels();
+          scrollToActive(`[data-node-id="${id}"]`);
 
           this.trigger(
             'active',
@@ -330,15 +390,29 @@ export class EditorManager {
     );
   }
 
-  normalizeScene(plugins?: Array<PluginClass>) {
+  normalizeScene(
+    plugins?: Array<
+      | PluginClass
+      | [PluginClass, Record<string, any> | (() => Record<string, any>)]
+    >
+  ): (
+    | PluginClass
+    | [PluginClass, Record<string, any> | (() => Record<string, any>)]
+  )[] {
     return (
-      plugins?.map((klass: PluginClass) => {
+      plugins?.map(klass => {
+        let options;
+        if (Array.isArray(klass)) {
+          options = klass[1];
+          klass = klass[0];
+        }
+
         // 处理插件身上的场景信息
         const scene = Array.from(
           new Set(['global'].concat(klass.scene || 'global'))
         );
         klass.scene = scene;
-        return klass;
+        return options ? [klass, options] : klass;
       }) || []
     );
   }
@@ -376,13 +450,6 @@ export class EditorManager {
       }
 
       this.buildRenderers();
-    }
-  }
-
-  // 更新amis渲染器上下文
-  updateAMISContext(amisStore: Object) {
-    if (amisStore) {
-      this.amisStore = amisStore;
     }
   }
 
@@ -516,8 +583,8 @@ export class EditorManager {
     let id = curRendererId || this.store.activeId;
     let panels: Array<BasicPanelItem> = [];
 
-    if (!id && this.store?.schema) {
-      id = this.store?.schema.$$id; // 默认使用根节点id
+    if (!id && this.store?.filteredSchema) {
+      id = this.store?.filteredSchema.$$id; // 默认使用根节点id
     }
 
     if (id || this.store.selections.length) {
@@ -628,7 +695,7 @@ export class EditorManager {
    * 备注3: 建议优先使用当前选中组件ID（this.store.activeId）来更新属性配置面板;
    * @param pluginType 组件类型
    */
-  updateConfigPanel(pluginType: string) {
+  updateConfigPanel(pluginType?: string) {
     const {activeId, getSchema, getNodeById} = this.store;
     let curPluginType = pluginType;
 
@@ -740,6 +807,7 @@ export class EditorManager {
       type: event,
       fn
     });
+    return () => this.off(event, fn);
   }
 
   off(event: string, fn: PluginEventFn) {
@@ -808,7 +876,11 @@ export class EditorManager {
    * @param rendererIdOrSchema
    * 备注：可以根据渲染器ID添加新元素，也可以根据现有schema片段添加新元素
    */
-  async addElem(rendererIdOrSchema: string | any) {
+  async addElem(
+    rendererIdOrSchema: string | any,
+    reGenerateId?: boolean,
+    activeChild: boolean = true
+  ) {
     if (!rendererIdOrSchema) {
       return;
     }
@@ -850,17 +922,28 @@ export class EditorManager {
 
     const curElemSchema = schemaData || subRenderer?.scaffold;
     const isSpecialLayout = this.isSpecialLayout(curElemSchema);
-    if (
-      (node.type === 'wrapper' || node.type === 'container') &&
-      node.schema?.body?.length === 0 &&
-      curElemSchema?.type === 'flex' &&
-      !node.schema?.isFreeContainer &&
-      !isSpecialLayout
-    ) {
-      // 布局能力提升: 点击插入新元素，当wrapper为空插入布局容器时，自动改为置换，避免过多层级
-      this.replaceChild(curActiveId, curElemSchema);
-      return;
-    }
+
+    // 不直接替换容器
+    // if (
+    //   (node.type === 'wrapper' || node.type === 'container') &&
+    //   node.schema?.body?.length === 0 &&
+    //   curElemSchema?.type === 'flex' &&
+    //   !node.schema?.isFreeContainer &&
+    //   !isSpecialLayout
+    // ) {
+    //   // 布局能力提升: 点击插入新元素，当wrapper为空插入布局容器时，自动改为置换，避免过多层级
+    //   this.replaceChild(
+    //     curActiveId,
+    //     curElemSchema,
+    //     subRenderer,
+    //     store.insertRegion,
+    //     reGenerateId
+    //   );
+    //   setTimeout(() => {
+    //     this.updateConfigPanel();
+    //   }, 0);
+    //   return;
+    // }
 
     const parentNode = node.parent as EditorNodeType; // 父级节点
 
@@ -909,7 +992,7 @@ export class EditorManager {
       let beforeId = -1;
       parent.some((item: any, index: number) => {
         let result = false;
-        if (item.$$id === curActiveId) {
+        if (item?.$$id === curActiveId) {
           beforeId = index;
           result = true;
         }
@@ -941,14 +1024,38 @@ export class EditorManager {
       regionNodeRegion,
       value,
       nextId,
-      subRenderer
+      subRenderer || node.info,
+      undefined, // 不是拖拽，不需要传递拖拽信息
+      reGenerateId
     );
-    if (child) {
+    if (child && activeChild) {
       // mobx 修改数据是异步的
       setTimeout(() => {
         store.setActiveId(child.$$id);
       }, 100);
     }
+  }
+
+  /**
+   * 判断当前节点是否可以添加同级节点
+   */
+  canAppendSiblings() {
+    const store = this.store;
+    const id = store.activeId;
+    const node = store.getNodeById(id)!; // 当前选中节点
+    const regionNode = node.parent as EditorNodeType; // 父级节点
+    if (!node || !regionNode || !regionNode.schema) {
+      return false;
+    } else if (regionNode.memberImmutable('')) {
+      return false;
+    } else if (
+      regionNode.schema.body ||
+      (regionNode.schema.type === 'flex' && regionNode.schema.items) ||
+      node.schema.columns
+    ) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -959,7 +1066,8 @@ export class EditorManager {
   async appendSiblingSchema(
     rendererSchema: Object,
     beforeInsert?: boolean,
-    disabledAutoSelectInsertElem?: boolean
+    disabledAutoSelectInsertElem?: boolean,
+    reGenerateId?: boolean
   ) {
     if (!rendererSchema) {
       return;
@@ -1017,7 +1125,14 @@ export class EditorManager {
         regionNodeId,
         regionNodeRegion,
         rendererSchema,
-        nextId
+        nextId,
+        node.info,
+        {
+          id: store.dragId,
+          type: store.dragType,
+          data: store.dragSchema
+        },
+        reGenerateId
       );
       if (child && !disabledAutoSelectInsertElem) {
         // mobx 修改数据是异步的
@@ -1179,6 +1294,11 @@ export class EditorManager {
           type: schema.type,
           plugin: editor,
           renderer: renderer,
+          dialogTitle:
+            schema.type === 'dialog' || schema.type === 'drawer'
+              ? schema.title
+              : '',
+          dialogType: schema.dialogType,
           schemaPath
         };
         return true;
@@ -1202,10 +1322,15 @@ export class EditorManager {
    * @param diff
    */
   @autobind
-  panelChangeValue(value: any, diff?: any) {
+  panelChangeValue(
+    value: any,
+    diff?: any,
+    changeFilter?: (schema: any, value: any, id: string, diff?: any) => any,
+    id = this.store.activeId
+  ) {
     const store = this.store;
     const context: ChangeEventContext = {
-      ...this.buildEventContext(store.activeId),
+      ...this.buildEventContext(id),
       value,
       diff
     };
@@ -1215,8 +1340,12 @@ export class EditorManager {
       return;
     }
 
-    store.changeValue(value, diff);
-    this.trigger('after-update', context);
+    store.changeValue(value, diff, changeFilter, id);
+
+    this.trigger('after-update', {
+      ...context,
+      schema: context.node.schema // schema 是新的，因为修改完了
+    });
   }
 
   /**
@@ -1224,6 +1353,21 @@ export class EditorManager {
    * @param config
    */
   openSubEditor(config: SubEditorContext) {
+    if (
+      ['dialog', 'drawer', 'confirmDialog'].includes(config.value.type) &&
+      this.parent
+    ) {
+      let parent: EditorManager | undefined = this.parent;
+      const id = config.value.$$originId || config.value.$$id;
+      while (parent) {
+        if (parent.store.schema.$$id === id) {
+          toast.warning('所选弹窗已经被打开，不能多次打开');
+          return;
+        }
+
+        parent = parent.parent;
+      }
+    }
     this.store.openSubEditor(config);
   }
 
@@ -1265,7 +1409,7 @@ export class EditorManager {
         y: info.y
       },
       menus,
-      () => this.store.setContextId('')
+      ctx => ctx.state.isOpened && this.store.setContextId('')
     );
   }
 
@@ -1301,12 +1445,13 @@ export class EditorManager {
       sourceId: node.id,
       direction: 'up',
       beforeId: node.prevSibling?.id,
-      region: regionNode.region
+      region: regionNode.region,
+      regionNode: regionNode
     };
 
     const event = this.trigger('before-move', context);
     if (!event.prevented) {
-      store.moveUp(node.id);
+      store.moveUp(context);
       // this.buildToolbars();
       this.trigger('after-move', context);
       this.trigger('after-update', context);
@@ -1332,12 +1477,13 @@ export class EditorManager {
       sourceId: node.id,
       direction: 'down',
       beforeId: node.nextSibling?.nextSibling?.id,
-      region: regionNode.region
+      region: regionNode.region,
+      regionNode: regionNode
     };
 
     const event = this.trigger('before-move', context);
     if (!event.prevented) {
-      store.moveDown(node.id);
+      store.moveDown(context);
       // this.buildToolbars();
       this.trigger('after-move', context);
       this.trigger('after-update', context);
@@ -1362,8 +1508,7 @@ export class EditorManager {
     if (!event.prevented) {
       Array.isArray(context.data) && context.data.length
         ? this.store.delMulti(context.data)
-        : this.store.del(id);
-
+        : this.store.del(context);
       this.trigger('after-delete', context);
     }
   }
@@ -1406,7 +1551,71 @@ export class EditorManager {
       return;
     }
     const json = reGenerateID(parse(this.clipboardData));
-    region ? this.addChild(id, region, json) : this.replaceChild(id, json);
+    if (region) {
+      this.addChild(id, region, json);
+      return;
+    }
+    if (this.replaceChild(id, json)) {
+      setTimeout(() => {
+        this.store.highlightNodes.forEach(node => {
+          node.calculateHighlightBox();
+        });
+        this.updateConfigPanel(json.type);
+      });
+    }
+  }
+
+  /**
+   * 重新生成当前节点的重复的id
+   */
+  reGenerateNodeDuplicateID(types: Array<string> = []) {
+    const node = this.store.getNodeById(this.store.activeId);
+    if (!node) {
+      return;
+    }
+    let schema = node.schema;
+    let changed = false;
+
+    // 支持按照类型过滤某类型组件
+    let tags = node.info?.plugin?.tags || [];
+    if (!Array.isArray(tags)) {
+      tags = [tags];
+    }
+    if (types.length && !tags.some(tag => types.includes(tag))) {
+      return;
+    }
+
+    // 记录组件新旧ID映射关系方便当前组件内事件动作替换
+    let idRefs: {[propKey: string]: string} = {};
+
+    // 如果有多个重复组件，则重新生成ID
+    JSONTraverse(schema, (value: any, key: string, host: any) => {
+      const isNodeIdFormat =
+        typeof value === 'string' && value.indexOf('u:') === 0;
+      if (key === 'id' && isNodeIdFormat && host) {
+        let sameNodes = JSONGetNodesById(this.store.schema, value, 'id');
+        if (sameNodes && sameNodes.length > 1) {
+          let newId = generateNodeId();
+          idRefs[value] = newId;
+          host[key] = newId;
+          changed = true;
+        }
+      }
+      return value;
+    });
+
+    if (changed) {
+      // 替换当前组件内事件动作里面可能的ID
+      JSONTraverse(schema, (value: any, key: string, host: any) => {
+        const isNodeIdFormat =
+          typeof value === 'string' && value.indexOf('u:') === 0;
+        if (key === 'componentId' && isNodeIdFormat && idRefs[value]) {
+          host.componentId = idRefs[value];
+        }
+        return value;
+      });
+      this.replaceChild(node.id, schema);
+    }
   }
 
   /**
@@ -1440,20 +1649,21 @@ export class EditorManager {
     region: string,
     json: any,
     beforeId?: string,
-    subRenderer?: SubRendererInfo,
+    subRenderer?: SubRendererInfo | RendererInfo,
     dragInfo?: {
       id: string;
       type: string;
       data: any;
-    }
+      position?: string;
+    },
+    reGenerateId?: boolean
   ): any | null {
     const store = this.store;
     let index: number = -1;
     const commonContext = this.buildEventContext(id);
 
     // 填充id，有些脚手架生成了复杂的布局等，自动填充一下id
-    let curChildJson = {...json};
-    JsonGenerateID(curChildJson);
+    let curChildJson = JSONPipeIn(json, reGenerateId ?? true);
 
     if (beforeId) {
       const arr = commonContext.schema[region];
@@ -1493,7 +1703,8 @@ export class EditorManager {
     id: string,
     region: string,
     sourceId: string,
-    beforeId?: string
+    beforeId?: string,
+    dragInfo?: any
   ): boolean {
     const store = this.store;
 
@@ -1501,7 +1712,8 @@ export class EditorManager {
       ...this.buildEventContext(id),
       beforeId,
       region: region,
-      sourceId
+      sourceId,
+      dragInfo
     };
 
     const event = this.trigger('before-move', context);
@@ -1523,12 +1735,16 @@ export class EditorManager {
   replaceChild(
     id: string,
     json: any,
-    subRenderer?: SubRendererInfo,
-    region?: string
+    subRenderer?: SubRendererInfo | RendererInfo,
+    region?: string,
+    reGenerateId?: boolean
   ): boolean {
+    // 转成普通json并添加node id
+    let curJson = JSONPipeIn(json, reGenerateId ?? true);
+
     const context: ReplaceEventContext = {
       ...this.buildEventContext(id),
-      data: {...json},
+      data: {...curJson},
       subRenderer,
       region
     };
@@ -1621,10 +1837,12 @@ export class EditorManager {
   }
 
   async scaffold(form: any, value: any): Promise<SchemaObject> {
+    const scaffoldFormData = form.pipeIn ? await form.pipeIn(value) : value;
+
     return new Promise(resolve => {
       this.store.openScaffoldForm({
         ...form,
-        value: form.pipeIn ? form.pipeIn(value) : value,
+        value: scaffoldFormData,
         callback: resolve
       });
     });
@@ -1651,11 +1869,15 @@ export class EditorManager {
   });
 
   patching = false;
+  patchingInvalid = false;
   patchSchema(force = false) {
     if (this.patching) {
+      this.patchingInvalid = true;
       return;
     }
     this.patching = true;
+    this.patchingInvalid = false;
+    const batch: Array<{id: string; value: any}> = [];
     let patchList = (list: Array<EditorNodeType>) => {
       // 深度优先
       list.forEach((node: EditorNodeType) => {
@@ -1663,14 +1885,18 @@ export class EditorManager {
           patchList(node.uniqueChildren);
         }
 
-        if (!node.isRegion) {
-          node.patch(this.store, force);
+        if (isAlive(node) && !node.isRegion) {
+          node.patch(this.store, force, (id, value) =>
+            batch.unshift({id, value})
+          );
         }
       });
     };
 
     patchList(this.store.root.children);
+    this.store.batchChangeValue(batch);
     this.patching = false;
+    this.patchingInvalid && this.patchSchema(force);
   }
 
   /**
@@ -1732,9 +1958,7 @@ export class EditorManager {
    * @param render
    */
   makeWrapper(info: RendererInfo, render: RendererConfig): any {
-    return this.parent?.makeWrapper
-      ? this.parent.makeWrapper(info, render)
-      : makeWrapper(this, info, render);
+    return makeWrapper(this, info, render);
   }
 
   /**
@@ -1809,16 +2033,16 @@ export class EditorManager {
       return;
     }
     const plugin = node.info.plugin!;
-
     const store = this.store;
     const context: PopOverFormContext = {
+      node,
       body: plugin.popOverBodyCreator
         ? plugin.popOverBodyCreator(this.buildEventContext(node))
         : plugin.popOverBody!,
       value: store.getValueOf(node.id),
       callback: this.panelChangeValue,
       target: () =>
-        document.querySelector(`[data-editor-id="${node.id}"]`) as HTMLElement
+        document.querySelector(`[data-hlbox-id="${node.id}"]`) as HTMLElement
     };
     store.openPopOverForm(context);
   }
@@ -1855,10 +2079,17 @@ export class EditorManager {
       return [];
     }
 
-    let scope: DataScope | void;
+    let scope: DataScope | void = undefined;
     let from = node;
     let region = node;
     const trigger = node;
+
+    // 删掉当前行记录scope，保持原始scope
+    for (const key in this.dataSchema.idMap) {
+      if (/\-currentRow$/.test(key)) {
+        this.dataSchema.removeScope(key);
+      }
+    }
 
     // 查找最近一层的数据域
     while (!scope && from) {
@@ -1874,32 +2105,89 @@ export class EditorManager {
     }
 
     let nearestScope;
+    let listScope = [];
 
     // 更新组件树中的所有上下文数据声明为最新数据
     while (scope) {
-      const [id, type] = scope.id.split('-');
-      const node = this.store.getNodeById(id, type);
+      const [nodeId] = scope.id.split('-');
+      const type = scope.id.replace(`${nodeId}-`, '');
+      const scopeNode = this.store.getNodeById(nodeId, type);
 
       // 拿非重复组件id的父组件作为主数据域展示，如CRUD，不展示表格，只展示增删改查信息，避免变量面板出现两份数据
-      if (!nearestScope && node && !node.isSecondFactor) {
+      if (!nearestScope && scopeNode && !scopeNode.isSecondFactor) {
         nearestScope = scope;
       }
+      if (scopeNode) {
+        const tmpSchema = await scopeNode?.info?.plugin?.buildDataSchemas?.(
+          scopeNode,
+          region,
+          trigger
+        );
 
-      const jsonschema = await node?.info?.plugin?.buildDataSchemas?.(
-        node,
-        region,
-        trigger
-      );
-      if (jsonschema) {
-        scope.removeSchema(jsonschema.$id);
-        scope.addSchema(jsonschema);
+        if (tmpSchema) {
+          const jsonschema = {
+            ...tmpSchema,
+            ...(tmpSchema?.$id
+              ? {}
+              : {$id: `${scopeNode!.id}-${scopeNode!.type}`})
+          };
+          scope.removeSchema(jsonschema.$id);
+          scope.addSchema(jsonschema);
+        }
+
+        // 记录each列表等组件顺序
+        if (scopeNode?.info?.isListComponent) {
+          listScope.unshift(scope);
+
+          // 如果当前节点是list类型节点，当前scope从父节点上取
+          if (nodeId === id) {
+            nearestScope = scope.parent;
+          }
+        }
       }
 
       scope = withoutSuper ? undefined : scope.parent;
     }
 
-    if (nearestScope?.id) {
-      this.dataSchema.switchTo(nearestScope.id);
+    // each列表类型嵌套时需要从上到下获取数据，重新执行一遍
+    if (listScope.length > 1) {
+      for (let scope of listScope) {
+        const [id, type] = scope.id.split('-');
+        const node = this.store.getNodeById(id, type);
+        if (node) {
+          const tmpSchema = await node?.info?.plugin?.buildDataSchemas?.(
+            node,
+            region,
+            trigger
+          );
+          if (tmpSchema) {
+            const jsonschema = {
+              ...tmpSchema,
+              ...(tmpSchema?.$id ? {} : {$id: `${node!.id}-${node!.type}`})
+            };
+            scope.removeSchema(jsonschema.$id);
+            scope.addSchema(jsonschema);
+          }
+        }
+      }
+    }
+
+    // 存在当前行时，找到最底层（todo：暂不考虑table套service+table的场景）
+    const nearestScopeId =
+      Object.keys(this.dataSchema.idMap).find(
+        key =>
+          /\-currentRow$/.test(key) &&
+          !this.dataSchema.idMap[key].children?.length
+      ) || nearestScope?.id;
+
+    if (nearestScopeId) {
+      this.dataSchema.switchTo(nearestScopeId);
+    }
+
+    // 如果当前容器是list非数据组件，scope从父scope开始
+    if (node.info.isListComponent) {
+      let lastScope = listScope[listScope.length - 1];
+      this.dataSchema.switchTo(lastScope.parent!);
     }
 
     return withoutSuper
@@ -1910,12 +2198,12 @@ export class EditorManager {
   /**
    * 获取可用上下文待绑定字段
    */
-  async getAvailableContextFields(node: EditorNodeType) {
+  async getAvailableContextFields(node: EditorNodeType): Promise<any> {
     if (!node) {
       return;
     }
 
-    let scope: DataScope | void;
+    let scope: DataScope | void = undefined;
     let from = node;
     let region = node;
 
@@ -1924,17 +2212,34 @@ export class EditorManager {
       scope = this.dataSchema.hasScope(`${from.id}-${from.type}`)
         ? this.dataSchema.getScope(`${from.id}-${from.type}`)
         : undefined;
+
+      /** Combo和InputTable作为也有自己的Scope */
+      if (!scope) {
+        if (['combo', 'input-table'].includes(from?.info?.type)) {
+          break;
+        }
+      }
+
       from = from.parent;
       if (from?.isRegion) {
         region = from;
       }
     }
 
+    if (!scope) {
+      /** 如果在子编辑器中，继续去上层编辑器查找，不过这里可能受限于当前层的数据映射 */
+      if (!from && this.store.isSubEditor) {
+        return this.config?.getAvaiableContextFields?.(node);
+      }
+      return from?.info.plugin.getAvailableContextFields?.(from, node);
+    }
+
     while (scope) {
-      const [id, type] = scope.id.split('-');
+      const [id] = scope.id.split('-');
+      const type = scope.id.substring(id.length + 1); // replace(`${id}-`, '');
       const scopeNode = this.store.getNodeById(id, type);
 
-      if (scopeNode) {
+      if (scopeNode && !scopeNode.info?.isListComponent) {
         return scopeNode?.info.plugin.getAvailableContextFields?.(
           scopeNode,
           node
@@ -1974,6 +2279,7 @@ export class EditorManager {
     this.trigger('dispose', {
       data: this
     });
+    delete (this as any).parent;
     this.toDispose.forEach(fn => fn());
     this.toDispose = [];
     this.plugins.forEach(p => p.dispose?.());

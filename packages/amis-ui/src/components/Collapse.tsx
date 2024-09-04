@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import {ClassNamesFn, themeable} from 'amis-core';
+import {ClassNamesFn, ThemeProps, themeable} from 'amis-core';
 import Transition, {
   EXITED,
   ENTERING,
@@ -24,7 +24,7 @@ const collapseStyles: {
   [ENTERING]: 'in'
 };
 
-export interface CollapseProps {
+export interface CollapseProps extends ThemeProps {
   id?: string;
   key?: string;
   collapseId?: string;
@@ -33,8 +33,6 @@ export interface CollapseProps {
   unmountOnExit?: boolean;
   className?: string;
   style?: any;
-  classPrefix: string;
-  classnames: ClassNamesFn;
   headerPosition?: 'top' | 'bottom';
   header?: React.ReactNode;
   body: any;
@@ -47,13 +45,16 @@ export interface CollapseProps {
   headingClassName?: string;
   collapseHeader?: React.ReactElement | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'base';
-  onCollapse?: (item: any, collapsed: boolean) => void;
+  onCollapse?: (collapsed: boolean) => void;
   wrapperComponent?: any;
   headingComponent?: any;
   translate?: TranslateFn;
   propsUpdate?: boolean;
   partial?: boolean;
   children?: React.ReactNode | Array<React.ReactNode>;
+  divideLine?: boolean;
+  /** 当Collapse作为Form组件的子元素时，开启该属性后组件样式设置为FieldSet组件的样式，默认开启 */
+  enableFieldSetStyle?: boolean;
 }
 
 export interface CollapseState {
@@ -73,7 +74,8 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
     collapsable: true,
     disabled: false,
     showArrow: true,
-    propsUpdate: false
+    propsUpdate: false,
+    enableFieldSetStyle: true
   };
 
   state: CollapseState = {
@@ -107,10 +109,31 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
     if (props.disabled || props.collapsable === false) {
       return;
     }
-    props.onCollapse && props.onCollapse(props, !this.state.collapsed);
+    const newCollapsed = !this.state.collapsed;
+    props.onCollapse?.(newCollapsed);
     this.setState({
-      collapsed: !this.state.collapsed
+      collapsed: newCollapsed
     });
+  }
+
+  /** 变更组件的折叠状态 */
+  @autobind
+  changeCollapsedState(targetState: boolean) {
+    const {disabled, collapsable} = this.props;
+    const {collapsed: currentState} = this.state;
+
+    if (disabled || collapsable === false || currentState === targetState) {
+      return;
+    }
+
+    this.setState(
+      {
+        collapsed: targetState
+      },
+      () => {
+        this.props.onCollapse?.(targetState);
+      }
+    );
   }
 
   contentDom: any;
@@ -170,7 +193,9 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
       showArrow,
       expandIcon,
       disabled,
-      children
+      children,
+      mobileUI,
+      enableFieldSetStyle
     } = this.props;
 
     const finalHeader = this.state.collapsed
@@ -182,7 +207,11 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
         <HeadingComponent
           key="header"
           onClick={this.toggleCollapsed}
-          className={cx(`Collapse-header`, headingClassName)}
+          className={cx(
+            `Collapse-header`,
+            {'is-mobile': mobileUI},
+            headingClassName
+          )}
         >
           {showArrow && collapsable ? (
             expandIcon ? (
@@ -198,7 +227,7 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
                 <Icon
                   icon="right-arrow-bold"
                   className={cx('Collapse-arrow', 'icon')}
-                  wrapClassName={cx('Collapse-arrow')}
+                  classNameProp={cx('Collapse-arrow')}
                   iconContent="Collapse-arrow"
                 />
               </span>
@@ -249,10 +278,12 @@ export class Collapse extends React.Component<CollapseProps, CollapseState> {
         className={cx(
           `Collapse`,
           {
+            'is-mobile': mobileUI,
             'is-active': !this.state.collapsed,
             [`Collapse--${size}`]: size,
             'Collapse--disabled': disabled,
-            'Collapse--title-bottom': headerPosition === 'bottom'
+            'Collapse--title-bottom': headerPosition === 'bottom',
+            'Collapse-fieldset--disabled': enableFieldSetStyle === false
           },
           className
         )}

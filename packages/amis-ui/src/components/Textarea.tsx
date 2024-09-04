@@ -1,7 +1,7 @@
 import React from 'react';
 import {findDOMNode} from 'react-dom';
 import BaseTextArea from 'react-textarea-autosize';
-import {localeable, LocaleProps} from 'amis-core';
+import {localeable, LocaleProps, TestIdBuilder} from 'amis-core';
 import {themeable, ThemeProps} from 'amis-core';
 import {autobind, ucFirst} from 'amis-core';
 import {Icon} from './icons';
@@ -58,6 +58,7 @@ export interface TextAreaProps extends ThemeProps, LocaleProps {
   placeholder?: string;
   name?: string;
   disabled?: boolean;
+  testIdBuilder?: TestIdBuilder;
 
   forwardRef?: {current: HTMLTextAreaElement | null};
 }
@@ -183,7 +184,9 @@ export class Textarea extends React.Component<TextAreaProps, TextAreaState> {
       classnames: cx,
       maxLength,
       showCounter,
-      clearable
+      clearable,
+      testIdBuilder,
+      style
     } = this.props;
     const counter = showCounter ? this.valueToString(value).length : 0;
 
@@ -194,10 +197,11 @@ export class Textarea extends React.Component<TextAreaProps, TextAreaState> {
           {
             [`TextareaControl--border${ucFirst(borderMode)}`]: borderMode,
             'is-focused': this.state.focused,
-            'is-disabled': disabled
+            'is-disabled': disabled || readOnly
           },
           className
         )}
+        style={style}
       >
         <BaseTextArea
           className={cx(`TextareaControl-input`, {
@@ -218,6 +222,7 @@ export class Textarea extends React.Component<TextAreaProps, TextAreaState> {
           onChange={this.handleChange}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
+          {...testIdBuilder?.getTestId()}
         />
 
         {clearable && !disabled && value ? (
@@ -233,9 +238,13 @@ export class Textarea extends React.Component<TextAreaProps, TextAreaState> {
               'is-clearable': clearable && !disabled && value
             })}
           >
-            {`${counter}${
-              typeof maxLength === 'number' && maxLength ? `/${maxLength}` : ''
-            }`}
+            <span>{counter}</span>
+            {typeof maxLength === 'number' && maxLength ? (
+              <>
+                <i>/</i>
+                <span>{maxLength}</span>
+              </>
+            ) : null}
           </span>
         ) : null}
       </div>

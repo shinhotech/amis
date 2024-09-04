@@ -1,17 +1,28 @@
-import {getSchemaTpl, valuePipeOut} from 'amis-editor-core';
+import {
+  defaultValue,
+  getSchemaTpl,
+  undefinedPipeOut,
+  valuePipeOut
+} from 'amis-editor-core';
 import {registerEditorPlugin, tipedLabel} from 'amis-editor-core';
 import {BasePlugin, BaseEventContext} from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
-import type {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import type {
+  EditorManager,
+  EditorNodeType,
+  RendererPluginAction,
+  RendererPluginEvent
+} from 'amis-editor-core';
+import {isExpression, isPureVariable} from 'amis-core';
+import omit from 'lodash/omit';
 
 export class SwitchControlPlugin extends BasePlugin {
+  static id = 'SwitchControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'switch';
   $schema = '/schemas/SwitchControlSchema.json';
-
-  order = -400;
 
   // 组件名称
   name = '开关';
@@ -51,22 +62,48 @@ export class SwitchControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '开关值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '开关值'
+      dataSchema: (manager: EditorManager) => {
+        const node = manager.store.getNodeById(manager.store.activeId);
+        const schemas = manager.dataSchema.current.schemas;
+        const dataSchema = schemas.find(
+          item => item.properties?.[node!.schema.name]
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...((dataSchema?.properties?.[node!.schema.name] as any) ??
+                      {}),
+                    title: '开关值'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
   // 动作定义
   actions: RendererPluginAction[] = [
+    {
+      actionType: 'clear',
+      actionLabel: '清空',
+      description: '清除选中值'
+    },
+    {
+      actionType: 'reset',
+      actionLabel: '重置',
+      description: '将值重置为初始值'
+    },
     {
       actionType: 'setValue',
       actionLabel: '赋值',
@@ -75,6 +112,7 @@ export class SwitchControlPlugin extends BasePlugin {
   ];
 
   panelJustify = true;
+
   panelBodyCreator = (context: BaseEventContext) =>
     getSchemaTpl('tabs', [
       {
@@ -101,49 +139,58 @@ export class SwitchControlPlugin extends BasePlugin {
                   body: [getSchemaTpl('onText'), getSchemaTpl('offText')]
                 }
               },
-
               {
                 type: 'ae-switch-more',
-                bulk: true,
+                hiddenOnDefault: false,
                 mode: 'normal',
-                label: tipedLabel(
-                  '值格式',
-                  '默认勾选后的值 true，未勾选的值 false'
-                ),
+                label: '值格式',
                 formType: 'extend',
                 form: {
                   body: [
                     {
-                      type: 'input-text',
-                      label: '勾选后的值',
+                      type: 'ae-valueFormat',
                       name: 'trueValue',
-                      value: true,
-                      pipeOut: valuePipeOut,
+                      label: '开启时',
+                      pipeIn: defaultValue(true),
+                      pipeOut: undefinedPipeOut,
                       onChange: (
-                        value: string,
-                        oldValue: string,
+                        value: any,
+                        oldValue: any,
                         model: any,
                         form: any
                       ) => {
-                        if (oldValue === form.getValueByName('value')) {
-                          form.setValueByName('value', value);
+                        const {value: defaultValue, trueValue} =
+                          form?.data || {};
+                        if (isPureVariable(defaultValue)) {
+                          return;
+                        }
+                        if (trueValue === defaultValue && trueValue !== value) {
+                          form.setValues({value});
                         }
                       }
                     },
                     {
-                      type: 'input-text',
-                      label: '未勾选的值',
+                      type: 'ae-valueFormat',
                       name: 'falseValue',
-                      value: false,
-                      pipeOut: valuePipeOut,
+                      label: '关闭时',
+                      pipeIn: defaultValue(false),
+                      pipeOut: undefinedPipeOut,
                       onChange: (
-                        value: string,
-                        oldValue: string,
+                        value: any,
+                        oldValue: any,
                         model: any,
                         form: any
                       ) => {
-                        if (oldValue === form.getValueByName('value')) {
-                          form.setValueByName('value', value);
+                        const {value: defaultValue, falseValue} =
+                          form?.data || {};
+                        if (isPureVariable(defaultValue)) {
+                          return;
+                        }
+                        if (
+                          falseValue === defaultValue &&
+                          falseValue !== value
+                        ) {
+                          form.setValues({value});
                         }
                       }
                     }
@@ -167,25 +214,24 @@ export class SwitchControlPlugin extends BasePlugin {
               }),
               */
               getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema,
+                rendererSchema: {
+                  ...omit(context?.schema, ['trueValue', 'falseValue']),
+                  type: 'switch'
+                },
                 needDeleteProps: ['option'],
                 rendererWrapper: true, // 浅色线框包裹一下，增加边界感
-                // valueType: 'boolean',
+                valueType: 'boolean',
                 pipeIn: (value: any, data: any) => {
-                  const {trueValue = true, falseValue = false} =
-                    data.data || {};
-                  return value === trueValue
-                    ? true
-                    : value === falseValue
-                    ? false
-                    : value;
+                  if (isPureVariable(value)) {
+                    return value;
+                  }
+                  return value === (data?.data?.trueValue ?? true);
                 },
                 pipeOut: (value: any, origin: any, data: any) => {
-                  return value && value === (data.trueValue || true)
-                    ? data.trueValue || true
-                    : value && value !== (data.falseValue || false)
-                    ? value
-                    : data.falseValue || false;
+                  // 如果是表达式，直接返回
+                  if (isExpression(value)) return value;
+                  const {trueValue = true, falseValue = false} = data || {};
+                  return value ? trueValue : falseValue;
                 }
               }),
               getSchemaTpl('labelRemark'),
@@ -226,6 +272,15 @@ export class SwitchControlPlugin extends BasePlugin {
         ]
       }
     ]);
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    // 默认trueValue和falseValue是同类型
+    return {
+      type: node.schema?.trueValue ? typeof node.schema?.trueValue : 'boolean',
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+  }
 }
 
 registerEditorPlugin(SwitchControlPlugin);

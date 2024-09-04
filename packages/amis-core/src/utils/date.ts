@@ -71,8 +71,12 @@ export const filterDate = (
     const date = new Date();
     return mm([date.getFullYear(), date.getMonth(), date.getDate()]);
   } else {
-    const result = mm(value);
-    return result.isValid() ? result : mm(value, format);
+    const result = utc ? mm(value).local() : mm(value);
+    return result.isValid()
+      ? result
+      : utc
+      ? mm(value, format).local()
+      : mm(value, format);
   }
 };
 
@@ -91,4 +95,50 @@ export function parseDuration(str: string): moment.Duration | undefined {
   }
 
   return;
+}
+
+/**
+ * 解析日期，先尝试用 format 解析，如果失败，再尝试用其他标准格式解析
+ * @param value
+ * @param format
+ * @returns
+ */
+export function normalizeDate(
+  value: any,
+  format?: string,
+  options?: {
+    utc?: boolean; // utc还原成本地时间
+  }
+) {
+  if (!value || value === '0') {
+    return undefined;
+  }
+
+  const v = options?.utc
+    ? moment.utc(value, format).local()
+    : moment(value, format, true);
+  if (v.isValid()) {
+    return v;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    let formats = ['', 'YYYY-MM-DD HH:mm:ss', 'X'];
+
+    if (/^\d{10}((\.\d+)*)$/.test(value.toString())) {
+      formats = ['X', 'x', 'YYYY-MM-DD HH:mm:ss', ''];
+    } else if (/^\d{13}((\.\d+)*)$/.test(value.toString())) {
+      formats = ['x', 'X', 'YYYY-MM-DD HH:mm:ss', ''];
+    }
+
+    while (formats.length) {
+      const format = formats.shift()!;
+      const date = moment(value, format);
+
+      if (date.isValid()) {
+        return date;
+      }
+    }
+  }
+
+  return undefined;
 }

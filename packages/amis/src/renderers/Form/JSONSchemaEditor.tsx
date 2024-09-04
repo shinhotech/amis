@@ -5,14 +5,16 @@ import {JSONSchemaEditor} from 'amis-ui';
 import {autobind, isObject} from 'amis-core';
 import {FormBaseControlSchema} from '../../Schema';
 
-import {schemaEditorItemPlaceholder} from 'amis-ui/lib/components/schema-editor/Common';
-import type {SchemaEditorItemPlaceholder} from 'amis-ui/lib/components/schema-editor/Common';
+import {schemaEditorItemPlaceholder} from 'amis-ui';
+import type {SchemaEditorItemPlaceholder} from 'amis-ui';
+import {isMobile} from 'amis-core';
 
 /**
  * JSON Schema Editor
- * 文档：https://baidu.gitee.io/amis/docs/components/form/json-schema-editor
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/json-schema-editor
  */
-export interface JSONSchemaEditorControlSchema extends Omit<FormBaseControlSchema, 'placeholder'> {
+export interface JSONSchemaEditorControlSchema
+  extends Omit<FormBaseControlSchema, 'placeholder'> {
   /**
    * 指定为 JSON Schema Editor
    */
@@ -83,6 +85,11 @@ export interface JSONSchemaEditorControlSchema extends Omit<FormBaseControlSchem
    *
    */
   placeholder?: SchemaEditorItemPlaceholder;
+
+  /**
+   * 是否为迷你模式，会隐藏一些不必要的元素
+   */
+  mini?: boolean;
 }
 
 export interface JSONSchemaEditorProps
@@ -137,14 +144,20 @@ export default class JSONSchemaEditorControl extends React.PureComponent<JSONSch
   }
 
   render() {
-    const {enableAdvancedSetting, ...rest} = this.props;
+    const {enableAdvancedSetting, mobileUI, env, ...rest} = this.props;
 
     return (
       <JSONSchemaEditor
         {...rest}
+        mobileUI={mobileUI}
         placeholder={this.normalizePlaceholder()}
         enableAdvancedSetting={enableAdvancedSetting}
         renderModalProps={this.renderModalProps}
+        popOverContainer={
+          mobileUI
+            ? env?.getModalContainer
+            : rest.popOverContainer || env.getModalContainer
+        }
       />
     );
   }

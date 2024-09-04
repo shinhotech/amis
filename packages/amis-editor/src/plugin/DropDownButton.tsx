@@ -14,6 +14,7 @@ import {
 } from 'amis-editor-core';
 import {BUTTON_DEFAULT_ACTION} from '../component/BaseControl';
 export class DropDownButtonPlugin extends BasePlugin {
+  static id = 'DropDownButtonPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'dropdown-button';
@@ -23,7 +24,8 @@ export class DropDownButtonPlugin extends BasePlugin {
   name = '下拉按钮';
   isBaseComponent = true;
   description = '下拉按钮，更多的按钮通过点击后展示开来。';
-  tags = ['按钮'];
+  searchKeywords = '下拉菜单';
+  tags = ['表单项'];
   icon = 'fa fa-chevron-down';
   pluginIcon = 'dropdown-btn-plugin';
 

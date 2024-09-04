@@ -49,6 +49,7 @@ import './renderers/Form/ChartRadios';
 import './renderers/Form/InputRating';
 import './renderers/Form/Switch';
 import './renderers/Form/Radios';
+import './renderers/Form/Radio';
 import './renderers/Form/JSONSchema';
 import './renderers/Form/JSONSchemaEditor';
 import './renderers/Form/ListSelect';
@@ -93,6 +94,8 @@ import './renderers/Form/TabsTransferPicker';
 import './renderers/Form/Group';
 import './renderers/Form/InputGroup';
 import './renderers/Form/UserSelect';
+import './renderers/Form/InputSignature';
+import './renderers/Form/InputVerificationCode';
 import './renderers/Grid';
 import './renderers/Grid2D';
 import './renderers/HBox';
@@ -120,6 +123,7 @@ import './renderers/Link';
 import './renderers/Wizard';
 import './renderers/Chart';
 import './renderers/Container';
+import './renderers/SwitchContainer';
 import './renderers/SearchBox';
 import './renderers/Service';
 import './renderers/SparkLine';
@@ -151,8 +155,45 @@ import './renderers/Password';
 import './renderers/DateRange';
 import './renderers/MultilineText';
 import './renderers/OfficeViewer';
+import './renderers/PdfViewer';
+import './renderers/AMIS';
 
 import './compat';
 import './schemaExtend';
+import type {
+  BaseSchema,
+  FormSchema,
+  SchemaApi,
+  SchemaCollection,
+  SchemaExpression,
+  SchemaObject
+} from './Schema';
+import type {TableViewSchema, TrObject} from './renderers/TableView';
+import type {ActionSchema, ButtonSchema} from './renderers/Action';
+import type {CRUDCommonSchema} from './renderers/CRUD';
+import type {CRUD2Schema} from './renderers/CRUD2';
+import type {TabsSchema} from './renderers/Tabs';
+import {availableLanguages as EditorAvailableLanguages} from './renderers/Form/Editor';
+import type {Action} from './types';
+import type {SchemaType} from './Schema';
 export * from './renderers/Form/IconPickerIcons';
 export * from './renderers/Form/IconSelectStore';
+
+export {
+  BaseSchema,
+  SchemaCollection,
+  FormSchema,
+  SchemaApi,
+  SchemaObject,
+  TableViewSchema,
+  TrObject,
+  ActionSchema,
+  CRUDCommonSchema,
+  ButtonSchema,
+  CRUD2Schema,
+  TabsSchema,
+  SchemaExpression,
+  Action,
+  SchemaType,
+  EditorAvailableLanguages
+};

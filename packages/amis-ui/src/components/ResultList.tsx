@@ -4,16 +4,18 @@
 import React from 'react';
 import Sortable from 'sortablejs';
 import {findDOMNode} from 'react-dom';
-import {cloneDeep} from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+import cx from 'classnames';
 
 import {Option, Options} from './Select';
 import {ThemeProps, themeable} from 'amis-core';
 import {Icon} from './icons';
 import {autobind, guid} from 'amis-core';
-import {LocaleProps, localeable} from 'amis-core';
-import {BaseSelection, BaseSelectionProps} from './Selection';
+import {LocaleProps, localeable, ClassNamesFn} from 'amis-core';
 import TransferSearch from './TransferSearch';
 import VirtualList, {AutoSizer} from './virtual-list';
+
+import type {TestIdBuilder} from 'amis-core';
 
 export interface ResultListProps extends ThemeProps, LocaleProps {
   className?: string;
@@ -33,12 +35,14 @@ export interface ResultListProps extends ThemeProps, LocaleProps {
   itemHeight?: number; // 每个选项的高度，主要用于虚拟渲染
   virtualThreshold?: number; // 数据量多大的时候开启虚拟渲染
   showInvalidMatch?: boolean;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface ItemRenderStates {
   index: number;
   disabled?: boolean;
   labelField?: string;
+  classnames: ClassNamesFn;
   onChange: (value: any, name: string) => void;
 }
 
@@ -51,10 +55,20 @@ export class ResultList extends React.Component<
   ResultListState
 > {
   static itemRender(option: Option, states: ItemRenderStates) {
+    const scopeLabel = option.scopeLabel || '';
+    const label = option[states?.labelField || 'label'];
+    const canScopeLabelTitle =
+      typeof scopeLabel === 'string' || typeof scopeLabel === 'number';
+    const canLabelTitle =
+      typeof label === 'string' || typeof label === 'number';
+    const title =
+      canScopeLabelTitle && canLabelTitle ? `${scopeLabel}${label}` : '';
+    const classnames = states.classnames;
     return (
-      <span>{`${option.scopeLabel || ''}${
-        option[states?.labelField || 'label']
-      }`}</span>
+      <span title={title} className={classnames('Selection-ellipsis-line')}>
+        {scopeLabel}
+        {label}
+      </span>
     );
   }
 
@@ -81,6 +95,7 @@ export class ResultList extends React.Component<
   id = guid();
   sortable?: Sortable;
   unmounted = false;
+  searchRef?: any;
 
   componentDidMount() {
     this.props.sortable && this.initSortable();
@@ -97,6 +112,14 @@ export class ResultList extends React.Component<
   componentWillUnmount() {
     this.desposeSortable();
     this.unmounted = true;
+  }
+
+  @autobind
+  domSearchRef(ref: any) {
+    while (ref && ref.getWrappedInstance) {
+      ref = ref.getWrappedInstance();
+    }
+    this.searchRef = ref;
   }
 
   initSortable() {
@@ -123,13 +146,13 @@ export class ResultList extends React.Component<
 
         // 换回来
         const parent = e.to as HTMLElement;
-        if (
-          e.newIndex < e.oldIndex &&
-          e.oldIndex < parent.childNodes.length - 1
-        ) {
-          parent.insertBefore(e.item, parent.childNodes[e.oldIndex + 1]);
-        } else if (e.oldIndex < parent.childNodes.length - 1) {
-          parent.insertBefore(e.item, parent.childNodes[e.oldIndex]);
+        if (e.oldIndex < parent.childNodes.length - 1) {
+          parent.insertBefore(
+            e.item,
+            parent.childNodes[
+              e.oldIndex > e.newIndex ? e.oldIndex + 1 : e.oldIndex
+            ]
+          );
         } else {
           parent.appendChild(e.item);
         }
@@ -179,6 +202,14 @@ export class ResultList extends React.Component<
   @autobind
   clearSearch() {
     this.setState({searchResult: null});
+  }
+
+  @autobind
+  clearInput() {
+    if (this.props.searchable) {
+      this.searchRef?.clearInput?.();
+    }
+    this.clearSearch();
   }
 
   // 删除项
@@ -247,9 +278,10 @@ export class ResultList extends React.Component<
       sortable,
       labelField,
       translate: __,
-      showInvalidMatch
+      showInvalidMatch,
+      testIdBuilder
     } = this.props;
-
+    const itemTIB = testIdBuilder?.getChild(`item-${option.value || index}`);
     return (
       <div
         style={styles}
@@ -269,7 +301,8 @@ export class ResultList extends React.Component<
             index,
             disabled,
             onChange: this.handleValueChange.bind(this, index),
-            labelField
+            labelField,
+            classnames: cx
           })}
         </label>
 
@@ -280,6 +313,7 @@ export class ResultList extends React.Component<
             onClick={(e: React.MouseEvent<HTMLElement>) =>
               this.handleCloseItem(e, option)
             }
+            {...itemTIB?.getChild('close').getTestId()}
           >
             <Icon icon="close" className="icon" />
           </a>
@@ -359,6 +393,7 @@ export class ResultList extends React.Component<
         {title ? <div className={cx('Selections-title')}>{title}</div> : null}
         {searchable ? (
           <TransferSearch
+            ref={this.domSearchRef}
             placeholder={searchPlaceholder}
             onSearch={this.search}
             onCancelSearch={this.clearSearch}

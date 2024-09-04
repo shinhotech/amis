@@ -2,11 +2,11 @@
   position: relative;
   display: inline-flex;
   vertical-align: middle;
+  flex-wrap: wrap;
 
   > .#{$ns}Button {
     position: relative;
     flex: 0 1 auto;
-    max-width: px2rem(140px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -47,6 +47,14 @@
 
   &--block {
     display: block;
+  }
+  &-button--active {
+    z-index: 1;
+
+    &.is-disabled {
+      color: var(--text-color);
+      border: var(--borderWidth) solid var(--borderColor);
+    }
   }
 }
 
@@ -146,8 +154,12 @@
   display: flex;
 
   .#{$ns}Button,
-  .#{$ns}ButtonGroup {
+  .#{$ns}ButtonGroup,
+  .#{$ns}Badge {
     flex-grow: 1;
     text-align: center;
+    .#{$ns}Button {
+      width: 100%;
+    }
   }
 }

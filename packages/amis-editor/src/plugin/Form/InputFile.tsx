@@ -6,6 +6,7 @@ import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 
 export class FileControlPlugin extends BasePlugin {
+  static id = 'FileControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-file';
   $schema = '/schemas/FileControlSchema.json';
@@ -50,9 +51,15 @@ export class FileControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.file': {
+            data: {
               type: 'object',
-              title: '上传的文件'
+              title: '数据',
+              properties: {
+                file: {
+                  type: 'object',
+                  title: '上传的文件'
+                }
+              }
             }
           }
         }
@@ -66,9 +73,15 @@ export class FileControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '被移除的文件'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '被移除的文件'
+                }
+              }
             }
           }
         }
@@ -82,9 +95,19 @@ export class FileControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '远程上传请求成功后返回的结果数据'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '上传的文件'
+                },
+                result: {
+                  type: 'object',
+                  title: '远程上传请求成功后返回的响应数据'
+                }
+              }
             }
           }
         }
@@ -98,13 +121,19 @@ export class FileControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '上传的文件'
-            },
-            'event.data.error': {
-              type: 'object',
-              title: '远程上传请求失败后返回的错误信息'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '上传的文件'
+                },
+                error: {
+                  type: 'object',
+                  title: '远程上传请求失败后返回的错误信息'
+                }
+              }
             }
           }
         }
@@ -207,7 +236,7 @@ export class FileControlPlugin extends BasePlugin {
                 name: 'formType',
                 type: 'select',
                 tiled: true,
-                visibleOn: 'data.uploadType === "asForm"',
+                visibleOn: 'this.uploadType === "asForm"',
                 value: 'asBlob',
                 label: tipedLabel(
                   '数据格式',
@@ -236,19 +265,19 @@ export class FileControlPlugin extends BasePlugin {
               },
 
               getSchemaTpl('bos', {
-                visibleOn: 'data.uploadType === "bos"'
+                visibleOn: 'this.uploadType === "bos"'
               }),
 
               getSchemaTpl('proxy', {
                 value: true,
-                visibleOn: 'data.uploadType !== "asForm" || !data.uploadType'
+                visibleOn: 'this.uploadType !== "asForm" || !this.uploadType'
               }),
 
               getSchemaTpl('switch', {
                 name: 'autoUpload',
                 label: '自动上传',
                 value: true,
-                visibleOn: 'data.uploadType !== "asForm"'
+                visibleOn: 'this.uploadType !== "asForm"'
               }),
 
               getSchemaTpl('switch', {
@@ -256,14 +285,14 @@ export class FileControlPlugin extends BasePlugin {
                 label: '开启分块',
                 value: false,
                 pipeIn: (value: any, form: any) => !!value, // 兼容auto
-                visibleOn: 'data.uploadType !== "asForm"'
+                visibleOn: 'this.uploadType !== "asForm"'
               }),
 
               {
                 type: 'container',
                 className: 'ae-ExtendMore mb-3',
                 visibleOn:
-                  'data.uploadType !== "asForm" && data.useChunk === true',
+                  'this.uploadType !== "asForm" && this.useChunk === true',
                 body: [
                   {
                     type: 'input-group',
@@ -284,7 +313,7 @@ export class FileControlPlugin extends BasePlugin {
                   {
                     type: 'Container',
                     visibleOn:
-                      'data.uploadType == "fileReceptor" && data.useChunk != false',
+                      'this.uploadType == "fileReceptor" && this.useChunk != false',
                     body: [
                       getSchemaTpl('apiControl', {
                         mode: 'row',
@@ -329,7 +358,7 @@ export class FileControlPlugin extends BasePlugin {
                 value: '/api/upload/file',
                 __isUpload: true,
                 visibleOn:
-                  'data.uploadType === "fileReceptor" && !data.useChunk'
+                  'this.uploadType === "fileReceptor" && !this.useChunk'
               }),
               {
                 type: 'input-text',

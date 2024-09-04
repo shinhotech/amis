@@ -3,6 +3,7 @@ import {registerEditorPlugin} from 'amis-editor-core';
 import {BasePlugin, getSchemaTpl} from 'amis-editor-core';
 
 export class HiddenControlPlugin extends BasePlugin {
+  static id = 'HiddenControlPlugin';
   // 关联渲染器名字
   rendererName = 'hidden';
   $schema = '/schemas/HiddenControlSchema.json';
@@ -13,6 +14,7 @@ export class HiddenControlPlugin extends BasePlugin {
   icon = 'fa fa-eye-slash';
   pluginIcon = 'hidden-plugin';
   description = '隐藏表单项';
+  searchKeywords = '隐藏字段';
   docLink = '/amis/zh-CN/components/form/hidden';
   tags = ['表单项'];
   scaffold = {

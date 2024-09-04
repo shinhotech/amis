@@ -4,7 +4,6 @@ exports[`Renderer:text 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -85,45 +84,6 @@ exports[`Renderer:text 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -132,7 +92,6 @@ exports[`Renderer:text type is email: validate fail 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -220,45 +179,6 @@ exports[`Renderer:text type is email: validate fail 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -267,7 +187,6 @@ exports[`Renderer:text type is email: validate success 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -348,45 +267,6 @@ exports[`Renderer:text type is email: validate success 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -395,7 +275,6 @@ exports[`Renderer:text type is password with revealPassword 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -476,45 +355,6 @@ exports[`Renderer:text type is password with revealPassword 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -523,7 +363,6 @@ exports[`Renderer:text type is password: password invisible 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -586,12 +425,8 @@ exports[`Renderer:text type is password: password invisible 1`] = `
               <a
                 class="cxd-TextControl-revealPassword"
               >
-                <div
-                  class="cxd-TextControl-icon-invisible InputText-invisible"
-                  style="display: none;"
-                />
                 <icon-mock
-                  classname="cxd-TextControl-icon-invisible icon-invisible"
+                  classname="cxd-TextControl-icon-invisible icon-invisible cxd-TextControl-icon-invisible"
                   icon="invisible"
                 />
               </a>
@@ -616,45 +451,6 @@ exports[`Renderer:text type is password: password invisible 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -663,7 +459,6 @@ exports[`Renderer:text type is password: password visible 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -726,12 +521,8 @@ exports[`Renderer:text type is password: password visible 1`] = `
               <a
                 class="cxd-TextControl-revealPassword"
               >
-                <div
-                  class="cxd-TextControl-icon-view InputText-view"
-                  style="display: none;"
-                />
                 <icon-mock
-                  classname="cxd-TextControl-icon-view icon-view"
+                  classname="cxd-TextControl-icon-view icon-view cxd-TextControl-icon-view"
                   icon="view"
                 />
               </a>
@@ -756,45 +547,6 @@ exports[`Renderer:text type is password: password visible 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -803,7 +555,6 @@ exports[`Renderer:text type is url: validate fail 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -891,45 +642,6 @@ exports[`Renderer:text type is url: validate fail 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -938,7 +650,6 @@ exports[`Renderer:text type is url: validate success 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1019,45 +730,6 @@ exports[`Renderer:text type is url: validate success 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1066,7 +738,6 @@ exports[`Renderer:text with addOn 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1159,45 +830,6 @@ exports[`Renderer:text with addOn 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1206,7 +838,6 @@ exports[`Renderer:text with clearable 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1269,10 +900,6 @@ exports[`Renderer:text with clearable 1`] = `
               <a
                 class="cxd-TextControl-clear"
               >
-                <div
-                  class=" InputText-clear"
-                  style="display: none;"
-                />
                 <icon-mock
                   classname="icon icon-input-clear"
                   icon="input-clear"
@@ -1299,45 +926,6 @@ exports[`Renderer:text with clearable 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1346,7 +934,6 @@ exports[`Renderer:text with counter 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1432,45 +1019,6 @@ exports[`Renderer:text with counter 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1479,7 +1027,6 @@ exports[`Renderer:text with counter 2`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1565,45 +1112,6 @@ exports[`Renderer:text with counter 2`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1612,7 +1120,6 @@ exports[`Renderer:text with counter and maxLength 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1699,45 +1206,6 @@ exports[`Renderer:text with counter and maxLength 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1746,7 +1214,6 @@ exports[`Renderer:text with counter and maxLength 2`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1833,45 +1300,6 @@ exports[`Renderer:text with counter and maxLength 2`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -1880,7 +1308,6 @@ exports[`Renderer:text with minLength 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -1970,45 +1397,6 @@ exports[`Renderer:text with minLength 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -2017,7 +1405,6 @@ exports[`Renderer:text with options 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -2068,13 +1455,11 @@ exports[`Renderer:text with options 1`] = `
             <div
               aria-expanded="false"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-0-label"
               class="cxd-TextControl-input cxd-TextControl-input--withAC"
               role="combobox"
             >
               <input
                 aria-autocomplete="list"
-                aria-labelledby="downshift-0-label"
                 autocomplete="off"
                 class=""
                 id="downshift-0-input"
@@ -2104,54 +1489,14 @@ exports[`Renderer:text with options 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
 
-exports[`Renderer:text with options and multiple and delimiter: first option selected 1`] = `
+exports[`Renderer:text with options and multiple Renderer:text with options and multiple and delimiter: first option selected 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -2202,16 +1547,15 @@ exports[`Renderer:text with options and multiple and delimiter: first option sel
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-1-label"
               aria-owns="downshift-1-menu"
-              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple"
+              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple has-popover"
               role="combobox"
             >
               <div
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionA
                 </span>
@@ -2223,7 +1567,6 @@ exports[`Renderer:text with options and multiple and delimiter: first option sel
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-1-menu"
-                aria-labelledby="downshift-1-label"
                 autocomplete="off"
                 class=""
                 id="downshift-1-input"
@@ -2233,37 +1576,44 @@ exports[`Renderer:text with options and multiple and delimiter: first option sel
                 value=""
               />
               <div
-                class="cxd-TextControl-sugs"
+                class="cxd-PopOver cxd-TextControl-popover cxd-PopOver--leftBottomLeftTop cxd-PopOver--v-top"
+                role="popover"
+                style="display: block; width: 0px; left: 0px; top: 0px;"
+                theme="cxd"
               >
                 <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-0"
-                  role="option"
+                  class="cxd-TextControl-sugs"
                 >
-                  <span>
-                    OptionB
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-1"
-                  role="option"
-                >
-                  <span>
-                    OptionC
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-2"
-                  role="option"
-                >
-                  <span>
-                    OptionD
-                  </span>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-0"
+                    role="option"
+                  >
+                    <span>
+                      OptionB
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-1"
+                    role="option"
+                  >
+                    <span>
+                      OptionC
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-2"
+                    role="option"
+                  >
+                    <span>
+                      OptionD
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2305,54 +1655,14 @@ exports[`Renderer:text with options and multiple and delimiter: first option sel
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
 
-exports[`Renderer:text with options and multiple and delimiter: options is opened 1`] = `
+exports[`Renderer:text with options and multiple Renderer:text with options and multiple and delimiter: options is opened 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -2403,15 +1713,13 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-1-label"
               aria-owns="downshift-1-menu"
-              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple"
+              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple has-popover"
               role="combobox"
             >
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-1-menu"
-                aria-labelledby="downshift-1-label"
                 autocomplete="off"
                 class=""
                 id="downshift-1-input"
@@ -2421,47 +1729,54 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
                 value=""
               />
               <div
-                class="cxd-TextControl-sugs"
+                class="cxd-PopOver cxd-TextControl-popover cxd-PopOver--leftBottomLeftTop cxd-PopOver--v-top"
+                role="popover"
+                style="display: block; width: 0px; left: 0px; top: 0px;"
+                theme="cxd"
               >
                 <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-0"
-                  role="option"
+                  class="cxd-TextControl-sugs"
                 >
-                  <span>
-                    OptionA
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-1"
-                  role="option"
-                >
-                  <span>
-                    OptionB
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-2"
-                  role="option"
-                >
-                  <span>
-                    OptionC
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-3"
-                  role="option"
-                >
-                  <span>
-                    OptionD
-                  </span>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-0"
+                    role="option"
+                  >
+                    <span>
+                      OptionA
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-1"
+                    role="option"
+                  >
+                    <span>
+                      OptionB
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-2"
+                    role="option"
+                  >
+                    <span>
+                      OptionC
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-3"
+                    role="option"
+                  >
+                    <span>
+                      OptionD
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2507,54 +1822,14 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
 
-exports[`Renderer:text with options and multiple and delimiter: options is opened again, and first option already selected 1`] = `
+exports[`Renderer:text with options and multiple Renderer:text with options and multiple and delimiter: options is opened again, and first option already selected 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -2605,16 +1880,15 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-1-label"
               aria-owns="downshift-1-menu"
-              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple"
+              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple has-popover"
               role="combobox"
             >
               <div
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionA
                 </span>
@@ -2626,7 +1900,6 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-1-menu"
-                aria-labelledby="downshift-1-label"
                 autocomplete="off"
                 class=""
                 id="downshift-1-input"
@@ -2636,37 +1909,44 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
                 value=""
               />
               <div
-                class="cxd-TextControl-sugs"
+                class="cxd-PopOver cxd-TextControl-popover cxd-PopOver--leftBottomLeftTop cxd-PopOver--v-top"
+                role="popover"
+                style="display: block; width: 0px; left: 0px; top: 0px;"
+                theme="cxd"
               >
                 <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-0"
-                  role="option"
+                  class="cxd-TextControl-sugs"
                 >
-                  <span>
-                    OptionB
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-1"
-                  role="option"
-                >
-                  <span>
-                    OptionC
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-2"
-                  role="option"
-                >
-                  <span>
-                    OptionD
-                  </span>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-0"
+                    role="option"
+                  >
+                    <span>
+                      OptionB
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-1"
+                    role="option"
+                  >
+                    <span>
+                      OptionC
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-2"
+                    role="option"
+                  >
+                    <span>
+                      OptionD
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2708,54 +1988,14 @@ exports[`Renderer:text with options and multiple and delimiter: options is opene
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
 
-exports[`Renderer:text with options and multiple and delimiter: second option selected 1`] = `
+exports[`Renderer:text with options and multiple Renderer:text with options and multiple and delimiter: second option selected 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -2806,16 +2046,15 @@ exports[`Renderer:text with options and multiple and delimiter: second option se
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-1-label"
               aria-owns="downshift-1-menu"
-              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple"
+              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened cxd-TextControl-input--multiple has-popover"
               role="combobox"
             >
               <div
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionA
                 </span>
@@ -2828,7 +2067,7 @@ exports[`Renderer:text with options and multiple and delimiter: second option se
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionB
                 </span>
@@ -2840,7 +2079,6 @@ exports[`Renderer:text with options and multiple and delimiter: second option se
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-1-menu"
-                aria-labelledby="downshift-1-label"
                 autocomplete="off"
                 class=""
                 id="downshift-1-input"
@@ -2850,27 +2088,34 @@ exports[`Renderer:text with options and multiple and delimiter: second option se
                 value=""
               />
               <div
-                class="cxd-TextControl-sugs"
+                class="cxd-PopOver cxd-TextControl-popover cxd-PopOver--leftBottomLeftTop cxd-PopOver--v-top"
+                role="popover"
+                style="display: block; width: 0px; left: 0px; top: 0px;"
+                theme="cxd"
               >
                 <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-0"
-                  role="option"
+                  class="cxd-TextControl-sugs"
                 >
-                  <span>
-                    OptionC
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-1-item-1"
-                  role="option"
-                >
-                  <span>
-                    OptionD
-                  </span>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-0"
+                    role="option"
+                  >
+                    <span>
+                      OptionC
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-1-item-1"
+                    role="option"
+                  >
+                    <span>
+                      OptionD
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2912,54 +2157,14 @@ exports[`Renderer:text with options and multiple and delimiter: second option se
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
 
-exports[`Renderer:text with options and multiple and delimiter: thrid option create 1`] = `
+exports[`Renderer:text with options and multiple Renderer:text with options and multiple and delimiter: thrid option create 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -3010,7 +2215,6 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
             <div
               aria-expanded="false"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-1-label"
               class="cxd-TextControl-input cxd-TextControl-input--withAC cxd-TextControl-input--multiple"
               role="combobox"
             >
@@ -3018,7 +2222,7 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionA
                 </span>
@@ -3031,7 +2235,7 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   OptionB
                 </span>
@@ -3044,7 +2248,7 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
                 class="cxd-TextControl-value"
               >
                 <span
-                  class="cxd-TextControl-valueLabel"
+                  class="cxd-OverflowTpl cxd-TextControl-valueLabel"
                 >
                   AbCd
                 </span>
@@ -3055,7 +2259,6 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
               </div>
               <input
                 aria-autocomplete="list"
-                aria-labelledby="downshift-1-label"
                 autocomplete="off"
                 class=""
                 id="downshift-1-input"
@@ -3103,45 +2306,6 @@ exports[`Renderer:text with options and multiple and delimiter: thrid option cre
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -3150,7 +2314,6 @@ exports[`Renderer:text with options: options is open 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -3201,15 +2364,13 @@ exports[`Renderer:text with options: options is open 1`] = `
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-0-label"
               aria-owns="downshift-0-menu"
-              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened"
+              class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened has-popover"
               role="combobox"
             >
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-0-menu"
-                aria-labelledby="downshift-0-label"
                 autocomplete="off"
                 class=""
                 id="downshift-0-input"
@@ -3219,27 +2380,34 @@ exports[`Renderer:text with options: options is open 1`] = `
                 value=""
               />
               <div
-                class="cxd-TextControl-sugs"
+                class="cxd-PopOver cxd-TextControl-popover cxd-PopOver--leftBottomLeftTop cxd-PopOver--v-top"
+                role="popover"
+                style="display: block; width: 0px; left: 0px; top: 0px;"
+                theme="cxd"
               >
                 <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-0-item-0"
-                  role="option"
+                  class="cxd-TextControl-sugs"
                 >
-                  <span>
-                    Option A
-                  </span>
-                </div>
-                <div
-                  aria-selected="false"
-                  class="cxd-TextControl-sugItem"
-                  id="downshift-0-item-1"
-                  role="option"
-                >
-                  <span>
-                    Option B
-                  </span>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-0-item-0"
+                    role="option"
+                  >
+                    <span>
+                      Option A
+                    </span>
+                  </div>
+                  <div
+                    aria-selected="false"
+                    class="cxd-TextControl-sugItem"
+                    id="downshift-0-item-1"
+                    role="option"
+                  >
+                    <span>
+                      Option B
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3263,45 +2431,6 @@ exports[`Renderer:text with options: options is open 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -3310,7 +2439,6 @@ exports[`Renderer:text with options: select first option 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -3361,7 +2489,6 @@ exports[`Renderer:text with options: select first option 1`] = `
             <div
               aria-expanded="true"
               aria-haspopup="listbox"
-              aria-labelledby="downshift-0-label"
               aria-owns="downshift-0-menu"
               class="cxd-TextControl-input cxd-TextControl-input--withAC is-opened"
               role="combobox"
@@ -3369,7 +2496,6 @@ exports[`Renderer:text with options: select first option 1`] = `
               <input
                 aria-autocomplete="list"
                 aria-controls="downshift-0-menu"
-                aria-labelledby="downshift-0-label"
                 autocomplete="off"
                 class=""
                 id="downshift-0-input"
@@ -3399,45 +2525,6 @@ exports[`Renderer:text with options: select first option 1`] = `
         </button>
       </div>
     </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
-    </div>
   </div>
 </div>
 `;
@@ -3446,7 +2533,6 @@ exports[`Renderer:text with prefix and suffix 1`] = `
 <div>
   <div
     class="cxd-Panel cxd-Panel--default cxd-Panel--form"
-    style="position: relative;"
   >
     <div
       class="cxd-Panel-heading"
@@ -3536,45 +2622,6 @@ exports[`Renderer:text with prefix and suffix 1`] = `
           </span>
         </button>
       </div>
-    </div>
-    <div
-      class="resize-sensor"
-      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-    >
-      
-  
-      <div
-        class="resize-sensor-expand"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-shrink"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-      >
-        
-    
-        <div
-          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-        />
-        
-  
-      </div>
-      
-  
-      <div
-        class="resize-sensor-appear"
-        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-      />
     </div>
   </div>
 </div>

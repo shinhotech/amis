@@ -2,7 +2,7 @@ import React from 'react';
 import {findDOMNode} from 'react-dom';
 import Sortable from 'sortablejs';
 import cloneDeep from 'lodash/cloneDeep';
-import {RendererProps} from 'amis-core';
+import {isMobile, RendererProps} from 'amis-core';
 import {Overlay} from 'amis-core';
 import {PopOver} from 'amis-core';
 import {Modal} from 'amis-ui';
@@ -14,11 +14,10 @@ import {noop, autobind, anyChanged, createObject} from 'amis-core';
 import {filter} from 'amis-core';
 import {Icon} from 'amis-ui';
 import {getIcon} from 'amis-ui';
-import {generateIcon} from 'amis-core';
 import {RootClose} from 'amis-core';
 import type {TooltipObject} from 'amis-ui/lib/components/TooltipWrapper';
-import {IColumn} from 'amis-core/lib/store/table';
-import type {IColumn2} from 'amis-core/lib/store/table2';
+import {IColumn} from 'amis-core';
+import type {IColumn2} from 'amis-core';
 
 export interface ColumnTogglerProps extends RendererProps {
   /**
@@ -177,7 +176,7 @@ export default class ColumnToggler extends React.Component<
 
   componentDidUpdate(prevProps: ColumnTogglerProps) {
     if (anyChanged('activeToggaleColumns', prevProps, this.props)) {
-      this.setState({tempColumns: this.props.columns});
+      this.setState({tempColumns: cloneDeep(this.props.columns)});
     }
   }
 
@@ -274,7 +273,12 @@ export default class ColumnToggler extends React.Component<
 
           const parent = e.to as HTMLElement;
           if (e.oldIndex < parent.childNodes.length - 1) {
-            parent.insertBefore(e.item, parent.childNodes[e.oldIndex]);
+            parent.insertBefore(
+              e.item,
+              parent.childNodes[
+                e.oldIndex > e.newIndex ? e.oldIndex + 1 : e.oldIndex
+              ]
+            );
           } else {
             parent.appendChild(e.item);
           }
@@ -319,8 +323,10 @@ export default class ColumnToggler extends React.Component<
       classPrefix: ns,
       children,
       closeOnClick,
-      closeOnOutside
+      closeOnOutside,
+      mobileUI
     } = this.props;
+
     const body = (
       <RootClose
         disabled={!this.state.isOpened}
@@ -329,7 +335,7 @@ export default class ColumnToggler extends React.Component<
         {(ref: any) => {
           return (
             <ul
-              className={cx('ColumnToggler-menu')}
+              className={cx('ColumnToggler-menu', {'is-mobile': mobileUI})}
               onClick={closeOnClick ? this.close : noop}
               ref={ref}
             >
@@ -369,11 +375,12 @@ export default class ColumnToggler extends React.Component<
       overlay,
       translate: __,
       footerBtnSize,
+      children,
       env
     } = this.props;
 
     const {enableSorting, tempColumns} = this.state;
-
+    const inDragging = enableSorting && draggable && tempColumns.length > 1;
     return (
       <>
         <Modal
@@ -397,7 +404,9 @@ export default class ColumnToggler extends React.Component<
               <Icon icon="close" className="icon" />
             </a>
           </header>
-
+          {!inDragging && (
+            <ul className={cx('ColumnToggler-modal-content')}>{children}</ul>
+          )}
           <ul className={cx('ColumnToggler-modal-content')} ref={this.dragRef}>
             {Array.isArray(tempColumns)
               ? tempColumns.map((column, index) => (
@@ -413,7 +422,7 @@ export default class ColumnToggler extends React.Component<
                       className={cx('ColumnToggler-menuItem')}
                       key={column.index}
                     >
-                      {enableSorting && draggable && tempColumns.length > 1 ? (
+                      {inDragging ? (
                         <>
                           <a className={cx('ColumnToggler-menuItem-dragBar')}>
                             <Icon icon="drag" className={cx('icon')} />
@@ -520,7 +529,8 @@ export default class ColumnToggler extends React.Component<
       isActived,
       data,
       draggable,
-      hideExpandIcon
+      hideExpandIcon,
+      mobileUI
     } = this.props;
 
     const button = (
@@ -543,27 +553,15 @@ export default class ColumnToggler extends React.Component<
           size ? `Button--size-${size}` : ''
         )}
       >
-        {icon ? (
-          typeof icon === 'string' ? (
-            getIcon(icon!) ? (
-              <Icon icon={icon} className={cx('icon', {'m-r-xs': !!label})} />
-            ) : (
-              generateIcon(cx, icon, label ? 'm-r-xs' : '')
-            )
-          ) : React.isValidElement(icon) ? (
-            React.cloneElement(icon as React.ReactElement, {
-              className: cx({'m-r-xs': !!label})
-            })
-          ) : (
-            <Icon icon="columns" className="icon m-r-none" />
-          )
-        ) : (
-          <Icon icon="columns" className="icon m-r-none" />
-        )}
+        <Icon
+          cx={cx}
+          icon={icon || 'columns'}
+          className={cx('icon', {'m-r-xs': !!label, 'm-r-none': !!icon})}
+        />
         {typeof label === 'string' ? filter(label, data) : label}
         {hideExpandIcon || draggable ? null : (
           <span className={cx('ColumnToggler-caret')}>
-            <Icon icon="caret" className="icon" />
+            <Icon icon="right-arrow-bold" className="icon" />
           </span>
         )}
       </button>
@@ -588,7 +586,7 @@ export default class ColumnToggler extends React.Component<
         ) : (
           <TooltipWrapper
             placement={placement}
-            tooltip={disabled ? disabledTip : tooltip}
+            tooltip={disabled || mobileUI ? disabledTip : (tooltip as any)}
             container={tooltipContainer}
             trigger={tooltipTrigger}
             rootClose={tooltipRootClose}

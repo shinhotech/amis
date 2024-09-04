@@ -1,10 +1,6 @@
 .#{$ns}TextControl {
   @include input-text();
 
-  .InputText-clear {
-    content: var(--input-clearable-icon);
-  }
-
   &-clear {
     padding: 0 var(--Form-input-clearBtn-padding);
   }
@@ -45,6 +41,8 @@
       var(--input-default-default-paddingLeft);
     background: var(--input-default-default-bg-color);
     height: var(--input-size-default-height);
+    align-items: center;
+    transition: all var(--animation-duration) ease-in-out;
 
     input {
       color: var(--input-default-default-color);
@@ -313,28 +311,28 @@
     }
   }
 
-  &-sugs {
-    position: absolute;
+  &-popover {
+    margin-top: px2rem(4px);
     background: var(--Form-select-menu-bg);
     color: var(--Form-select-menu-color);
     border-radius: px2rem(2px);
-    box-shadow: var(--menu-box-shadow);
-    left: px2rem(-1px);
-    right: px2rem(-1px);
-    top: calc(100% + #{px2rem(4px)});
-    z-index: 10;
+    box-shadow: var(--Form-select-outer-boxShadow);
+    border: var(--Form-select-outer-borderWidth) solid
+      var(--Form-select-outer-borderColor);
+    padding: px2rem(4px) 0;
+  }
+
+  &-sugs {
     max-height: px2rem(300px);
     overflow: auto;
   }
 
   &-sugItem {
-    padding: calc(
-        (
-            var(--Form-selectOption-height) - var(--Form-input-lineHeight) *
-              var(--Form-input-fontSize) - #{px2rem(2px)}
-          ) / 2
-      )
-      px2rem(12px);
+    padding: var(--select-base-default-option-paddingTop)
+      var(--select-base-default-option-paddingRight)
+      var(--select-base-default-option-paddingBottom)
+      var(--select-base-default-option-paddingLeft);
+    line-height: var(--select-base-default-option-line-height);
 
     svg {
       width: px2rem(16px);
@@ -369,8 +367,7 @@
   &-input--multiple {
     height: auto;
     min-height: var(--Form-input-height);
-    padding: calc(var(--Form-input-paddingY) - #{px2rem(2px)})
-      calc(var(--Form-input-paddingX) - #{px2rem(3px)});
+    padding: var(--Form-input-paddingY) var(--Form-input-paddingX);
   }
 
   &-input--multiple &-placeholder {
@@ -493,6 +490,10 @@
       height: var(--input-password-invisible-icon-size);
     }
   }
+}
+
+.InputText-clear.icon {
+  content: var(--input-clearable-icon);
 }
 
 // 特殊处理 input-password。否则 form 内联模式，icon 会换行

@@ -1,13 +1,25 @@
-import {getSchemaTpl} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  defaultValue,
+  getSchemaTpl
+} from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {BasePlugin, BaseEventContext} from 'amis-editor-core';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
-import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import {
+  RendererPluginAction,
+  RendererPluginEvent,
+  undefinedPipeOut
+} from 'amis-editor-core';
 
 import {ValidatorTag} from '../../validator';
 import {tipedLabel} from 'amis-editor-core';
+import {resolveOptionEventDataSchame, resolveOptionType} from '../../util';
+import type {Schema} from 'amis';
 
 export class TransferPlugin extends BasePlugin {
+  static id = 'TransferPlugin';
   // 关联渲染器名字
   rendererName = 'transfer';
   $schema = '/schemas/TransferControlSchema.json';
@@ -56,37 +68,48 @@ export class TransferPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '输入框失去焦点时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+      dataSchema: (manager: EditorManager) => {
+        const {value, items} = resolveOptionEventDataSchame(manager, true);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value,
+                  items
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     },
     {
       eventName: 'selectAll',
       eventLabel: '全选',
       description: '选中所有选项',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+      dataSchema: (manager: EditorManager) => {
+        const {items} = resolveOptionEventDataSchame(manager, true);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  items
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -170,20 +193,20 @@ export class TransferPlugin extends BasePlugin {
               }),
               getSchemaTpl('label'),
               getSchemaTpl('valueFormula', {
-                rendererSchema: {
-                  ...context?.schema,
+                rendererSchema: (schema: Schema) => ({
+                  ...schema,
                   type: 'select',
                   multiple: true
-                },
-                visibleOn: 'data.options.length > 0'
+                }),
+                visibleOn: 'this.options.length > 0'
               }),
-              getSchemaTpl('labelRemark'),
-              getSchemaTpl('remark'),
-              getSchemaTpl('description'),
               getSchemaTpl('switch', {
                 label: '统计数据',
                 name: 'statistics'
-              })
+              }),
+              getSchemaTpl('labelRemark'),
+              getSchemaTpl('remark'),
+              getSchemaTpl('description')
             ]
           },
           {
@@ -225,7 +248,7 @@ export class TransferPlugin extends BasePlugin {
               },
 
               getSchemaTpl('optionControl', {
-                visibleOn: 'data.selectMode === "list"',
+                visibleOn: 'this.selectMode === "list"',
                 multiple: true
               }),
 
@@ -240,7 +263,7 @@ export class TransferPlugin extends BasePlugin {
               {
                 type: 'ae-transferTableControl',
                 label: '数据',
-                visibleOn: 'data.selectMode === "table"',
+                visibleOn: 'this.selectMode === "table"',
                 mode: 'normal',
                 // 自定义change函数
                 onValueChange: (
@@ -261,7 +284,7 @@ export class TransferPlugin extends BasePlugin {
               },
 
               getSchemaTpl('treeOptionControl', {
-                visibleOn: 'data.selectMode === "tree"'
+                visibleOn: 'this.selectMode === "tree"'
               }),
 
               getSchemaTpl('switch', {
@@ -272,7 +295,7 @@ export class TransferPlugin extends BasePlugin {
               getSchemaTpl('optionsMenuTpl', {
                 manager: this.manager,
                 onChange: (value: any) => {},
-                visibleOn: 'data.selectMode !== "table"'
+                visibleOn: 'this.selectMode !== "table"'
               }),
 
               {
@@ -315,7 +338,7 @@ export class TransferPlugin extends BasePlugin {
                 },
                 inputClassName: 'is-inline',
                 visibleOn:
-                  'data.selectMode === "list" && !data.resultListModeFollowSelect'
+                  'this.selectMode === "list" && !this.resultListModeFollowSelect'
               }),
 
               getSchemaTpl('optionsMenuTpl', {
@@ -323,7 +346,7 @@ export class TransferPlugin extends BasePlugin {
                 manager: this.manager,
                 onChange: (value: any) => {},
                 visibleOn:
-                  '!(data.selectMode === "table" && data.resultListModeFollowSelect)'
+                  '!(this.selectMode === "table" && this.resultListModeFollowSelect)'
               }),
               {
                 label: '标题',
@@ -359,7 +382,59 @@ export class TransferPlugin extends BasePlugin {
               label: 'AddOn',
               visibleOn: 'this.addOn && this.addOn.type === "text"'
             })
-          ])
+          ]),
+          ...(this.rendererName === 'transfer-picker'
+            ? [
+                {
+                  title: '边框',
+                  key: 'borderMode',
+                  body: [getSchemaTpl('borderMode')]
+                },
+                {
+                  title: '弹窗',
+                  key: 'picker',
+                  body: [
+                    {
+                      name: 'pickerSize',
+                      type: 'select',
+                      pipeIn: defaultValue(''),
+                      pipeOut: undefinedPipeOut,
+                      label: '弹窗大小',
+                      options: [
+                        {
+                          label: '默认',
+                          value: ''
+                        },
+                        {
+                          value: 'sm',
+                          label: '小'
+                        },
+
+                        {
+                          label: '中',
+                          value: 'md'
+                        },
+
+                        {
+                          label: '大',
+                          value: 'lg'
+                        },
+
+                        {
+                          label: '特大',
+                          value: 'xl'
+                        },
+
+                        {
+                          label: '全屏',
+                          value: 'full'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            : [])
         ])
       },
       {
@@ -374,6 +449,45 @@ export class TransferPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.extractValue) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name
+      };
+    } else if (node.schema?.joinValues === false) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name,
+        items: {
+          type: 'object',
+          title: '成员',
+          properties: {
+            [node.schema?.labelField || 'label']: {
+              type: 'string',
+              title: '文本'
+            },
+            [node.schema?.valueField || 'value']: {
+              type,
+              title: '值'
+            }
+          }
+        },
+        originalValue: dataSchema.originalValue
+      };
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(TransferPlugin);

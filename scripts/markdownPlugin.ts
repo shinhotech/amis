@@ -81,6 +81,7 @@ renderer.link = function (href: string, title: string, text: string) {
 };
 
 function markdown2js(content: string, file: string) {
+  var raw = content;
   var m = rYml.exec(content);
   var info: any = {};
   if (m && m[1]) {
@@ -152,7 +153,7 @@ function markdown2js(content: string, file: string) {
       return _;
     })
     .replace(
-      /```(schema|html|css)(?::(.*?))?\n([\s\S]*?)```/g,
+      /```(schema|html)(?::(.*?))?[\n|\r\n]([\s\S]*?)```/g,
       function (_, lang, attr, code) {
         const setting: any = {};
         attr &&
@@ -187,10 +188,6 @@ function markdown2js(content: string, file: string) {
             prism.languages[lang],
             lang
           )}</code></pre></div><!--amis-preview-end-->`;
-        } else if (lang === 'css') {
-          placeholder[
-            index
-          ] = `<!--amis-preview-start--><div class="amis-style-preview" style="min-height: ${setting.height}px"><script type="text/css" id="amis-business-style" ${attr}>${code}</script></div><!--amis-preview-end-->`;
         } else {
           placeholder[
             index
@@ -218,6 +215,7 @@ function markdown2js(content: string, file: string) {
       }
     ) +
     '</div>';
+  info.raw = raw;
   info.toc = toc;
 
   return 'export default ' + JSON.stringify(info, null, 2) + ';';

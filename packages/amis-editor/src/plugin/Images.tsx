@@ -4,6 +4,7 @@ import {defaultValue, getSchemaTpl, tipedLabel} from 'amis-editor-core';
 import {mockValue} from 'amis-editor-core';
 
 export class ImagesPlugin extends BasePlugin {
+  static id = 'ImagesPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'images';
@@ -13,11 +14,13 @@ export class ImagesPlugin extends BasePlugin {
   name = '图片集';
   isBaseComponent = true;
   description = '展示多张图片';
+  docLink = '/amis/zh-CN/components/images';
   tags = ['展示'];
   icon = 'fa fa-clone';
   pluginIcon = 'images-plugin';
   scaffold = {
-    type: 'images'
+    type: 'images',
+    imageGallaryClassName: 'app-popover :AMISCSSWrapper'
   };
   previewSchema = {
     ...this.scaffold,
@@ -84,14 +87,13 @@ export class ImagesPlugin extends BasePlugin {
                       }
                     }
                   },
-                  {
-                    name: 'source',
-                    type: 'input-text',
-                    label: '关联数据',
-                    description:
-                      '比如：\\${listVar}，用来关联作用域中的已有数据。',
+                  getSchemaTpl('sourceBindControl', {
+                    label: tipedLabel(
+                      '关联数据',
+                      '比如：\\${listVar}，用来关联作用域中的已有数据'
+                    ),
                     visibleOn: 'this.__mode == 1'
-                  },
+                  }),
                   {
                     type: 'combo',
                     name: 'options',
@@ -210,20 +212,32 @@ export class ImagesPlugin extends BasePlugin {
               }
             ]
           },
+          getSchemaTpl('theme:base', {
+            classname: 'imagesControlClassName',
+            title: '图片集'
+          }),
           {
-            title: 'CSS类名',
+            title: '其他',
             body: [
-              getSchemaTpl('className', {
-                autoComplete: false,
-                label: '外层'
-              }),
-
-              getSchemaTpl('className', {
-                name: 'listClassName',
-                label: '图片列表'
+              {
+                name: 'themeCss.galleryControlClassName.--image-images-prev-icon',
+                label: '左切换图标',
+                type: 'icon-select',
+                returnSvg: true
+              },
+              {
+                name: 'themeCss.galleryControlClassName.--image-images-next-icon',
+                label: '右切换图标',
+                type: 'icon-select',
+                returnSvg: true
+              },
+              getSchemaTpl('theme:select', {
+                label: '切换图标大小',
+                name: 'themeCss.galleryControlClassName.--image-images-item-size'
               })
             ]
-          }
+          },
+          getSchemaTpl('theme:cssCode')
         ])
       }
     ]);

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/modules/es.number.is-nan.js", "../../node_modules/core-js/es/number/is-nan.js"],
+  "sourcesContent": ["'use strict';\nvar $ = require('../internals/export');\n\n// `Number.isNaN` method\n// https://tc39.es/ecma262/#sec-number.isnan\n$({ target: 'Number', stat: true }, {\n  isNaN: function isNaN(number) {\n    // eslint-disable-next-line no-self-compare -- NaN check\n    return number !== number;\n  }\n});\n", "'use strict';\nrequire('../../modules/es.number.is-nan');\nvar path = require('../../internals/path');\n\nmodule.exports = path.Number.isNaN;\n"],
+  "mappings": ";;;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,IAAI;AAIR,MAAE,EAAE,QAAQ,UAAU,MAAM,KAAK,GAAG;AAAA,MAClC,OAAO,SAAS,MAAM,QAAQ;AAE5B,eAAO,WAAW;AAAA,MACpB;AAAA,IACF,CAAC;AAAA;AAAA;;;ACVD;AAAA;AACA;AACA,QAAI,OAAO;AAEX,WAAO,UAAU,KAAK,OAAO;AAAA;AAAA;",
+  "names": []
+}

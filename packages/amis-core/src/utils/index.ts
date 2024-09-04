@@ -1,8 +1,10 @@
 export * from './api';
 export * from './attachmentAdpator';
 export * from './autobind';
+export * from './browser';
 export * from './ColorScale';
 export * from './columnsSplit';
+export * from './concatData';
 export * from './dataMapping';
 export * from './DataSchema';
 export * from './DataScope';
@@ -25,6 +27,7 @@ export * from './image';
 export * from './isPureVariable';
 export * from './json-schema-2-amis-schema';
 export * from './keyToPath';
+export * from './labelToString';
 export * from './makeSorter';
 export * from './normalizeLink';
 export * from './normalizeOptions';
@@ -54,6 +57,8 @@ export * from './toNumber';
 export * from './decodeEntity';
 export * from './style-helper';
 export * from './resolveCondition';
+export * from './arraySlice';
+export * from './math';
 
 import animation from './Animation';
 

@@ -1,4 +1,8 @@
-import {registerEditorPlugin} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {
   BasePlugin,
   BaseEventContext,
@@ -13,8 +17,11 @@ import {
 } from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
+import type {Schema} from 'amis';
+import {resolveOptionEventDataSchame} from '../../util';
 
 export class ChainedSelectControlPlugin extends BasePlugin {
+  static id = 'ChainedSelectControlPlugin';
   // 关联渲染器名字
   rendererName = 'chained-select';
   $schema = '/schemas/ChainedSelectControlSchema.json';
@@ -50,17 +57,24 @@ export class ChainedSelectControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
+      dataSchema: (manager: EditorManager) => {
+        const {value} = resolveOptionEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -74,7 +88,7 @@ export class ChainedSelectControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -107,7 +121,7 @@ export class ChainedSelectControlPlugin extends BasePlugin {
               getSchemaTpl('label'),
 
               getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema,
+                rendererSchema: (schema: Schema) => schema,
                 mode: 'vertical', // 改成上下展示模式
                 rendererWrapper: true,
                 label: tipedLabel('默认值', '请填入选项 Options 中 value 值')
@@ -123,12 +137,12 @@ export class ChainedSelectControlPlugin extends BasePlugin {
               }),
 
               getSchemaTpl('delimiter', {
-                visibleOn: 'data.joinValues !== false',
+                visibleOn: 'this.joinValues !== false',
                 clearValueOnHidden: true
               }),
 
               getSchemaTpl('extractValue', {
-                visibleOn: 'data.joinValues === false',
+                visibleOn: 'this.joinValues === false',
                 clearValueOnHidden: true
               }),
 
@@ -220,6 +234,45 @@ export class ChainedSelectControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    // 默认文本，todo:异步数据case
+    const type = 'string';
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.extractValue) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name
+      };
+    } else if (node.schema?.joinValues === false) {
+      dataSchema = {
+        type: 'array',
+        title: node.schema?.label || node.schema?.name,
+        items: {
+          type: 'object',
+          title: '成员',
+          properties: {
+            [node.schema?.labelField || 'label']: {
+              type: 'string',
+              title: '文本'
+            },
+            [node.schema?.valueField || 'value']: {
+              type,
+              title: '值'
+            }
+          }
+        },
+        originalValue: dataSchema.originalValue
+      };
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(ChainedSelectControlPlugin);

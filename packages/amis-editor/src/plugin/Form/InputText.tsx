@@ -1,4 +1,9 @@
-import {registerEditorPlugin} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  RAW_TYPE_MAP,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {
   BasePlugin,
   BasicSubRenderInfo,
@@ -10,26 +15,29 @@ import {defaultValue, getSchemaTpl, tipedLabel} from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {inputStateTpl} from '../../renderer/style-control/helper';
+import {resolveOptionType} from '../../util';
+import type {SchemaType} from 'amis';
 
-const isText = 'data.type === "input-text"';
-const isPassword = 'data.type === "input-password"';
-const isEmail = 'data.type === "input-email"';
-const isUrl = 'data.type === "input-url"';
+const isText = 'this.type === "input-text"';
+const isPassword = 'this.type === "input-password"';
+const isEmail = 'this.type === "input-email"';
+const isUrl = 'this.type === "input-url"';
 function isTextShow(value: string, name: boolean): boolean {
   return ['input-text'].includes(value) ? !!name : false;
 }
 
 export class TextControlPlugin extends BasePlugin {
+  static id = 'TextControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'input-text';
 
   $schema = '/schemas/TextControlSchema.json';
 
-  order = -500;
+  order = -600;
   // 添加源对应组件中文名称 & type字段
   searchKeywords =
-    '文本框、邮箱框、input-email、URL框、input-url、密码框、input-password';
+    '文本框、邮箱框、input-email、URL框、input-url、密码框、input-password、密码输入框';
   // 组件名称
   name = '文本框';
 
@@ -39,7 +47,7 @@ export class TextControlPlugin extends BasePlugin {
 
   description = '文本输入框，支持普通文本、密码、URL、邮箱等多种内容输入';
 
-  docLink = '/amis/zh-CN/components/form/text';
+  docLink = '/amis/zh-CN/components/form/input-text';
 
   tags = ['表单项'];
 
@@ -75,49 +83,97 @@ export class TextControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '输入框内容变化',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+      dataSchema: (manager: EditorManager) => {
+        const node = manager.store.getNodeById(manager.store.activeId);
+        const schemas = manager.dataSchema.current.schemas;
+        const dataSchema = schemas.find(
+          item => item.properties?.[node!.schema.name]
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...((dataSchema?.properties?.[node!.schema.name] as any) ??
+                      {}),
+                    title: '当前文本内容'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     },
     {
       eventName: 'focus',
       eventLabel: '获取焦点',
       description: '输入框获取焦点',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+      dataSchema: (manager: EditorManager) => {
+        const node = manager.store.getNodeById(manager.store.activeId);
+        const schemas = manager.dataSchema.current.schemas;
+        const dataSchema = schemas.find(
+          item => item.properties?.[node!.schema.name]
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...((dataSchema?.properties?.[node!.schema.name] as any) ??
+                      {}),
+                    title: '当前文本内容'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     },
     {
       eventName: 'blur',
       eventLabel: '失去焦点',
       description: '输入框失去焦点',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+      dataSchema: (manager: EditorManager) => {
+        const node = manager.store.getNodeById(manager.store.activeId);
+        const schemas = manager.dataSchema.current.schemas;
+        const dataSchema = schemas.find(
+          item => item.properties?.[node!.schema.name]
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...((dataSchema?.properties?.[node!.schema.name] as any) ??
+                      {}),
+                    title: '当前文本内容'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
     // 貌似无效，先下掉
     // {
@@ -136,7 +192,7 @@ export class TextControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -210,13 +266,21 @@ export class TextControlPlugin extends BasePlugin {
                     form.changeValue('validationErrors', {...validationErrors});
                   }
                 }),
-                getSchemaTpl('valueFormula', {
-                  rendererSchema: context?.schema
+                getSchemaTpl('tplFormulaControl', {
+                  name: 'value',
+                  label: '默认值'
                 }),
                 getSchemaTpl('clearable'),
                 getSchemaTpl('showCounter', {
                   visibleOn: `${isText} || ${isPassword}`
                 }),
+                {
+                  name: 'maxLength',
+                  label: tipedLabel('最大字数', '限制输入最多文字数量'),
+                  type: 'input-number',
+                  min: 0,
+                  step: 1
+                },
                 {
                   name: 'addOn',
                   label: tipedLabel('AddOn', '输入框左侧或右侧的附加挂件'),
@@ -272,7 +336,7 @@ export class TextControlPlugin extends BasePlugin {
             },
             {
               title: '选项',
-              visibleOn: `${isText} && (data.options  || data.autoComplete || data.source)`,
+              visibleOn: `${isText} && (this.options  || this.autoComplete || this.source)`,
               body: [
                 getSchemaTpl('optionControlV2'),
                 getSchemaTpl('multiple', {
@@ -299,7 +363,7 @@ export class TextControlPlugin extends BasePlugin {
                         name: 'autoComplete',
                         label: '接口',
                         description: '',
-                        visibleOn: 'data.autoComplete !== false'
+                        visibleOn: 'this.autoComplete !== false'
                       }),
                       {
                         label: tipedLabel(
@@ -354,7 +418,7 @@ export class TextControlPlugin extends BasePlugin {
         body: getSchemaTpl(
           'collapseGroup',
           [
-            getSchemaTpl('style:formItem', {renderer}),
+            getSchemaTpl('theme:formItem'),
             getSchemaTpl('theme:form-label'),
             getSchemaTpl('theme:form-description'),
             {
@@ -362,7 +426,7 @@ export class TextControlPlugin extends BasePlugin {
               body: [
                 ...inputStateTpl(
                   'themeCss.inputControlClassName',
-                  'input.base.default'
+                  '--input-default'
                 )
               ]
             },
@@ -411,6 +475,60 @@ export class TextControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      rawType: RAW_TYPE_MAP[node.schema.type as SchemaType] || 'string',
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    // 选择器模式
+    if (node.schema?.options) {
+      if (node.schema?.joinValues === false) {
+        dataSchema = {
+          ...dataSchema,
+          type: 'object',
+          title: node.schema?.label || node.schema?.name,
+          properties: {
+            [node.schema?.labelField || 'label']: {
+              type: 'string',
+              title: '文本'
+            },
+            [node.schema?.valueField || 'value']: {
+              type,
+              title: '值'
+            }
+          }
+        };
+      }
+
+      if (node.schema?.multiple) {
+        if (node.schema?.extractValue) {
+          dataSchema = {
+            type: 'array',
+            title: node.schema?.label || node.schema?.name
+          };
+        } else if (node.schema?.joinValues === false) {
+          dataSchema = {
+            type: 'array',
+            title: node.schema?.label || node.schema?.name,
+            items: {
+              type: 'object',
+              title: '成员',
+              properties: dataSchema.properties
+            },
+            originalValue: dataSchema.originalValue
+          };
+        }
+      }
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(TextControlPlugin);

@@ -29,10 +29,6 @@
     }
     ul {
       width: 100%;
-      li {
-        height: auto;
-        padding: #{px2rem(7px)} #{px2rem(12px)};
-      }
     }
   }
   &-content-oldentry {
@@ -234,7 +230,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
     color: #84868c;
     line-height: #{px2rem(24px)};
 
@@ -262,6 +257,18 @@
     font-size: 12px;
   }
 
+  .common-actions {
+    position: absolute;
+    width: 80%;
+    top: #{px2rem(-41px)};
+    left: #{px2rem(128px)};
+
+    .common-actions-label {
+      line-height: #{px2rem(24px)};
+      margin-right: 4px;
+    }
+  }
+
   .action-config-panel {
     background: #ffffff;
     border: 1px solid #e8e9eb;
@@ -274,7 +281,6 @@
     .action-panel-title {
       margin: 16px 16px 12px;
       line-height: 18px;
-      font-size: 12px;
       font-weight: 500;
     }
 
@@ -303,10 +309,13 @@
         height: calc(100% - 88px);
         border-top: 1px solid #e8e9eb;
         .action-tree-control {
+          & > div {
+            max-height: 100%;
+          }
+
           height: 100%;
           max-height: 100%;
           padding: 0;
-          font-size: 12px;
           & > div > div {
             margin-top: 82px;
             height: 64px;
@@ -318,7 +327,6 @@
         .action-tree-control {
           ul {
             li {
-              font-size: 12px;
               & > div {
                 flex-direction: row-reverse;
                 padding-left: 16px;
@@ -371,12 +379,10 @@
       padding: 0 8px 0 0;
       .event-action-radio {
         padding-top: 5px;
-        font-size: 12px;
       }
       .action-desc {
-        font-size: 12px;
         margin-left: 16px;
-        color: var(--Form-item-fontColor);
+        color: var(--Form-item-color);
       }
 
       .cmpt-action-select,
@@ -395,17 +401,23 @@
         .action-exec-on {
           width: 100%;
         }
-
-        label {
-          text-align: left;
-        }
-        span {
-          font-size: 12px;
-        }
       }
       .ae-BaseRemark {
         margin-left: 0;
         margin-top: 5px;
+      }
+
+      .event-action-combo-item {
+        .event-action-combo {
+          max-width: 380px;
+          .#{$ns}Form-row {
+            width: 380px;
+          }
+          .flex-1 {
+            max-width: 170px;
+          }
+        }
+        width: 380px;
       }
     }
   }

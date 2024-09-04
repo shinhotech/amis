@@ -1,6 +1,8 @@
 import ReactDOM from 'react-dom';
+import React from 'react';
 import getOffset from './offset';
 import getPosition from './position';
+import {getScrollParent} from './helper';
 
 export function getContainer(container: any, defaultContainer: any) {
   container = typeof container === 'function' ? container() : container;
@@ -83,6 +85,7 @@ export function calculatePosition(
   padding: any = 0,
   customOffset: [number, number] = [0, 0]
 ) {
+  const scrollParent: HTMLElement = getScrollParent(container)!;
   const childOffset: any =
     container.tagName === 'BODY'
       ? getOffset(target)
@@ -104,16 +107,48 @@ export function calculatePosition(
   const isAuto = placement === 'auto';
   // 兜底方向
   const autoDefaultPlacement = 'left-bottom-left-top';
-  placement =
-    isAuto
-      ? `left-bottom-left-top right-bottom-right-top left-top-left-bottom right-top-right-bottom ${autoDefaultPlacement}`
-      : placement;
+  placement = isAuto
+    ? `left-bottom-left-top right-bottom-right-top left-top-left-bottom right-top-right-bottom ${autoDefaultPlacement}`
+    : placement;
 
   let positionLeft = 0,
     positionTop = 0,
     arrowOffsetLeft: any = '',
     arrowOffsetTop: any = '',
     activePlacement: string = placement;
+
+  // 如果是作为菜单浮层，不再基于四个方向对齐，而是模拟原生右键菜单定位：
+  // 1.计算放右边，还是左边
+  // 2.计算能否放在下面，如果不能则贴底
+  // 3.由于是基于一个点此时不考虑 arrow
+  if (placement === 'asContextMenu') {
+    if (childOffset.left + 1 + overlayWidth <= clip.width) {
+      // 放右边
+      positionLeft = childOffset.left + 1;
+    } else if (childOffset.left - overlayWidth >= 0) {
+      // 放左边
+      positionLeft = childOffset.left - overlayWidth;
+    } else {
+      // 兜底贴右边
+      positionLeft = Math.max(clip.width - overlayWidth, 10);
+    }
+
+    if (childOffset.top + 1 + overlayHeight <= clip.height) {
+      // 放下面
+      positionTop = childOffset.top + 1;
+    } else {
+      // 贴底边，预留5px避免完全贴底
+      positionTop = Math.max(clip.height - overlayHeight - 5, 10);
+    }
+    const [offSetX = 0, offSetY = 0] = customOffset;
+    return {
+      positionLeft: (positionLeft + offSetX) / scaleX,
+      positionTop: (positionTop + offSetY) / scaleY,
+      arrowOffsetLeft,
+      arrowOffsetTop,
+      activePlacement
+    };
+  }
 
   if (~placement.indexOf('-')) {
     const tests = placement.split(/\s+/);
@@ -133,8 +168,13 @@ export function calculatePosition(
       // 根据之前的计算结果，使用收集的可见方向作为兜底，避免完全不可见
       if (isAuto && tests.length === 0) {
         const [_atX, _atY, _myX, _myY] = autoDefaultPlacement.split('-');
-        const {atX = _atX, atY = _atY, myX = _myX, myY = _myY} = visiblePlacement;
-        current = (activePlacement = [atX, atY, myX, myY].join('-'));
+        const {
+          atX = _atX,
+          atY = _atY,
+          myX = _myX,
+          myY = _myY
+        } = visiblePlacement;
+        current = activePlacement = [atX, atY, myX, myY].join('-');
       }
 
       let [atX, atY, myX, myY] = current.split('-');
@@ -164,7 +204,7 @@ export function calculatePosition(
           : overlayHeight / 2;
 
       // 如果还有其他可选项，则做位置判断，是否在可视区域，不完全在则继续看其他定位情况。
-      if (tests.length) {
+      if (tests.length || isAuto) {
         const transformed = {
           x: clip.x + positionLeft / scaleX,
           y: clip.y + positionTop / scaleY,
@@ -176,8 +216,9 @@ export function calculatePosition(
         let visibleY = false;
 
         if (
-          transformed.x > 0 &&
-          transformed.x + transformed.width < window.innerWidth
+          transformed.x >= 0 &&
+          transformed.x + transformed.width <
+            window.innerWidth + scrollParent.scrollLeft
         ) {
           visibleX = true;
           !visiblePlacement.atX && (visiblePlacement.atX = atX);
@@ -185,8 +226,9 @@ export function calculatePosition(
         }
 
         if (
-          transformed.y > 0 &&
-          transformed.y + transformed.height < window.innerHeight
+          transformed.y >= 0 &&
+          transformed.y + transformed.height <
+            window.innerHeight + scrollParent.scrollTop
         ) {
           visibleY = true;
           !visiblePlacement.atY && (visiblePlacement.atY = atY);
@@ -195,6 +237,32 @@ export function calculatePosition(
 
         if (visibleX && visibleY) {
           break;
+        } else if (isAuto && tests.length === 0) {
+          // 获取相对定位的父元素位置
+          let offsetParent = overlayNode.offsetParent;
+          while (
+            offsetParent &&
+            window.getComputedStyle(offsetParent).position === 'static'
+          ) {
+            offsetParent = offsetParent.offsetParent;
+          }
+          const parentRect = offsetParent?.getBoundingClientRect?.();
+          const parentTransformed = {
+            x: parentRect?.x || 0,
+            y: parentRect?.y || 0
+          };
+          // 如果是 auto 模式，且最后一个方向都不可见，则直接平移到可见区域，考虑相对定位的父元素位置，保留10px的边距
+          visibleY ||
+            (positionTop =
+              Math.max(10, window.innerHeight - transformed.height) +
+              scrollParent.scrollTop -
+              parentTransformed.y -
+              10);
+          visibleX ||
+            (positionLeft =
+              Math.max(10, window.innerWidth - transformed.width) +
+              scrollParent.scrollLeft -
+              parentTransformed.x);
         }
       }
     }
@@ -270,4 +338,25 @@ export function getStyleNumber(element: HTMLElement, styleName: string) {
   return (
     parseInt(getComputedStyle(element).getPropertyValue(styleName), 10) || 0
   );
+}
+
+/** 根据关键字高亮显示文本内容 */
+export function renderTextByKeyword(rendererText: string, curKeyword: string) {
+  if (!rendererText || typeof rendererText !== 'string') {
+    return rendererText;
+  }
+
+  if (curKeyword && ~rendererText.indexOf(curKeyword)) {
+    const keywordStartIndex = rendererText.indexOf(curKeyword);
+    const keywordEndIndex = keywordStartIndex + curKeyword.length;
+    return (
+      <span>
+        {rendererText.substring(0, keywordStartIndex)}
+        <span className="is-keyword">{curKeyword}</span>
+        {rendererText.substring(keywordEndIndex)}
+      </span>
+    );
+  } else {
+    return rendererText;
+  }
 }

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/entry-unbind.js"],
+  "sourcesContent": ["'use strict';\nvar globalThis = require('../internals/global-this');\nvar uncurryThis = require('../internals/function-uncurry-this');\n\nmodule.exports = function (CONSTRUCTOR, METHOD) {\n  return uncurryThis(globalThis[CONSTRUCTOR].prototype[METHOD]);\n};\n"],
+  "mappings": ";;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,aAAa;AACjB,QAAI,cAAc;AAElB,WAAO,UAAU,SAAU,aAAa,QAAQ;AAC9C,aAAO,YAAY,WAAW,WAAW,EAAE,UAAU,MAAM,CAAC;AAAA,IAC9D;AAAA;AAAA;",
+  "names": []
+}

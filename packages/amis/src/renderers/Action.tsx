@@ -3,13 +3,15 @@ import hotkeys from 'hotkeys-js';
 import {
   ActionObject,
   extendObject,
-  insertCustomStyle,
+  CustomStyle,
   IScopedContext,
   isObject,
   Renderer,
   RendererProps,
   ScopedContext,
-  uuid
+  uuid,
+  setThemeClassName,
+  RendererEvent
 } from 'amis-core';
 import {filter} from 'amis-core';
 import {BadgeObject, Button, SpinnerExtraProps} from 'amis-ui';
@@ -197,6 +199,7 @@ export interface DownloadActionSchema
    * 指定为下载行为
    */
   actionType: 'download';
+  downloadFileName?: string;
 }
 
 export interface SaveAsActionSchema
@@ -232,7 +235,7 @@ export interface DialogActionSchema extends ButtonSchema {
 
   /**
    * 弹框详情
-   * 文档：https://baidu.gitee.io/amis/docs/components/dialog
+   * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/dialog
    */
   dialog: DialogSchemaBase;
 
@@ -242,6 +245,11 @@ export interface DialogActionSchema extends ButtonSchema {
   nextCondition?: SchemaExpression;
   reload?: SchemaReload;
   redirect?: string;
+
+  /**
+   * 数据映射
+   */
+  data?: any;
 }
 
 export interface DrawerActionSchema extends ButtonSchema {
@@ -252,7 +260,7 @@ export interface DrawerActionSchema extends ButtonSchema {
 
   /**
    * 抽出式弹框详情
-   * 文档：https://baidu.gitee.io/amis/docs/components/drawer
+   * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/drawer
    */
   drawer: DrawerSchemaBase;
 
@@ -262,6 +270,11 @@ export interface DrawerActionSchema extends ButtonSchema {
   nextCondition?: SchemaExpression;
   reload?: SchemaReload;
   redirect?: string;
+
+  /**
+   * 数据映射
+   */
+  data?: any;
 }
 
 export interface ToastActionSchema extends ButtonSchema {
@@ -272,7 +285,7 @@ export interface ToastActionSchema extends ButtonSchema {
 
   /**
    * 轻提示详情
-   * 文档：https://baidu.gitee.io/amis/docs/components/toast
+   * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/toast
    */
   toast: ToastSchemaBase;
 }
@@ -361,11 +374,12 @@ export interface OtherActionSchema extends ButtonSchema {
 
 export interface VanillaAction extends ButtonSchema {
   actionType?: string;
+  downloadFileName?: string;
 }
 
 /**
  * 按钮动作渲染器。
- * 文档：https://baidu.gitee.io/amis/docs/components/action
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/action
  */
 export type ActionSchema =
   | AjaxActionSchema
@@ -388,6 +402,7 @@ const ActionProps = [
   'url',
   'link',
   'confirmText',
+  'confirmTitle',
   'tooltip',
   'disabledTip',
   'className',
@@ -424,7 +439,8 @@ const ActionProps = [
   'requireSelected',
   'countDown',
   'fileName',
-  'isolateScope'
+  'isolateScope',
+  'downloadFileName'
 ];
 import {filterContents} from './Remark';
 import {ClassNamesFn, themeable, ThemeProps} from 'amis-core';
@@ -444,11 +460,9 @@ import {
 import {DialogSchema, DialogSchemaBase} from './Dialog';
 import {DrawerSchema, DrawerSchemaBase} from './Drawer';
 import {ToastSchemaBase} from '../Schema';
-import {generateIcon} from 'amis-core';
-import {withBadge} from 'amis-ui';
+import {withBadge, Icon} from 'amis-ui';
 import {normalizeApi, str2AsyncFunction} from 'amis-core';
 import {TooltipWrapper} from 'amis-ui';
-import {ICmptAction} from 'amis-core/lib/actions/CmptAction';
 
 // 构造一个假的 React 事件避免可能的报错，主要用于快捷键功能
 // 来自 https://stackoverflow.com/questions/27062455/reactjs-can-i-create-my-own-syntheticevent
@@ -484,93 +498,29 @@ export const createSyntheticEvent = <T extends Element, E extends Event>(
   };
 };
 
+type CommonKeys =
+  | 'type'
+  | 'className'
+  | 'iconClassName'
+  | 'rightIconClassName'
+  | 'loadingClassName';
+
 export interface ActionProps
   extends Omit<
       ButtonSchema,
       'className' | 'iconClassName' | 'rightIconClassName' | 'loadingClassName'
     >,
     ThemeProps,
-    Omit<
-      AjaxActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      UrlActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      LinkActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      DialogActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      DrawerActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      ToastSchemaBase,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      CopyActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      ReloadActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
-    Omit<
-      EmailActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-      | 'body'
-    >,
-    Omit<
-      OtherActionSchema,
-      | 'type'
-      | 'className'
-      | 'iconClassName'
-      | 'rightIconClassName'
-      | 'loadingClassName'
-    >,
+    Omit<AjaxActionSchema, CommonKeys>,
+    Omit<UrlActionSchema, CommonKeys>,
+    Omit<LinkActionSchema, CommonKeys>,
+    Omit<DialogActionSchema, CommonKeys>,
+    Omit<DrawerActionSchema, CommonKeys>,
+    Omit<ToastSchemaBase, CommonKeys>,
+    Omit<CopyActionSchema, CommonKeys>,
+    Omit<ReloadActionSchema, CommonKeys>,
+    Omit<EmailActionSchema, CommonKeys | 'body'>,
+    Omit<OtherActionSchema, CommonKeys>,
     SpinnerExtraProps {
   actionType: any;
   onAction?: (
@@ -688,6 +638,7 @@ export class Action extends React.Component<ActionProps, ActionState> {
       action.actionType = 'ajax';
       const api = normalizeApi((action as AjaxActionSchema).api);
       api.responseType = 'blob';
+      api.downloadFileName = action.downloadFileName;
       (action as AjaxActionSchema).api = api;
     }
 
@@ -793,25 +744,12 @@ export class Action extends React.Component<ActionProps, ActionState> {
       classPrefix: ns,
       loadingConfig,
       themeCss,
+      wrapperCustomStyle,
       css,
-      id
+      id,
+      testIdBuilder,
+      env
     } = this.props;
-    insertCustomStyle(
-      themeCss || css,
-      [
-        {
-          key: 'className',
-          value: className,
-          weights: {
-            hover: {
-              suf: ':not(:disabled):not(.is-disabled)'
-            },
-            active: {suf: ':not(:disabled):not(.is-disabled)'}
-          }
-        }
-      ],
-      id
-    );
 
     if (actionType !== 'email' && body) {
       return (
@@ -854,49 +792,129 @@ export class Action extends React.Component<ActionProps, ActionState> {
       disabled = true;
     }
 
-    const iconElement = generateIcon(cx, icon, 'Button-icon', iconClassName);
-    const rightIconElement = generateIcon(
-      cx,
-      rightIcon,
-      'Button-icon',
-      rightIconClassName
+    const iconElement = (
+      <Icon
+        cx={cx}
+        icon={icon}
+        className="Button-icon"
+        classNameProp={cx(
+          iconClassName,
+          setThemeClassName({
+            ...this.props,
+            name: 'iconClassName',
+            id,
+            themeCss: themeCss || css
+          })
+        )}
+      />
+    );
+    const rightIconElement = (
+      <Icon
+        cx={cx}
+        icon={rightIcon}
+        className="Button-icon"
+        classNameProp={cx(
+          rightIconClassName,
+          setThemeClassName({
+            ...this.props,
+            name: 'iconClassName',
+            id,
+            themeCss: themeCss || css
+          })
+        )}
+      />
     );
 
     return (
-      <Button
-        loadingConfig={loadingConfig}
-        className={cx(className, {
-          [activeClassName || 'is-active']: isActive
-        })}
-        style={style}
-        size={size}
-        level={
-          activeLevel && isActive
-            ? activeLevel
-            : level || (primary ? 'primary' : undefined)
-        }
-        loadingClassName={loadingClassName}
-        loading={loading}
-        onClick={this.handleAction}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        type={type && ~allowedType.indexOf(type) ? type : 'button'}
-        disabled={disabled}
-        componentClass={isMenuItem ? 'a' : componentClass}
-        overrideClassName={isMenuItem}
-        tooltip={filterContents(tooltip, data)}
-        disabledTip={filterContents(disabledTip, data)}
-        tooltipPlacement={tooltipPlacement}
-        tooltipContainer={tooltipContainer}
-        tooltipTrigger={tooltipTrigger}
-        tooltipRootClose={tooltipRootClose}
-        block={block}
-        iconOnly={!!(icon && !label && level !== 'link')}
-      >
-        {!loading ? iconElement : ''}
-        {label ? <span>{filter(String(label), data)}</span> : null}
-        {rightIconElement}
-      </Button>
+      <>
+        <Button
+          loadingConfig={loadingConfig}
+          className={cx(
+            className,
+            setThemeClassName({
+              ...this.props,
+              name: 'wrapperCustomStyle',
+              id,
+              themeCss: wrapperCustomStyle
+            }),
+            setThemeClassName({
+              ...this.props,
+              name: 'className',
+              id,
+              themeCss: themeCss || css
+            }),
+            {
+              [activeClassName || 'is-active']: isActive
+            }
+          )}
+          testIdBuilder={testIdBuilder}
+          style={style}
+          size={size}
+          level={
+            activeLevel && isActive
+              ? activeLevel
+              : filter(level, data) || (primary ? 'primary' : undefined)
+          }
+          loadingClassName={loadingClassName}
+          loading={loading}
+          onClick={this.handleAction}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          type={type && ~allowedType.indexOf(type) ? type : 'button'}
+          disabled={disabled}
+          componentClass={isMenuItem ? 'a' : componentClass}
+          overrideClassName={isMenuItem}
+          tooltip={filterContents(tooltip, data)}
+          disabledTip={filterContents(disabledTip, data)}
+          tooltipPlacement={tooltipPlacement}
+          tooltipContainer={tooltipContainer}
+          tooltipTrigger={tooltipTrigger}
+          tooltipRootClose={tooltipRootClose}
+          block={block}
+          iconOnly={!!(icon && !label && level !== 'link')}
+        >
+          {!loading ? iconElement : ''}
+          {label ? <span>{filter(String(label), data)}</span> : null}
+          {rightIconElement}
+        </Button>
+        {/* button自定义样式 */}
+        <CustomStyle
+          {...this.props}
+          config={{
+            themeCss: themeCss || css,
+            classNames: [
+              {
+                key: 'className',
+                weights: {
+                  hover: {
+                    suf: ':not(:disabled):not(.is-disabled)'
+                  },
+                  active: {suf: ':not(:disabled):not(.is-disabled)'}
+                }
+              },
+              {
+                key: 'iconClassName',
+                weights: {
+                  default: {
+                    important: true
+                  },
+                  hover: {
+                    important: true,
+                    suf: ':not(:disabled):not(.is-disabled)'
+                  },
+                  active: {
+                    important: true,
+                    suf: ':not(:disabled):not(.is-disabled)'
+                  }
+                }
+              }
+            ],
+            wrapperCustomStyle,
+            id
+          }}
+          env={env}
+        />
+      </>
     );
   }
 }
@@ -908,7 +926,10 @@ export type ActionRendererProps = RendererProps &
     onAction: (
       e: React.MouseEvent<any> | string | void | null,
       action: object,
-      data: any
+      data: any,
+      throwErrors?: boolean,
+      delegate?: IScopedContext,
+      rendererEvent?: RendererEvent<any>
     ) => void;
     btnDisabled?: boolean;
   };
@@ -958,10 +979,7 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
     let mergedData = data;
 
     if (action?.actionType === 'click' && isObject(action?.args)) {
-      mergedData = createObject(data, {
-        ...action.args,
-        nativeEvent: e
-      });
+      mergedData = createObject(data, action.args);
     }
 
     const hasOnEvent = $schema.onEvent && Object.keys($schema.onEvent).length;
@@ -973,12 +991,16 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
       env.confirm &&
       (confirmText = filter(action.confirmText, mergedData))
     ) {
-      let confirmed = await env.confirm(confirmText);
+      let confirmed = await env.confirm(
+        confirmText,
+        filter(action.confirmTitle, mergedData) || undefined
+      );
       if (confirmed) {
         // 触发渲染器事件
         const rendererEvent = await dispatchEvent(
           e as React.MouseEvent<any> | string,
-          mergedData
+          mergedData,
+          this // 保证renderer可以拿到，避免因交互设计导致的清空情况，例如crud内itemAction
         );
 
         // 阻止原有动作执行
@@ -987,7 +1009,14 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
         }
 
         // 因为crud里面也会处理二次确认，所以如果按钮处理过了就跳过crud的二次确认
-        onAction(e, {...action, ignoreConfirm: !!hasOnEvent}, mergedData);
+        await onAction(
+          e,
+          {...action, ignoreConfirm: !!hasOnEvent},
+          mergedData,
+          undefined,
+          undefined,
+          rendererEvent
+        );
       } else if (action.countDown) {
         throw new Error('cancel');
       }
@@ -1003,7 +1032,14 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
         return;
       }
 
-      onAction(e, action, mergedData);
+      await onAction(
+        e,
+        action,
+        mergedData,
+        undefined,
+        undefined,
+        rendererEvent
+      );
     }
   }
 
@@ -1048,9 +1084,7 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
         onMouseLeave={this.handleMouseLeave}
         loading={loading}
         isCurrentUrl={this.isCurrentAction}
-        tooltipContainer={
-          env.getModalContainer ? env.getModalContainer : undefined
-        }
+        tooltipContainer={rest.popOverContainer || env.getModalContainer}
       />
     );
   }

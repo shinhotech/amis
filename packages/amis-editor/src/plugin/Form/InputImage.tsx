@@ -11,7 +11,44 @@ import {tipedLabel} from 'amis-editor-core';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {ValidatorTag} from '../../validator';
 
+const addBtnCssClassName = 'themeCss.addBtnControlClassName';
+const IconCssClassName = 'themeCss.iconControlClassName';
+const editorPath = '--inputImage-base';
+const inputStateFunc = (visibleOn: string, state: string) => {
+  return [
+    getSchemaTpl('theme:border', {
+      name: `${addBtnCssClassName}.border:${state}`,
+      visibleOn: visibleOn,
+      editorValueToken: `${editorPath}-${state}`
+    }),
+    getSchemaTpl('theme:colorPicker', {
+      label: '文字',
+      name: `${addBtnCssClassName}.color:${state}`,
+      labelMode: 'input',
+      visibleOn: visibleOn,
+      editorValueToken: `${editorPath}-${state}-color`
+    }),
+    getSchemaTpl('theme:colorPicker', {
+      label: '背景',
+      name: `${addBtnCssClassName}.background:${state}`,
+      labelMode: 'input',
+      needGradient: true,
+      needImage: true,
+      visibleOn: visibleOn,
+      editorValueToken: `${editorPath}-${state}-bg-color`
+    }),
+    getSchemaTpl('theme:colorPicker', {
+      label: '图标',
+      name: `${addBtnCssClassName}.icon-color:${state}`,
+      labelMode: 'input',
+      visibleOn: visibleOn,
+      editorValueToken: `${editorPath}-${state}-icon-color`
+    })
+  ];
+};
+
 export class ImageControlPlugin extends BasePlugin {
+  static id = 'ImageControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-image';
   $schema = '/schemas/ImageControlSchema.json';
@@ -57,9 +94,15 @@ export class ImageControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.file': {
+            data: {
               type: 'object',
-              title: '上传的文件'
+              title: '数据',
+              properties: {
+                file: {
+                  type: 'object',
+                  title: '上传的文件'
+                }
+              }
             }
           }
         }
@@ -73,9 +116,15 @@ export class ImageControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '被移除的文件'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '被移除的文件'
+                }
+              }
             }
           }
         }
@@ -89,9 +138,19 @@ export class ImageControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '远程上传请求成功后返回的结果数据'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '上传的文件'
+                },
+                result: {
+                  type: 'object',
+                  title: '远程上传请求成功后返回的响应数据'
+                }
+              }
             }
           }
         }
@@ -105,13 +164,19 @@ export class ImageControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.item': {
+            data: {
               type: 'object',
-              title: '上传的文件'
-            },
-            'event.data.error': {
-              type: 'object',
-              title: '远程上传请求失败后返回的错误信息'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '上传的文件'
+                },
+                error: {
+                  type: 'object',
+                  title: '远程上传请求失败后返回的错误信息'
+                }
+              }
             }
           }
         }
@@ -173,7 +238,7 @@ export class ImageControlPlugin extends BasePlugin {
               },
 
               getSchemaTpl('uploadType', {
-                visibleOn: 'data.submitType === "asUpload" || !data.submitType',
+                visibleOn: 'this.submitType === "asUpload" || !this.submitType',
                 pipeIn: (value: any, form: any) => value || 'fileReceptor',
                 pipeOut: (value: any, form: any) => value || 'fileReceptor'
               }),
@@ -185,13 +250,13 @@ export class ImageControlPlugin extends BasePlugin {
                   '文件接收器',
                   '文件接收接口，默认不填则上传到 hiphoto'
                 ),
-                visibleOn: 'data.uploadType === "fileReceptor"',
+                visibleOn: 'this.uploadType === "fileReceptor"',
                 value: '/api/upload',
                 __isUpload: true
               }),
 
               getSchemaTpl('bos', {
-                visibleOn: 'data.uploadType === "bos"'
+                visibleOn: 'this.uploadType === "bos"'
               }),
 
               getSchemaTpl('proxy', {
@@ -202,7 +267,7 @@ export class ImageControlPlugin extends BasePlugin {
               getSchemaTpl('multiple', {
                 patch: {
                   value: false,
-                  visibleOn: '!data.crop',
+                  visibleOn: '!this.crop',
                   label: tipedLabel('可多选', '开启后，不能同时开启裁剪功能')
                 },
                 body: [
@@ -237,7 +302,7 @@ export class ImageControlPlugin extends BasePlugin {
               // {
               //   type: 'container',
               //   className: 'ae-ExtendMore mb-3',
-              //   visibleOn: 'data.compress',
+              //   visibleOn: 'this.compress',
               //   name: 'compressOptions',
               //   body: [
               //     {
@@ -261,7 +326,7 @@ export class ImageControlPlugin extends BasePlugin {
 
               getSchemaTpl('switch', {
                 name: 'crop',
-                visibleOn: '!data.multiple',
+                visibleOn: '!this.multiple',
                 label: tipedLabel('开启裁剪', '开启后，不能同时开启多选模式'),
                 pipeIn: (value: any) => !!value
               }),
@@ -269,7 +334,7 @@ export class ImageControlPlugin extends BasePlugin {
               {
                 type: 'container',
                 className: 'ae-ExtendMore mb-3',
-                visibleOn: 'data.crop',
+                visibleOn: 'this.crop',
                 body: [
                   {
                     name: 'crop.aspectRatio',
@@ -307,13 +372,25 @@ export class ImageControlPlugin extends BasePlugin {
               getSchemaTpl('switch', {
                 name: 'limit',
                 label: '图片限制',
-                pipeIn: (value: any) => !!value
+                pipeIn: (value: any) => !!value,
+                onChange: (
+                  value: any,
+                  oldValue: boolean,
+                  model: any,
+                  form: any
+                ) => {
+                  if (!value) {
+                    form.setValues({
+                      maxSize: undefined
+                    });
+                  }
+                }
               }),
 
               {
                 type: 'container',
                 className: 'ae-ExtendMore mb-3',
-                visibleOn: 'data.limit',
+                visibleOn: 'this.limit',
                 body: [
                   {
                     name: 'maxSize',
@@ -393,43 +470,81 @@ export class ImageControlPlugin extends BasePlugin {
       },
       {
         title: '外观',
-        body: getSchemaTpl('collapseGroup', [
-          getSchemaTpl('style:formItem', {renderer: context.info.renderer}),
-          {
-            title: '尺寸',
-            body: [
-              getSchemaTpl('switch', {
-                name: 'fixedSize',
-                label: tipedLabel(
-                  '固定尺寸',
-                  '开启后需通过CSS类设置其高度、宽度'
+        body: getSchemaTpl(
+          'collapseGroup',
+          [
+            getSchemaTpl('style:formItem', {renderer: context.info.renderer}),
+            {
+              title: '基本样式',
+              body: [
+                {
+                  type: 'select',
+                  name: '__editorState',
+                  label: '状态',
+                  selectFirst: true,
+                  options: [
+                    {
+                      label: '常规',
+                      value: 'default'
+                    },
+                    {
+                      label: '悬浮',
+                      value: 'hover'
+                    },
+                    {
+                      label: '点击',
+                      value: 'active'
+                    }
+                  ]
+                },
+                ...inputStateFunc(
+                  "${__editorState == 'default' || !__editorState}",
+                  'default'
                 ),
-                value: false
-              }),
-
-              {
-                type: 'container',
-                className: 'ae-ExtendMore mb-3',
-                visibleOn: 'data.fixedSize',
-                body: [
-                  {
-                    type: 'input-text',
-                    required: true,
-                    name: 'fixedSizeClassName',
-                    label: tipedLabel(
-                      'CSS类名',
-                      '开启固定尺寸时，根据此值控制展示尺寸'
-                    )
-                  }
-                ]
-              }
-            ]
-          },
-          getSchemaTpl('style:classNames', {
-            unsupportStatic: true,
-            schema: []
-          })
-        ])
+                ...inputStateFunc("${__editorState == 'hover'}", 'hover'),
+                ...inputStateFunc("${__editorState == 'active'}", 'active'),
+                getSchemaTpl('theme:radius', {
+                  name: `${addBtnCssClassName}.border-radius`,
+                  label: '圆角',
+                  editorValueToken: `${editorPath}-default`
+                }),
+                {
+                  name: `${addBtnCssClassName}.--inputImage-base-default-icon`,
+                  label: '选择图标',
+                  type: 'icon-select',
+                  returnSvg: true
+                },
+                getSchemaTpl('theme:select', {
+                  name: `${IconCssClassName}.iconSize`,
+                  label: '图标大小',
+                  editorValueToken: `${editorPath}-default-icon-size`
+                }),
+                getSchemaTpl('theme:select', {
+                  name: `${IconCssClassName}.margin-bottom`,
+                  label: '图标底边距',
+                  editorValueToken: `${editorPath}-default-icon-margin`
+                })
+              ]
+            },
+            getSchemaTpl('theme:cssCode', {
+              themeClass: [
+                {
+                  name: '图片上传按钮',
+                  value: 'addOn',
+                  className: 'addBtnControlClassName',
+                  state: ['default', 'hover', 'active']
+                },
+                {
+                  name: '上传图标',
+                  value: 'icon',
+                  className: 'iconControlClassName'
+                }
+              ],
+              isFormItem: true
+            })
+          ],
+          {...context?.schema, configTitle: 'style'}
+        )
       },
       {
         title: '事件',

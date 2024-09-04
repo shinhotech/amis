@@ -13,6 +13,7 @@ import {evalExpression} from '../utils/tpl';
 
 export const Item = types
   .model('Item', {
+    storeType: 'Item',
     id: types.identifier,
     pristine: types.frozen(),
     data: types.frozen(),
@@ -39,9 +40,14 @@ export const Item = types
     },
 
     get locals(): any {
+      const listStore = getParent(self, 2) as IListStore;
       return createObject(
-        extendObject((getParent(self, 2) as IListStore).data, {
-          index: self.index
+        extendObject(listStore.data, {
+          index: self.index,
+
+          // 只有table时，也可以获取选中行
+          selectedItems: listStore.selectedItems.map(item => item.data),
+          unSelectedItems: listStore.unSelectedItems.map(item => item.data)
         }),
         self.data
       );
@@ -75,6 +81,16 @@ export const Item = types
     reset() {
       self.newIndex = self.index;
       self.data = self.pristine;
+    },
+    updateData({children, ...rest}: any) {
+      self.data = {
+        ...self.data,
+        ...rest
+      };
+
+      // if (Array.isArray(children)) {
+
+      // }
     }
   }));
 
@@ -95,6 +111,7 @@ export const ListStore = iRendererStore
     draggable: false,
     dragging: false,
     multiple: true,
+    strictMode: false,
     selectable: false,
     itemCheckableOn: '',
     itemDraggableOn: '',
@@ -162,6 +179,7 @@ export const ListStore = iRendererStore
       config.selectable === void 0 || (self.selectable = config.selectable);
       config.draggable === void 0 || (self.draggable = config.draggable);
       config.multiple === void 0 || (self.multiple = config.multiple);
+      config.strictMode === void 0 || (self.strictMode = config.strictMode);
       config.hideCheckToggler === void 0 ||
         (self.hideCheckToggler = config.hideCheckToggler);
 
@@ -203,18 +221,28 @@ export const ListStore = iRendererStore
 
     function updateSelected(selected: Array<any>, valueField?: string) {
       self.selectedItems.clear();
-      self.items.forEach(item => {
-        if (~selected.indexOf(item.pristine)) {
-          self.selectedItems.push(item);
-        } else if (
-          find(
-            selected,
-            a =>
-              a[valueField || 'value'] == item.pristine[valueField || 'value']
-          )
-        ) {
-          self.selectedItems.push(item);
+      selected.forEach(item => {
+        let resolved = self.items.find(a => a.pristine === item);
+
+        // 先严格比较，
+        if (!resolved) {
+          resolved = self.items.find(a => {
+            const selectValue = item[valueField || 'value'];
+            const itemValue = a.pristine[valueField || 'value'];
+            return selectValue === itemValue;
+          });
         }
+
+        // 再宽松比较
+        if (!resolved) {
+          resolved = self.items.find(a => {
+            const selectValue = item[valueField || 'value'];
+            const itemValue = a.pristine[valueField || 'value'];
+            return selectValue == itemValue;
+          });
+        }
+
+        resolved && self.selectedItems.push(resolved);
       });
     }
 
@@ -270,6 +298,10 @@ export const ListStore = iRendererStore
       self.dragging = !self.dragging;
     }
 
+    function startDragging() {
+      self.dragging = true;
+    }
+
     function stopDragging() {
       self.dragging = false;
     }
@@ -285,7 +317,16 @@ export const ListStore = iRendererStore
       self.items.replace(newItems);
     }
 
+    function getData(superData: any): any {
+      return createObject(superData, {
+        items: self.items.map(item => item.data),
+        selectedItems: self.selectedItems.map(item => item.data),
+        unSelectedItems: self.unSelectedItems.map(item => item.data)
+      });
+    }
+
     return {
+      getData,
       update,
       initItems,
       updateSelected,
@@ -297,6 +338,7 @@ export const ListStore = iRendererStore
       setOrderByInfo,
       reset,
       toggleDragging,
+      startDragging,
       stopDragging,
       exchange
     };

@@ -3,17 +3,21 @@ import {
   FormItem,
   FormControlProps,
   FormBaseControl,
-  resolveEventData
+  resolveEventData,
+  str2function,
+  normalizeDate,
+  getVariable
 } from 'amis-core';
 import cx from 'classnames';
 import {filterDate, isPureVariable, resolveVariableAndFilter} from 'amis-core';
 import moment from 'moment';
-import 'moment/locale/zh-cn';
 import {DatePicker} from 'amis-ui';
 import {FormBaseControlSchema, SchemaObject} from '../../Schema';
 import {createObject, anyChanged, isMobile, autobind} from 'amis-core';
 import {ActionObject} from 'amis-core';
 import {supportStatic} from './StaticHoc';
+
+import type {ShortCuts} from 'amis-ui/lib/components/DatePicker';
 
 export interface InputDateBaseControlSchema extends FormBaseControlSchema {
   /**
@@ -38,10 +42,19 @@ export interface InputDateBaseControlSchema extends FormBaseControlSchema {
   format?: string;
 
   /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
    * 日期展示格式
    */
   inputFormat?: string;
 
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
   /**
    * 设定是否存储 utc 时间。
    */
@@ -56,11 +69,23 @@ export interface InputDateBaseControlSchema extends FormBaseControlSchema {
    * 边框模式，全边框，还是半边框，或者没边框。
    */
   borderMode?: 'full' | 'half' | 'none';
+
+  /**
+   * 日期快捷键
+   */
+  shortcuts?: string | ShortCuts[];
+
+  /**
+   * 字符串函数，用来决定是否禁用某个日期。
+   *
+   * (currentDate: moment.Moment, props: any) => boolean;
+   */
+  disabledDate?: string;
 }
 
 /**
  * Date日期选择控件
- * 文档：https://baidu.gitee.io/amis/docs/components/form/date
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/date
  */
 export interface DateControlSchema extends InputDateBaseControlSchema {
   /**
@@ -81,6 +106,16 @@ export interface DateControlSchema extends InputDateBaseControlSchema {
   inputFormat?: string;
 
   /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
+
+  /**
    * 点选日期后是否关闭弹窗
    */
   closeOnSelect?: boolean;
@@ -94,11 +129,16 @@ export interface DateControlSchema extends InputDateBaseControlSchema {
    * 限制最大日期
    */
   maxDate?: string;
+
+  /**
+   * 弹窗容器选择器
+   */
+  popOverContainerSelector?: string;
 }
 
 /**
  * Datetime日期时间选择控件
- * 文档：https://baidu.gitee.io/amis/docs/components/form/datetime
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/datetime
  */
 export interface DateTimeControlSchema extends InputDateBaseControlSchema {
   /**
@@ -119,6 +159,16 @@ export interface DateTimeControlSchema extends InputDateBaseControlSchema {
   inputFormat?: string;
 
   /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
+
+  /**
    * 时间的格式。
    *
    * @default HH:mm
@@ -139,11 +189,16 @@ export interface DateTimeControlSchema extends InputDateBaseControlSchema {
    * 时间输入范围限制
    */
   timeConstraints?: any;
+
+  /**
+   * 是否为结束时间，如果是，那么会自动加上 23:59:59
+   */
+  isEndDate?: boolean;
 }
 
 /**
  * Time 时间选择控件
- * 文档：https://baidu.gitee.io/amis/docs/components/form/time
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/time
  */
 export interface TimeControlSchema extends InputDateBaseControlSchema {
   /**
@@ -164,6 +219,16 @@ export interface TimeControlSchema extends InputDateBaseControlSchema {
   inputFormat?: string;
 
   /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
+
+  /**
    * 时间的格式。
    *
    * @default HH:mm
@@ -178,7 +243,7 @@ export interface TimeControlSchema extends InputDateBaseControlSchema {
 
 /**
  * Month 月份选择控件
- * 文档：https://baidu.gitee.io/amis/docs/components/form/Month
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/Month
  */
 export interface MonthControlSchema extends InputDateBaseControlSchema {
   /**
@@ -197,6 +262,16 @@ export interface MonthControlSchema extends InputDateBaseControlSchema {
    * @default YYYY-MM
    */
   inputFormat?: string;
+
+  /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
 }
 
 /**
@@ -219,6 +294,16 @@ export interface QuarterControlSchema extends InputDateBaseControlSchema {
    * @default YYYY-MM
    */
   inputFormat?: string;
+
+  /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
 }
 
 /**
@@ -241,6 +326,16 @@ export interface YearControlSchema extends InputDateBaseControlSchema {
    * @default YYYY-MM
    */
   inputFormat?: string;
+
+  /**
+   * 替代format
+   */
+  valueFormat?: string;
+
+  /**
+   * 日期展示格式(新：替代inputFormat)
+   */
+  displayFormat?: string;
 }
 
 export interface DateProps extends FormControlProps {
@@ -248,6 +343,7 @@ export interface DateProps extends FormControlProps {
   timeFormat?: string;
   format?: string;
   valueFormat?: string;
+  displayFormat?: string;
   timeConstraints?: {
     hours?: {
       min: number;
@@ -314,12 +410,21 @@ export default class DateControl extends React.PureComponent<
       setPrinstineValue,
       data,
       format,
-      utc
+      valueFormat,
+      utc,
+      changeMotivation
     } = props;
 
     if (defaultValue && value === defaultValue) {
-      const date = filterDate(defaultValue, data, format);
-      setPrinstineValue((utc ? moment.utc(date) : date).format(format));
+      const date = filterDate(defaultValue, data, valueFormat || format);
+      setPrinstineValue(
+        (utc ? moment.utc(date) : date).format(valueFormat || format)
+      );
+    } else if (changeMotivation === 'formulaChanged' && defaultValue && value) {
+      const date = normalizeDate(value, valueFormat || format);
+      if (date && date.format(valueFormat || format) !== value) {
+        setPrinstineValue(date.format(valueFormat || format));
+      }
     }
 
     let schedulesData = props.schedules;
@@ -331,8 +436,12 @@ export default class DateControl extends React.PureComponent<
     }
 
     this.state = {
-      minDate: minDate ? filterDate(minDate, data, format) : undefined,
-      maxDate: maxDate ? filterDate(maxDate, data, format) : undefined,
+      minDate: minDate
+        ? filterDate(minDate, data, valueFormat || format)
+        : undefined,
+      maxDate: maxDate
+        ? filterDate(maxDate, data, valueFormat || format)
+        : undefined,
       schedules: schedulesData
     };
   }
@@ -341,9 +450,15 @@ export default class DateControl extends React.PureComponent<
     const props = this.props;
 
     if (prevProps.defaultValue !== props.defaultValue) {
-      const date = filterDate(props.defaultValue, props.data, props.format);
+      const date = filterDate(
+        props.defaultValue,
+        props.data,
+        props.valueFormat || props.format
+      );
       props.setPrinstineValue(
-        (props.utc ? moment.utc(date) : date).format(props.format)
+        (props.utc ? moment.utc(date) : date).format(
+          props.valueFormat || props.format
+        )
       );
     }
 
@@ -354,10 +469,18 @@ export default class DateControl extends React.PureComponent<
     ) {
       this.setState({
         minDate: props.minDate
-          ? filterDate(props.minDate, props.data, this.props.format)
+          ? filterDate(
+              props.minDate,
+              props.data,
+              this.props.valueFormat || this.props.format
+            )
           : undefined,
         maxDate: props.maxDate
-          ? filterDate(props.maxDate, props.data, this.props.format)
+          ? filterDate(
+              props.maxDate,
+              props.data,
+              this.props.valueFormat || this.props.format
+            )
           : undefined
       });
     }
@@ -431,21 +554,38 @@ export default class DateControl extends React.PureComponent<
   @autobind
   dispatchEvent(e: React.SyntheticEvent<HTMLElement>) {
     const {dispatchEvent, value} = this.props;
-    dispatchEvent(e, resolveEventData(this.props, {value}, 'value'));
+    dispatchEvent(e, resolveEventData(this.props, {value}));
   }
 
   // 动作
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue} = this.props;
+    const {resetValue, formStore, store, name} = this.props;
 
     if (action.actionType === 'clear') {
       this.dateRef?.clear();
       return;
     }
 
-    if (action.actionType === 'reset' && resetValue) {
-      this.dateRef?.reset(resetValue);
+    if (action.actionType === 'reset') {
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      this.dateRef?.reset(pristineVal);
     }
+  }
+
+  setData(value: any) {
+    const {data, valueFormat, format, utc, onChange} = this.props;
+
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      value instanceof Date
+    ) {
+      const date = filterDate(value as any, data, valueFormat || format);
+      value = (utc ? moment.utc(date) : date).format(valueFormat || format);
+    }
+
+    onChange(value);
   }
 
   // 值的变化
@@ -454,12 +594,65 @@ export default class DateControl extends React.PureComponent<
     const {dispatchEvent} = this.props;
     const dispatcher = dispatchEvent(
       'change',
-      resolveEventData(this.props, {value: nextValue}, 'value')
+      resolveEventData(this.props, {value: nextValue})
     );
-    if (dispatcher?.prevented) {
-      return;
-    }
+    // 因为前面没有 await，所以这里的 dispatcher.prevented 是不准确的。
+    // 为什么没写 onChange，我估计是不能让 onChange 太慢执行
+    // if (dispatcher?.prevented) {
+    //   return;
+    // }
     this.props.onChange(nextValue);
+  }
+
+  // 点击日期事件
+  @autobind
+  async handleClick(date: moment.Moment) {
+    const {dispatchEvent, utc, valueFormat, format} = this.props;
+    dispatchEvent(
+      'click',
+      resolveEventData(this.props, {
+        value: (utc ? moment.utc(date) : date).format(valueFormat || format)
+      })
+    );
+  }
+
+  // 鼠标移入日期事件
+  @autobind
+  async handleMouseEnter(date: moment.Moment) {
+    const {dispatchEvent, utc, valueFormat, format} = this.props;
+    dispatchEvent(
+      'mouseenter',
+      resolveEventData(this.props, {
+        value: (utc ? moment.utc(date) : date).format(valueFormat || format)
+      })
+    );
+  }
+
+  // 鼠标移出日期事件
+  @autobind
+  async handleMouseLeave(date: moment.Moment) {
+    const {dispatchEvent, utc, valueFormat, format} = this.props;
+    dispatchEvent(
+      'mouseleave',
+      resolveEventData(this.props, {
+        value: (utc ? moment.utc(date) : date).format(valueFormat || format)
+      })
+    );
+  }
+
+  @autobind
+  isDisabledDate(currentDate: moment.Moment) {
+    const {disabledDate} = this.props;
+    const fn =
+      typeof disabledDate === 'string'
+        ? str2function(disabledDate, 'currentDate', 'props')
+        : disabledDate;
+
+    if (typeof fn === 'function') {
+      return fn(currentDate, this.props);
+    }
+
+    return false;
   }
 
   @supportStatic()
@@ -479,14 +672,13 @@ export default class DateControl extends React.PureComponent<
       env,
       largeMode,
       render,
-      useMobileUI,
+      mobileUI,
       placeholder,
       ...rest
     } = this.props;
-    const mobileUI = useMobileUI && isMobile();
 
     if (type === 'time' && timeFormat) {
-      format = timeFormat;
+      valueFormat = format = timeFormat;
     }
 
     return (
@@ -502,18 +694,19 @@ export default class DateControl extends React.PureComponent<
       >
         <DatePicker
           {...rest}
+          env={env}
           placeholder={placeholder ?? this.placeholder}
-          useMobileUI={useMobileUI}
+          mobileUI={mobileUI}
           popOverContainer={
-            mobileUI && env && env.getModalContainer
-              ? env.getModalContainer
-              : mobileUI
-              ? undefined
-              : rest.popOverContainer
+            mobileUI
+              ? env?.getModalContainer
+              : rest.popOverContainer || env.getModalContainer
           }
-          timeFormat={timeFormat}
-          format={valueFormat || format}
+          popOverContainerSelector={rest.popOverContainerSelector}
           {...this.state}
+          valueFormat={valueFormat || format}
+          minDateRaw={this.props.minDate}
+          maxDateRaw={this.props.maxDate}
           classnames={cx}
           onRef={this.getRef}
           schedules={this.state.schedules}
@@ -522,6 +715,10 @@ export default class DateControl extends React.PureComponent<
           onChange={this.handleChange}
           onFocus={this.dispatchEvent}
           onBlur={this.dispatchEvent}
+          disabledDate={this.isDisabledDate}
+          onClick={this.handleClick}
+          onMouseEnter={this.handleMouseEnter}
+          onMouseLeave={this.handleMouseLeave}
         />
       </div>
     );
@@ -536,8 +733,6 @@ export class DateControlRenderer extends DateControl {
   placeholder = this.props.translate('Date.placeholder');
   static defaultProps = {
     ...DateControl.defaultProps,
-    dateFormat: 'YYYY-MM-DD',
-    timeFormat: '',
     strictMode: false
   };
 }
@@ -550,9 +745,7 @@ export class DatetimeControlRenderer extends DateControl {
   static defaultProps = {
     ...DateControl.defaultProps,
     inputFormat: 'YYYY-MM-DD HH:mm:ss',
-    dateFormat: 'LL',
-    timeFormat: 'HH:mm:ss',
-    closeOnSelect: false,
+    closeOnSelect: true,
     strictMode: false
   };
 }
@@ -565,10 +758,8 @@ export class TimeControlRenderer extends DateControl {
   static defaultProps = {
     ...DateControl.defaultProps,
     inputFormat: 'HH:mm',
-    dateFormat: '',
-    timeFormat: 'HH:mm',
     viewMode: 'time',
-    closeOnSelect: false
+    closeOnSelect: true
   };
 }
 
@@ -580,8 +771,6 @@ export class MonthControlRenderer extends DateControl {
   static defaultProps = {
     ...DateControl.defaultProps,
     inputFormat: 'YYYY-MM',
-    dateFormat: 'MM',
-    timeFormat: '',
     viewMode: 'months',
     closeOnSelect: true,
     strictMode: false
@@ -596,8 +785,6 @@ export class QuarterControlRenderer extends DateControl {
   static defaultProps = {
     ...DateControl.defaultProps,
     inputFormat: 'YYYY [Q]Q',
-    dateFormat: 'YYYY [Q]Q',
-    timeFormat: '',
     viewMode: 'quarters',
     closeOnSelect: true,
     strictMode: false
@@ -612,8 +799,6 @@ export class YearControlRenderer extends DateControl {
   static defaultProps = {
     ...DateControl.defaultProps,
     inputFormat: 'YYYY',
-    dateFormat: 'YYYY',
-    timeFormat: '',
     viewMode: 'years',
     closeOnSelect: true,
     strictMode: false

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/modules/es.object.keys.js", "../../node_modules/core-js/es/object/keys.js"],
+  "sourcesContent": ["'use strict';\nvar $ = require('../internals/export');\nvar toObject = require('../internals/to-object');\nvar nativeKeys = require('../internals/object-keys');\nvar fails = require('../internals/fails');\n\nvar FAILS_ON_PRIMITIVES = fails(function () { nativeKeys(1); });\n\n// `Object.keys` method\n// https://tc39.es/ecma262/#sec-object.keys\n$({ target: 'Object', stat: true, forced: FAILS_ON_PRIMITIVES }, {\n  keys: function keys(it) {\n    return nativeKeys(toObject(it));\n  }\n});\n", "'use strict';\nrequire('../../modules/es.object.keys');\nvar path = require('../../internals/path');\n\nmodule.exports = path.Object.keys;\n"],
+  "mappings": ";;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,IAAI;AACR,QAAI,WAAW;AACf,QAAI,aAAa;AACjB,QAAI,QAAQ;AAEZ,QAAI,sBAAsB,MAAM,WAAY;AAAE,iBAAW,CAAC;AAAA,IAAG,CAAC;AAI9D,MAAE,EAAE,QAAQ,UAAU,MAAM,MAAM,QAAQ,oBAAoB,GAAG;AAAA,MAC/D,MAAM,SAAS,KAAK,IAAI;AACtB,eAAO,WAAW,SAAS,EAAE,CAAC;AAAA,MAChC;AAAA,IACF,CAAC;AAAA;AAAA;;;ACdD;AAAA;AACA;AACA,QAAI,OAAO;AAEX,WAAO,UAAU,KAAK,OAAO;AAAA;AAAA;",
+  "names": []
+}

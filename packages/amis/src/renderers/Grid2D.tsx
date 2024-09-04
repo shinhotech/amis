@@ -55,7 +55,7 @@ export type Grid = GridObject & SchemaObject;
 
 /**
  * 二维布局渲染器。
- * 文档：https://baidu.gitee.io/amis/docs/components/grid-2d
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/grid-2d
  */
 export interface Grid2DSchema extends BaseSchema {
   /**
@@ -172,7 +172,7 @@ export default class Grid2D extends React.Component<Grid2DProps, object> {
   }
 
   render() {
-    const {grids, cols, gap, gapRow, width, rowHeight, style} = this.props;
+    const {grids, cols, gap, gapRow, width, rowHeight, style, id} = this.props;
 
     const templateColumns = new Array(cols);
     templateColumns.fill('1fr');
@@ -214,7 +214,11 @@ export default class Grid2D extends React.Component<Grid2DProps, object> {
       gridTemplateRows: templateRows.join(' ')
     };
 
-    return <div style={curStyle}>{this.renderGrids()}</div>;
+    return (
+      <div style={curStyle} data-id={id}>
+        {this.renderGrids()}
+      </div>
+    );
   }
 }
 

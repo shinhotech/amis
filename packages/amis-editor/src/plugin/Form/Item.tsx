@@ -16,8 +16,10 @@ import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import find from 'lodash/find';
 import {JSONDelete, JSONPipeIn, JSONUpdate} from 'amis-editor-core';
 import {SUPPORT_STATIC_FORMITEM_CMPTS} from '../../renderer/event-control/helper';
+import {isExpression, resolveVariableAndFilter} from 'amis-core';
 
 export class ItemPlugin extends BasePlugin {
+  static id = 'ItemPlugin';
   // panelTitle = '表单项通配';
   panelTitle = '表单项';
   order = -990;
@@ -104,16 +106,7 @@ export class ItemPlugin extends BasePlugin {
                   label: '只读模式'
                 })
               : null,
-            getSchemaTpl('switch', {
-              name: 'disabled',
-              label: '禁用',
-              mode: 'horizontal',
-              horizontal: {
-                justify: true,
-                left: 8
-              },
-              inputClassName: 'is-inline '
-            }),
+            getSchemaTpl('disabled'),
             ignoreValidator ? null : getSchemaTpl('required'),
             getSchemaTpl('description'),
             getSchemaTpl('placeholder'),
@@ -136,11 +129,32 @@ export class ItemPlugin extends BasePlugin {
             getSchemaTpl('horizontal', {
               label: '',
               visibleOn:
-                'data.mode == "horizontal" && data.label !== false && data.horizontal'
+                'this.mode == "horizontal" && this.label !== false && this.horizontal'
             }),
 
             renderer.sizeMutable !== false
-              ? getSchemaTpl('formItemSize')
+              ? getSchemaTpl('formItemSize', {
+                  options: [
+                    {
+                      label: '小',
+                      value: 'sm'
+                    },
+
+                    {
+                      label: '中',
+                      value: 'md'
+                    },
+
+                    {
+                      label: '大',
+                      value: 'lg'
+                    },
+                    {
+                      label: '默认（占满）',
+                      value: 'full'
+                    }
+                  ]
+                })
               : null,
             getSchemaTpl('formItemInline'),
 
@@ -172,8 +186,6 @@ export class ItemPlugin extends BasePlugin {
         {
           title: '显隐',
           body: [
-            // TODO: 有些表单项没有 disabled
-            getSchemaTpl('disabled'),
             getSchemaTpl('visible'),
             supportStatic ? getSchemaTpl('static') : null,
             getSchemaTpl('switch', {
@@ -207,18 +219,17 @@ export class ItemPlugin extends BasePlugin {
     const context = event.context;
 
     if (
-      /\$/.test(context.info.renderer.name!) &&
+      context.info.renderer.isFormItem &&
       context.diff?.some(change => change.path?.join('.') === 'value')
     ) {
-      const change: any = find(
-        context.diff,
-        change => change.path?.join('.') === 'value'
-      )!;
-      const component = this.manager.store
-        .getNodeById(context.id)
-        ?.getComponent();
+      let value = context.value.value;
+      const component = context.node?.getComponent();
 
-      component?.props.onChange(change?.rhs);
+      if (typeof value === 'string' && isExpression(value)) {
+        const data = component?.props.data || {};
+        value = resolveVariableAndFilter(value, data, '| raw');
+      }
+      component?.props.onChange(value);
     }
   }
 
@@ -250,6 +261,9 @@ export class ItemPlugin extends BasePlugin {
     {id, schema, region, selections}: ContextMenuEventContext,
     menus: Array<ContextMenuItem>
   ) {
+    if (this.manager.store.toolbarMode === 'mini') {
+      return;
+    }
     if (!selections.length || selections.length > 3) {
       // 单选或者超过3个选中态时直接返回
       return;

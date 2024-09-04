@@ -12,14 +12,14 @@ import RcMenu, {
   Divider as RcDivider,
   ItemGroup
 } from 'rc-menu';
-import Overflow from 'rc-overflow';
 import Sortable from 'sortablejs';
 import {
   mapTree,
   autobind,
   filterTree,
   findTree,
-  getTreeAncestors
+  getTreeAncestors,
+  TestIdBuilder
 } from 'amis-core';
 import {ClassNamesFn, themeable} from 'amis-core';
 
@@ -28,6 +28,9 @@ import {BadgeObject} from '../Badge';
 import MenuItem, {MenuItemProps} from './MenuItem';
 import SubMenu, {SubMenuProps} from './SubMenu';
 import {MenuContext} from './MenuContext';
+
+const INVALIDATE = 'invalidate';
+const RESPONSIVE = 'responsive';
 
 export interface NavigationItem {
   id?: string;
@@ -43,12 +46,10 @@ export interface NavigationItem {
   badgeClassName?: string;
   tooltipClassName?: string;
   component?: React.ReactNode;
-  hidden?: boolean;
-  isDivider?: boolean;
   permission?: string;
   persistState?: boolean;
   keepInHistory?: boolean;
-  mode?: string; // 菜单项是否为分组标题 mode: group
+  mode?: string; // 菜单项是否为分组标题 mode: group 菜单项是否为分割线 mode: divider
   [propName: string]: any;
 }
 
@@ -62,6 +63,8 @@ export interface MenuProps extends Omit<RcMenuProps, 'mode'> {
    * 导航项数据，支持树状结构
    */
   navigations: Array<NavigationItem>;
+
+  testIdBuilder?: TestIdBuilder;
 
   /**
    * 导航排列方式 stacked为true垂直 默认为false
@@ -185,6 +188,9 @@ export interface MenuProps extends Omit<RcMenuProps, 'mode'> {
   // (link: any, depth: number) => boolean
   onSelect?: any;
 
+  // (links: any[]) => void
+  onChange?: any;
+
   onToggle: (link: any, depth: number, forceFold?: boolean) => void;
 
   onDragStart?: (
@@ -209,6 +215,11 @@ export interface MenuProps extends Omit<RcMenuProps, 'mode'> {
    * 展开按钮在最前面
    */
   expandBefore?: boolean;
+
+  /**
+   * 浮层自定义样式
+   */
+  popupClassName?: string;
 }
 
 interface MenuState {
@@ -262,7 +273,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
   constructor(props: MenuProps) {
     super(props);
 
-    const {transformedNav, activeKey, defaultOpenKeys, openKeys} =
+    const {transformedNav, activeKey, defaultOpenKeys, openKeys, activeItems} =
       this.normalizeNavigations({
         ...props
       });
@@ -273,6 +284,9 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       defaultOpenKeys,
       openKeys
     };
+    if (activeKey.length) {
+      props.onChange?.(activeItems);
+    }
   }
 
   componentDidUpdate(prevProps: MenuProps, prevState: MenuState) {
@@ -295,18 +309,27 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       }
     }
     if (isNavDiff || !isEqual(prevProps.location, props.location)) {
-      const {transformedNav, activeKey, defaultOpenKeys, openKeys} =
-        this.normalizeNavigations({
-          ...props,
-          isOpen
-        });
+      const {
+        transformedNav,
+        activeKey,
+        defaultOpenKeys,
+        openKeys,
+        activeItems
+      } = this.normalizeNavigations({
+        ...props,
+        isOpen
+      });
 
       this.setState({
         navigations: transformedNav,
         activeKey,
         defaultOpenKeys,
-        openKeys
+        openKeys,
+        activeItems
       });
+    }
+    if (!isEqual(prevState.activeKey, this.state.activeKey)) {
+      props.onChange?.(this.state.activeItems);
     }
   }
 
@@ -324,13 +347,14 @@ export class Menu extends React.Component<MenuProps, MenuState> {
     let id = 1;
     const activeKeys: Array<string> = [];
     const openKeys: Array<string> = [];
+    const activeItems: Array<any> = [];
 
     const transformedNav = mapTree(
       filterTree(
         navigations,
         (item: NavigationItem, key: any, level: number): any => {
           // 水平导航不需要分割线
-          if (!stacked && item?.isDivider) {
+          if (!stacked && item.mode === 'divider') {
             return false;
           }
           return true;
@@ -347,6 +371,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
 
         if (!activeKeys.find(key => key === navId) && isActive(item, prefix)) {
           activeKeys?.push(navId);
+          activeItems?.push(item.link || item);
         }
 
         const open = isOpen(item as NavigationItem);
@@ -379,7 +404,8 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       transformedNav,
       activeKey: activeKeys,
       defaultOpenKeys: activeKeyPaths,
-      openKeys
+      openKeys,
+      activeItems
     };
   }
 
@@ -445,8 +471,8 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       mode,
       collapsed,
       accordion,
-      onToggleExpand,
       onToggle,
+      onToggleExpand,
       onSelect
     } = this.props;
     const isVericalInline = stacked && mode === 'inline' && !collapsed;
@@ -465,11 +491,13 @@ export class Menu extends React.Component<MenuProps, MenuState> {
     }
 
     const currentItem = findTree(navigations, item => item.id === key);
-    // 因为Nav里只处理当前菜单项 因此新增一个onToggle事件
-    onToggle?.(currentItem?.link, keyPaths.length, isOpen);
-    onToggleExpand?.(uniq(openKeys));
-
-    onSelect?.(currentItem?.link || currentItem, keyPaths.length);
+    if (currentItem?.path) {
+      onSelect?.(currentItem?.link || currentItem, keyPaths.length);
+    } else {
+      // 因为Nav里只处理当前菜单项 因此新增一个onToggle事件
+      onToggle?.(currentItem?.link, keyPaths.length, isOpen);
+      onToggleExpand?.(uniq(openKeys));
+    }
   }
 
   @autobind
@@ -502,7 +530,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       }
       const currentItem = findTree(navigations, item => item.id === eventKey);
       // 因为Nav里只处理当前菜单项 因此新增一个onToggle事件
-      onToggle?.(currentItem?.link, keyPaths.length, isOpen);
+      onToggle?.(currentItem?.link || currentItem, keyPaths.length, isOpen);
       onToggleExpand?.(uniq(openKeys));
     }
   }
@@ -515,7 +543,9 @@ export class Menu extends React.Component<MenuProps, MenuState> {
     disabled?: boolean;
     [propName: string]: any;
   }) {
-    const {classnames: cx, expandIcon} = this.props;
+    const navigations = this.state.navigations;
+    const {classnames: cx, expandIcon, testIdBuilder} = this.props;
+    const link = findTree(navigations, item => item.id === ctx.eventKey);
     return (
       <span
         key="expand-toggle"
@@ -524,11 +554,18 @@ export class Menu extends React.Component<MenuProps, MenuState> {
           this.handleToggleExpand(ctx);
           e.preventDefault();
         }}
+        {...testIdBuilder
+          ?.getChild(link?.link?.testid || ctx.eventKey)
+          .getChild('expand-toggle')
+          .getTestId()}
       >
-        {!expandIcon || !React.isValidElement(expandIcon) ? (
-          <Icon icon="right-arrow-bold" className="icon" />
-        ) : typeof expandIcon === 'string' ? (
-          <i className={cx(expandIcon)} />
+        {!React.isValidElement(expandIcon) ? (
+          <Icon
+            icon={
+              typeof expandIcon === 'string' ? expandIcon : 'right-arrow-bold'
+            }
+            className="icon"
+          />
         ) : (
           expandIcon
         )}
@@ -547,7 +584,9 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       isActive,
       collapsed,
       overflowedIndicator,
-      overflowMaxCount
+      overflowMaxCount,
+      popupClassName,
+      testIdBuilder
     } = this.props;
 
     return list.map((item: NavigationItem, index: number) => {
@@ -567,8 +606,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
           </ItemGroup>
         );
       }
-      const itemDisabled =
-        item.disabled === undefined ? disabled : item.disabled;
+      const itemDisabled = disabled || item.disabled;
       const link = item.link;
 
       if (
@@ -584,12 +622,14 @@ export class Menu extends React.Component<MenuProps, MenuState> {
             badge={badge}
             renderLink={renderLink}
             depth={level || 1}
+            testIdBuilder={testIdBuilder?.getChild(link.testid || index)}
+            popupClassName={popupClassName}
           >
             {this.renderMenuContent(item.children || [], item.depth + 1)}
           </SubMenu>
         );
       }
-      return item.isDivider ? (
+      return item.mode === 'divider' ? (
         <RcDivider
           key={item.id}
           className={cx(`Nav-Menu-item-divider`, {
@@ -604,6 +644,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
           renderLink={renderLink}
           badge={badge}
           data={data}
+          testIdBuilder={testIdBuilder?.getChild(link.testid || index)}
           depth={level || 1}
           order={index}
           overflowedIndicator={overflowedIndicator}
@@ -616,7 +657,6 @@ export class Menu extends React.Component<MenuProps, MenuState> {
   render() {
     const {
       classPrefix,
-      className,
       classnames: cx,
       collapsed,
       themeColor,
@@ -626,6 +666,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       prefix,
       disabled,
       draggable,
+      className,
       triggerSubMenuAction,
       direction,
       overflowedIndicator,
@@ -641,12 +682,12 @@ export class Menu extends React.Component<MenuProps, MenuState> {
       expandBefore,
       onDragStart
     } = this.props;
+
     const {navigations, activeKey, defaultOpenKeys, openKeys} = this.state;
     const isDarkTheme = themeColor === 'dark';
-    const disabledItem = findTree(navigations, item => !!item.disabled);
     const rcMode = stacked
       ? mode === 'float'
-        ? 'vertical-right'
+        ? 'vertical-left'
         : 'vertical'
       : 'horizontal';
     const disableOpen = collapsed || !stacked || (stacked && mode === 'float');
@@ -674,7 +715,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
             ['Nav-Menu-collapsed']: stacked && collapsed,
             ['Nav-Menu-dark']: isDarkTheme,
             ['Nav-Menu-light']: !isDarkTheme,
-            ['Nav-Menu-disabled']: disabled || !!disabledItem, // 整体禁用或者菜单项有禁用 需要添加disabled样式 否则禁用菜单样式有问题
+            ['Nav-Menu-disabled']: disabled, // 整体禁用 需要添加disabled样式 否则禁用菜单样式有问题
             ['Nav-Menu-expand-before']:
               stacked && mode === 'inline' && !collapsed && expandBefore
           })}
@@ -707,8 +748,8 @@ export class Menu extends React.Component<MenuProps, MenuState> {
           // @ts-ignore
           maxCount={
             stacked || disabledOverflow
-              ? Overflow.INVALIDATE
-              : overflowMaxCount || Overflow.RESPONSIVE
+              ? INVALIDATE
+              : overflowMaxCount || RESPONSIVE
           }
           component={overflowComponent || 'ul'}
           style={overflowStyle}

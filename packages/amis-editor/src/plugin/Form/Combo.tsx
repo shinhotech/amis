@@ -1,3 +1,4 @@
+import {setVariable, someTree} from 'amis-core';
 import {
   BaseEventContext,
   BasePlugin,
@@ -9,18 +10,20 @@ import {
   tipedLabel,
   mockValue,
   RegionConfig,
-  getI18nEnabled
+  getI18nEnabled,
+  EditorNodeType,
+  EditorManager
 } from 'amis-editor-core';
-
-import {setVariable} from 'amis-core';
-
+import {DSBuilderManager} from '../../builder/DSBuilderManager';
 import {ValidatorTag} from '../../validator';
 import {
   getArgsWrapper,
   getEventControlConfig
 } from '../../renderer/event-control/helper';
+import {resolveInputTableEventDataSchame} from '../../util';
 
 export class ComboControlPlugin extends BasePlugin {
+  static id = 'ComboControlPlugin';
   // 关联渲染器名字
   rendererName = 'combo';
   $schema = '/schemas/ComboControlSchema.json';
@@ -50,7 +53,7 @@ export class ComboControlPlugin extends BasePlugin {
     items: [
       {
         type: 'input-text',
-        name: 'input-text',
+        name: 'text',
         placeholder: '文本'
       },
       {
@@ -83,71 +86,161 @@ export class ComboControlPlugin extends BasePlugin {
     ]
   };
 
+  // 容器配置
+  regions: Array<RegionConfig> = [
+    {
+      key: 'items',
+      label: '内容区',
+      preferTag: '内容区',
+      renderMethod: 'renderItems'
+    }
+  ];
+
   // 事件定义
   events: RendererPluginEvent[] = [
     {
       eventName: 'add',
       eventLabel: '添加',
       description: '添加组合项时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'object',
-              title: '当前组合项的值'
+      dataSchema: (manager: EditorManager) => {
+        const {value} = resolveInputTableEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...value,
+                    title: '组合项的值'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     },
     {
       eventName: 'delete',
       eventLabel: '删除',
       description: '删除组合项',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.key': {
-              type: 'string',
-              title: '删除项的索引'
-            },
-            'event.data.value': {
-              type: 'string',
-              title: '现有组合项的值'
-            },
-            'event.data.item': {
-              type: 'object',
-              title: '被删除的项'
+      dataSchema: (manager: EditorManager) => {
+        const {value, item} = resolveInputTableEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  key: {
+                    type: 'number',
+                    title: '被删除的索引'
+                  },
+                  value: {
+                    type: 'string',
+                    ...value,
+                    title: '组合项的值'
+                  },
+                  item: {
+                    type: 'object',
+                    ...item,
+                    title: '被删除的项'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
+    },
+    {
+      eventName: 'dragEnd',
+      eventLabel: '拖拽结束',
+      description: '当组合项拖拽结束且位置发生变化时触发',
+      dataSchema: (manager: EditorManager) => {
+        const {value, item} = resolveInputTableEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  index: {
+                    type: 'number',
+                    title: '拖拽后的索引'
+                  },
+                  oldIndex: {
+                    type: 'number',
+                    title: '拖拽前的索引'
+                  },
+                  item: {
+                    type: 'object',
+                    ...item,
+                    title: '被拖拽的项'
+                  },
+                  value: {
+                    type: 'string',
+                    ...value,
+                    title: '拖拽前组合项的值'
+                  },
+                  oldValue: {
+                    type: 'string',
+                    ...value,
+                    title: '拖拽后组合项的值'
+                  }
+                }
+              }
+            }
+          }
+        ];
+      }
     },
     {
       eventName: 'tabsChange',
       eventLabel: '切换tab',
       description: '当设置 tabsMode 为 true 时，切换选项卡时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.key': {
-              type: 'string',
-              title: '选项卡索引'
-            },
-            'event.data.value': {
-              type: 'string',
-              title: '现有组合项的值'
-            },
-            'event.data.item': {
-              type: 'object',
-              title: '被激活的项'
+      dataSchema: (manager: EditorManager) => {
+        const {value, item} = resolveInputTableEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  key: {
+                    type: 'number',
+                    title: '选项卡索引'
+                  },
+                  value: {
+                    type: 'string',
+                    ...value,
+                    title: '组合项的值'
+                  },
+                  item: {
+                    type: 'object',
+                    ...item,
+                    title: '被激活的项'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -161,7 +254,7 @@ export class ComboControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'addItem',
@@ -188,14 +281,11 @@ export class ComboControlPlugin extends BasePlugin {
             placeholder: '变量名',
             source: '${__setValueDs}'
           },
-          {
+          getSchemaTpl('formulaControl', {
             name: 'val',
-            type: 'input-formula',
             variables: '${variables}',
-            evalMode: false,
-            variableMode: 'tabs',
             inputMode: 'input-group'
-          }
+          })
         ]
       })
     },
@@ -211,6 +301,13 @@ export class ComboControlPlugin extends BasePlugin {
   notRenderFormZone = true;
 
   panelJustify = true;
+
+  dsManager: DSBuilderManager;
+
+  constructor(manager: EditorManager) {
+    super(manager);
+    this.dsManager = new DSBuilderManager(manager);
+  }
 
   panelBodyCreator = (context: BaseEventContext) => {
     const i18nEnabled = getI18nEnabled();
@@ -267,7 +364,7 @@ export class ComboControlPlugin extends BasePlugin {
                 {
                   type: 'container',
                   className: 'ae-ExtendMore mb-3',
-                  visibleOn: 'data.multiple',
+                  visibleOn: 'this.multiple',
                   body: [
                     {
                       label: '最多条数',
@@ -288,12 +385,12 @@ export class ComboControlPlugin extends BasePlugin {
                     '默认数组内的数据结构为对象，如果只有一个表单项，可以配置将值打平，那么数组内放置的就是那个表单项的值'
                   ),
                   visibleOn:
-                    'Array.isArray(data.items) && data.items.length === 1 && data.multiple'
+                    'Array.isArray(this.items) && this.items.length === 1 && this.multiple'
                 }),
                 {
                   type: 'container',
                   className: 'ae-ExtendMore mb-3',
-                  visibleOn: 'data.multiple && data.flat',
+                  visibleOn: 'this.multiple && this.flat',
                   body: [getSchemaTpl('joinValues'), getSchemaTpl('delimiter')]
                 },
                 // 可排序，排序和新增无关，和多选模式有关
@@ -301,12 +398,12 @@ export class ComboControlPlugin extends BasePlugin {
                   name: 'draggable',
                   label: '可排序',
                   pipeIn: defaultValue(false),
-                  visibleOn: 'data.multiple'
+                  visibleOn: 'this.multiple'
                 }),
                 {
                   type: 'container',
                   className: 'ae-ExtendMore mb-3',
-                  visibleOn: 'data.draggable',
+                  visibleOn: 'this.draggable',
                   body: [getSchemaTpl('draggableTip')]
                 },
 
@@ -317,7 +414,7 @@ export class ComboControlPlugin extends BasePlugin {
                     '可新增',
                     '如需要拓展自定义的新增功能，可通过配置组件-新增项来拓展'
                   ),
-                  visibleOn: 'data.multiple',
+                  visibleOn: 'this.multiple',
                   pipeIn: defaultValue(false),
                   onChange: (
                     value: any,
@@ -341,7 +438,7 @@ export class ComboControlPlugin extends BasePlugin {
                   name: 'removable',
                   label: '可删除',
                   pipeIn: defaultValue(false),
-                  visibleOn: 'data.multiple',
+                  visibleOn: 'this.multiple',
                   onChange: (
                     value: any,
                     oldValue: any,
@@ -358,7 +455,7 @@ export class ComboControlPlugin extends BasePlugin {
                 {
                   type: 'container',
                   className: 'ae-ExtendMore mb-3',
-                  visibleOn: 'data.removable',
+                  visibleOn: 'this.removable',
                   body: [
                     // 自定义删除按钮开关
                     {
@@ -394,18 +491,18 @@ export class ComboControlPlugin extends BasePlugin {
                     // getSchemaTpl('icon', {
                     //   name: 'deleteIcon',
                     //   label: '图标',
-                    //   visibleOn: 'data.removableMode === "icon"'
+                    //   visibleOn: 'this.removableMode === "icon"'
                     // }),
                     {
                       label: '文案',
                       name: 'deleteBtn.label',
                       type: i18nEnabled ? 'input-text-i18n' : 'input-text',
-                      visibleOn: 'data.removableMode === "button"'
+                      visibleOn: 'this.removableMode === "button"'
                     },
                     getSchemaTpl('buttonLevel', {
                       label: '样式',
                       name: 'deleteBtn.level',
-                      visibleOn: 'data.removableMode === "button"'
+                      visibleOn: 'this.removableMode === "button"'
                     }),
                     getSchemaTpl('apiControl', {
                       name: 'deleteApi',
@@ -424,11 +521,6 @@ export class ComboControlPlugin extends BasePlugin {
                 getSchemaTpl('description')
               ]
             },
-            getSchemaTpl('status', {
-              isFormItem: true,
-              readonly: true
-            }),
-            getSchemaTpl('validation', {tag: ValidatorTag.MultiSelect}),
             getSchemaTpl('collapseGroup', [
               {
                 className: 'p-none',
@@ -451,7 +543,7 @@ export class ComboControlPlugin extends BasePlugin {
 
                   getSchemaTpl('combo-container', {
                     name: 'syncFields',
-                    visibleOn: '!data.strictMode',
+                    visibleOn: '!this.strictMode',
                     label: tipedLabel(
                       '同步字段',
                       '如果 Combo 层级比较深，底层的获取外层的数据可能不同步。但是给 combo 配置这个属性就能同步下来。'
@@ -485,11 +577,16 @@ export class ComboControlPlugin extends BasePlugin {
                       '如果数据比较多，比较卡顿时，可开启此配置项'
                     ),
                     pipeIn: defaultValue(false),
-                    visibleOn: 'data.multiple && !data.tabsMode'
+                    visibleOn: 'this.multiple && !this.tabsMode'
                   })
                 ]
               }
-            ])
+            ]),
+            getSchemaTpl('status', {
+              isFormItem: true,
+              readonly: true
+            }),
+            getSchemaTpl('validation', {tag: ValidatorTag.MultiSelect})
           ])
         ]
       },
@@ -499,7 +596,7 @@ export class ComboControlPlugin extends BasePlugin {
         body: getSchemaTpl('collapseGroup', [
           {
             title: '基本',
-            visibleOn: 'data.multiple',
+            visibleOn: 'this.multiple',
             body: [
               {
                 name: 'tabsMode',
@@ -526,7 +623,7 @@ export class ComboControlPlugin extends BasePlugin {
               {
                 type: 'container',
                 className: 'ae-ExtendMore mb-3',
-                visibleOn: 'data.tabsMode',
+                visibleOn: 'this.tabsMode',
                 body: [
                   {
                     type: 'select',
@@ -563,7 +660,7 @@ export class ComboControlPlugin extends BasePlugin {
                 name: 'multiLine',
                 label: '多行展示',
                 pipeIn: defaultValue(false),
-                visibleOn: '!data.tabsMode',
+                visibleOn: '!this.tabsMode',
                 onChange: (
                   value: boolean,
                   oldValue: any,
@@ -577,7 +674,7 @@ export class ComboControlPlugin extends BasePlugin {
                 }
               }),
               getSchemaTpl('switch', {
-                visibleOn: '!data.tabsMode && data.multiLine',
+                visibleOn: '!this.tabsMode && this.multiLine',
                 name: 'noBorder',
                 label: '去掉边框',
                 pipeIn: defaultValue(false)
@@ -588,7 +685,7 @@ export class ComboControlPlugin extends BasePlugin {
             renderer: context.info.renderer,
             schema: [
               getSchemaTpl('subFormItemMode', {
-                visibleOn: 'data.multiLine',
+                visibleOn: 'this.multiLine',
                 type: 'select',
                 label: '子表单'
               })
@@ -610,31 +707,137 @@ export class ComboControlPlugin extends BasePlugin {
     ]);
   };
 
-  filterProps(props: any) {
-    // 至少显示一个成员，否则啥都不显示。
-    if (props.multiple && !props.value && !props.$schema.value && !props.$ref) {
-      const mockedData = {};
-      if (Array.isArray(props.items) && props.items.length === 0) {
-        props.items.forEach((control: any) => {
-          control.name &&
-            setVariable(mockedData, control.name, mockValue(control));
+  filterProps(props: any, node: EditorNodeType) {
+    if (!node.state.value) {
+      // 至少显示一个成员，否则啥都不显示。
+      if (
+        props.multiple &&
+        !props.value &&
+        !props.$schema.value &&
+        !props.$ref
+      ) {
+        const mockedData = {};
+        if (Array.isArray(props.items) && props.items.length === 0) {
+          props.items.forEach((control: any) => {
+            control.name &&
+              setVariable(mockedData, control.name, mockValue(control));
+          });
+        }
+        node.updateState({
+          value: [mockedData]
         });
       }
-      props.value = [mockedData];
-      return props;
     }
     return props;
   }
 
-  // 容器配置
-  regions: Array<RegionConfig> = [
-    {
-      key: 'items',
-      label: '内容区',
-      preferTag: '内容区',
-      renderMethod: 'renderItems'
+  async buildDataSchemas(
+    node: EditorNodeType,
+    region?: EditorNodeType,
+    trigger?: EditorNodeType,
+    parent?: EditorNodeType
+  ) {
+    const itemsSchema: any = {
+      $id: `${node.id}-${node.type}-tableRows`,
+      type: 'object',
+      properties: {}
+    };
+    const items = node.children?.find(
+      child => child.isRegion && child.region === 'items'
+    );
+    const parentScopeId = `${parent?.id}-${parent?.type}${
+      node.parent?.type === 'cell' ? '-currentRow' : ''
+    }`;
+    let isColumnChild = false;
+
+    if (trigger && items) {
+      isColumnChild = someTree(items.children, item => item.id === trigger?.id);
+
+      if (isColumnChild) {
+        const scopeId = `${node.id}-${node.type}-currentRow`;
+        if (this.manager.dataSchema.getScope(scopeId)) {
+          this.manager.dataSchema.removeScope(scopeId);
+        }
+
+        if (this.manager.dataSchema.getScope(parentScopeId)) {
+          this.manager.dataSchema.switchTo(parentScopeId);
+        }
+
+        this.manager.dataSchema.addScope([], scopeId);
+        this.manager.dataSchema.current.tag = '当前行记录';
+        this.manager.dataSchema.current.group = '组件上下文';
+      }
     }
-  ];
+
+    const pool = items?.children?.concat() || [];
+
+    while (pool.length) {
+      const current = pool.shift() as EditorNodeType;
+      const schema = current.schema;
+      if (schema?.name) {
+        const tmpSchema = await current.info.plugin.buildDataSchemas?.(
+          current,
+          region,
+          trigger,
+          node
+        );
+        itemsSchema.properties[schema.name] = {
+          tmpSchema,
+          ...(tmpSchema?.$id ? {} : {$id: `${current!.id}-${current!.type}`})
+        };
+      }
+    }
+
+    if (isColumnChild) {
+      const scopeId = `${node.id}-${node.type}-currentRow`;
+      const scope = this.manager.dataSchema.getScope(scopeId);
+      scope?.addSchema(itemsSchema);
+    }
+
+    if (node.schema?.multiple) {
+      return {
+        $id: 'combo',
+        type: 'array',
+        title: node.schema?.label || node.schema?.name,
+        items: itemsSchema
+      };
+    }
+
+    return {
+      ...itemsSchema,
+      title: node.schema?.label || node.schema?.name
+    };
+  }
+
+  async getAvailableContextFields(
+    scopeNode: EditorNodeType,
+    target: EditorNodeType,
+    region?: EditorNodeType
+  ) {
+    let scope;
+    let builder;
+
+    if (
+      target.type === scopeNode.type ||
+      (target.parent.isRegion && target.parent.region === 'items')
+    ) {
+      scope = scopeNode.parent.parent;
+      builder = this.dsManager.getBuilderBySchema(scope.schema);
+    }
+
+    if (builder && scope.schema.api) {
+      return builder.getAvailableContextFields(
+        {
+          schema: scope.schema,
+          sourceKey: 'api',
+          feat: scope.schema?.feat ?? 'List',
+          scopeNode
+        },
+        /** ID相同为本体，否则为子项 */
+        target?.id === scopeNode?.id ? scopeNode : target
+      );
+    }
+  }
 }
 
 registerEditorPlugin(ComboControlPlugin);

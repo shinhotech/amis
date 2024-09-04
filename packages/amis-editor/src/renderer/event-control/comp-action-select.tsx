@@ -3,8 +3,9 @@
  */
 
 import {Option, Select} from 'amis';
-import {RendererProps} from 'amis-core';
+import {RendererProps, getRendererByName} from 'amis-core';
 import React from 'react';
+import {FORMITEM_CMPTS} from './helper';
 
 // 动作基本配置项
 export const BASE_ACTION_PROPS = [
@@ -12,8 +13,8 @@ export const BASE_ACTION_PROPS = [
   '__actionDesc',
   'preventDefault',
   'stopPropagation',
-  'expression',
-  'outputVar'
+  'expression'
+  // 'outputVar'
 ];
 
 export default class CmptActionSelect extends React.Component<RendererProps> {
@@ -30,7 +31,9 @@ export default class CmptActionSelect extends React.Component<RendererProps> {
           ...BASE_ACTION_PROPS,
           'componentId',
           '__rendererName',
-          '__cmptTreeSource'
+          '__cmptTreeSource',
+          '__isScopeContainer',
+          '__cmptId'
         ].includes(key)
       ) {
         removeKeys[key] = undefined;
@@ -43,13 +46,28 @@ export default class CmptActionSelect extends React.Component<RendererProps> {
       groupType: option.value,
       __cmptActionDesc: option.description
     });
+    if (
+      formStore.data.actionType === 'component' &&
+      formStore.data.groupType === 'setValue'
+    ) {
+      formStore.setValueByName('args.__containerType', 'all');
+      formStore.setValueByName('args.__comboType', 'all');
+    }
 
     this.props.onChange(option.value);
   }
   render() {
     const {data, formStore} = this.props;
     // 根据type 从组件树中获取actions
-    const actions = data.pluginActions[data.__rendererName] || [];
+    const actions = (data.pluginActions[data.__rendererName] || []).slice();
+    // 表单项类型组件，添加校验动作
+    if (getRendererByName(data.__rendererName)?.isFormItem) {
+      actions.push({
+        actionLabel: '校验',
+        description: '对单个表单项进行校验',
+        actionType: 'validateFormItem'
+      });
+    }
 
     return (
       <Select

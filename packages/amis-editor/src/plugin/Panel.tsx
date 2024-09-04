@@ -14,6 +14,7 @@ import {
 } from 'amis-editor-core';
 
 export class PanelPlugin extends BasePlugin {
+  static id = 'PanelPlugin';
   // 关联渲染器名字
   rendererName = 'panel';
   $schema = '/schemas/panelSchema.json';
@@ -24,7 +25,7 @@ export class PanelPlugin extends BasePlugin {
   pluginIcon = 'panel-plugin';
   description = '展示一个面板，可以配置标题，内容区。';
   docLink = '/amis/zh-CN/components/panel';
-  tags = '容器';
+  tags = ['布局容器'];
   scaffold = {
     type: 'panel',
     title: '标题',

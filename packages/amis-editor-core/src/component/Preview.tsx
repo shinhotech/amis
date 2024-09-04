@@ -11,11 +11,12 @@ import {EditorManager} from '../manager';
 import HighlightBox from './HighlightBox';
 import RegionHighlightBox from './RegionHLBox';
 import {ErrorRenderer} from './base/ErrorRenderer';
-import IFrameBridge from './IFrameBridge';
 import {isAlive} from 'mobx-state-tree';
 import {findTree} from 'amis-core';
 import BackTop from './base/BackTop';
-import {RendererConfig} from 'amis-core/lib/factory';
+import {reaction} from 'mobx';
+import type {RendererConfig} from 'amis-core';
+import IFramePreview from './IFramePreview';
 
 export interface PreviewProps {
   // isEditorEnabled?: (
@@ -35,10 +36,11 @@ export interface PreviewProps {
   store: EditorStoreType;
   manager: EditorManager;
   data?: any;
-  iframeUrl?: string;
   autoFocus?: boolean;
 
   toolbarContainer?: () => any;
+
+  readonly?: boolean;
 }
 
 export interface PreviewState {
@@ -48,6 +50,7 @@ export interface PreviewState {
 @observer
 export default class Preview extends Component<PreviewProps> {
   currentDom: HTMLElement; // 用于记录当前dom元素
+  dialogReaction: any;
   env: RenderOptions = {
     ...this.props.manager.env,
     notify: (type, msg, conf) => {
@@ -72,7 +75,7 @@ export default class Preview extends Component<PreviewProps> {
 
     this.currentDom.addEventListener('mouseleave', this.handleMouseLeave);
     this.currentDom.addEventListener('mousemove', this.handleMouseMove);
-    this.currentDom.addEventListener('click', this.handleClick);
+    this.currentDom.addEventListener('click', this.handleClick, true);
     this.currentDom.addEventListener('mouseover', this.handeMouseOver);
 
     this.currentDom.addEventListener('mousedown', this.handeMouseDown);
@@ -84,10 +87,11 @@ export default class Preview extends Component<PreviewProps> {
     if (this.currentDom) {
       this.currentDom.removeEventListener('mouseleave', this.handleMouseLeave);
       this.currentDom.removeEventListener('mousemove', this.handleMouseMove);
-      this.currentDom.removeEventListener('click', this.handleClick);
+      this.currentDom.removeEventListener('click', this.handleClick, true);
       this.currentDom.removeEventListener('mouseover', this.handeMouseOver);
       this.currentDom.removeEventListener('mousedown', this.handeMouseDown);
       this.props.manager.off('after-update', this.handlePanelChange);
+      this.dialogReaction?.();
     }
 
     this.scrollLayer?.removeEventListener('scroll', this.handlePanelChange);
@@ -102,12 +106,19 @@ export default class Preview extends Component<PreviewProps> {
   @autobind
   contentsRef(ref: HTMLDivElement | null) {
     if (ref) {
-      this.scrollLayer = ref as HTMLDivElement;
-      this.scrollLayer.addEventListener('scroll', this.handlePanelChange);
-      this.layer = ref!.querySelector('.ae-Preview-widgets') as HTMLDivElement;
-      this.props.store.setLayer(this.layer);
+      this.layer = ref.parentElement!.querySelector(
+        '.ae-Preview-widgets'
+      ) as HTMLDivElement;
 
       this.unSensor = resizeSensor(ref, this.handlePanelChange);
+      if (this.props.isMobile) {
+        ref = ref.firstChild as HTMLDivElement;
+      }
+
+      this.scrollLayer = ref as HTMLDivElement;
+      this.scrollLayer.removeEventListener('scroll', this.handlePanelChange);
+      this.scrollLayer.addEventListener('scroll', this.handlePanelChange);
+      this.props.store.setLayer(this.layer);
     } else {
       delete this.scrollLayer;
       delete this.layer;
@@ -121,22 +132,33 @@ export default class Preview extends Component<PreviewProps> {
     () => [this.getHighlightNodes(), this.props.store.activeId],
     ([ids]: [Array<string>], oldValue: [Array<string>]) => {
       const store = this.props.store;
-      setTimeout(() => {
-        this.calculateHighlightBox(ids);
-      }, 50);
+      // requestAnimationFrame(() => {
+      //   this.calculateHighlightBox(ids);
+      // });
+      store.activeHighlightNodes(ids);
       let oldIds = oldValue?.[0];
 
       if (Array.isArray(oldIds)) {
         oldIds = oldIds.filter(id => !~ids.indexOf(id));
-        store.resetHighlightBox(oldIds);
+        store.deActiveHighlightNodes(oldIds);
+        // store.resetHighlightBox(oldIds);
       }
     }
   );
 
   @autobind
   handlePanelChange() {
-    // 视图同步也需要时间啊
-    setTimeout(() => this.calculateHighlightBox(this.getHighlightNodes()), 50);
+    if (this.layer && this.scrollLayer) {
+      requestAnimationFrame(() => {
+        this.layer!.style.cssText += `transform: translate(0, -${
+          this.scrollLayer!.scrollTop
+        }px);`;
+      });
+    }
+
+    requestAnimationFrame(() =>
+      this.calculateHighlightBox(this.getHighlightNodes())
+    );
   }
 
   getHighlightNodes() {
@@ -391,26 +413,56 @@ export default class Preview extends Component<PreviewProps> {
 
   @autobind
   handleDragEnter(e: React.DragEvent) {
+    if (!this.props.editable) {
+      // 非编辑态下不监听拖拽事件
+      return;
+    }
     const manager = this.props.manager;
     manager.dnd.dragEnter(e.nativeEvent);
   }
 
   @autobind
   handleDragLeave(e: React.DragEvent) {
+    if (!this.props.editable) {
+      return;
+    }
     const manager = this.props.manager;
     manager.dnd.dragLeave(e.nativeEvent);
   }
 
   @autobind
   handleDragOver(e: React.DragEvent) {
+    if (!this.props.editable) {
+      return;
+    }
     const manager = this.props.manager;
     manager.dnd.dragOver(e.nativeEvent);
   }
 
   @autobind
   handleDrop(e: React.DragEvent) {
+    if (!this.props.editable) {
+      return;
+    }
     const manager = this.props.manager;
     manager.dnd.drop(e.nativeEvent);
+  }
+
+  @autobind
+  handleWidgetsDragEnter(e: React.DragEvent) {
+    const target = e.target as HTMLElement;
+    const dom = target.closest(`[data-node-id][data-node-region].region-tip`);
+
+    if (!dom) {
+      return;
+    }
+
+    e.preventDefault();
+    const manager = this.props.manager;
+    const id = dom.getAttribute('data-node-id')!;
+    const region = dom.getAttribute('data-node-region')!; // 大纲树中的容器节点
+
+    id && region && manager.dnd.switchToRegion(e.nativeEvent, id, region);
   }
 
   @autobind
@@ -443,11 +495,6 @@ export default class Preview extends Component<PreviewProps> {
 
     let info = manager.getEditorInfo(renderer!, path, schema);
 
-    // 更新 Editor 中的 amisStore
-    if (props && props.store && props.store.data) {
-      manager.updateAMISContext(props.store.data);
-    }
-
     info &&
       (renderer = {
         ...renderer,
@@ -466,7 +513,6 @@ export default class Preview extends Component<PreviewProps> {
       amisEnv,
       theme,
       isMobile,
-      iframeUrl,
       autoFocus,
       toolbarContainer,
       appLocale,
@@ -487,11 +533,17 @@ export default class Preview extends Component<PreviewProps> {
         onDrop={this.handleDrop}
         className={cx(
           'ae-Preview',
+          'AMISCSSWrapper',
           className,
-          isMobile ? 'is-mobile-body hoverShowScrollBar' : 'is-pc-body'
+          isMobile ? 'is-mobile-body' : 'is-pc-body'
         )}
       >
         <div
+          key={
+            /* contentsLayer 逻辑不一样需要更新一下 */ isMobile
+              ? 'mobile-body'
+              : 'pc-body'
+          }
           className={cx(
             'ae-Preview-body',
             className,
@@ -500,30 +552,18 @@ export default class Preview extends Component<PreviewProps> {
           )}
           ref={this.contentsRef}
         >
-          {iframeUrl && isMobile && (
-            <React.Fragment>
-              <div className="mobile-sound"></div>
-              <div className="mobile-receiver"></div>
-              <div className="mobile-left-btn"></div>
-              <div className="mobile-right-btn"></div>
-              <div className="mobile-open-btn"></div>
-            </React.Fragment>
-          )}
           <div className="ae-Preview-inner">
-            {iframeUrl && isMobile ? (
-              <IFrameBridge
+            {isMobile ? (
+              <IFramePreview
                 {...rest}
                 key="mobile"
-                className="ae-PreviewFrame"
                 editable={editable}
-                isMobile={isMobile}
                 store={store}
                 env={env}
                 manager={manager}
-                url={iframeUrl}
-                theme={theme}
                 autoFocus={autoFocus}
-              ></IFrameBridge>
+                appLocale={appLocale}
+              ></IFramePreview>
             ) : (
               <SmartPreview
                 {...rest}
@@ -536,42 +576,6 @@ export default class Preview extends Component<PreviewProps> {
                 appLocale={appLocale}
               />
             )}
-
-            {iframeUrl && isMobile && store.contextId ? (
-              <span className="ae-IframeMask"></span>
-            ) : null}
-
-            <div className="ae-Preview-widgets" id="aePreviewHighlightBox">
-              {store.highlightNodes.map(node => (
-                <HighlightBox
-                  node={node}
-                  key={node.id}
-                  store={store}
-                  id={node.id}
-                  title={node.label}
-                  toolbarContainer={toolbarContainer}
-                  onSwitch={this.handleNavSwitch}
-                  manager={manager}
-                >
-                  {node.childRegions.map(region =>
-                    !node.memberImmutable(region.region) &&
-                    store.isRegionActive(region.id, region.region) ? (
-                      <RegionHighlightBox
-                        manager={manager}
-                        key={region.region}
-                        store={store}
-                        node={region}
-                        id={region.id}
-                        name={region.region}
-                        title={region.label}
-                        preferTag={region.preferTag}
-                        isOnlyChildRegion={node.childRegions.length === 1}
-                      />
-                    ) : null
-                  )}
-                </HighlightBox>
-              ))}
-            </div>
           </div>
           {this.currentDom && (
             <BackTop
@@ -585,6 +589,44 @@ export default class Preview extends Component<PreviewProps> {
               <Icon icon="back-up" className="back-top-icon" />
             </BackTop>
           )}
+        </div>
+
+        <div
+          onDragEnter={this.handleWidgetsDragEnter}
+          className="ae-Preview-widgets"
+          id="aePreviewHighlightBox"
+        >
+          {store.highlightNodes.map(node => (
+            <HighlightBox
+              node={node}
+              key={node.id}
+              store={store}
+              id={node.id}
+              title={node.label}
+              toolbarContainer={toolbarContainer}
+              onSwitch={this.handleNavSwitch}
+              manager={manager}
+              readonly={this.props.readonly}
+            >
+              {node.childRegions.map(region =>
+                !node.memberImmutable(region.region) &&
+                !this.props.readonly &&
+                store.isRegionActive(region.id, region.region) ? (
+                  <RegionHighlightBox
+                    manager={manager}
+                    key={region.region}
+                    store={store}
+                    node={region}
+                    id={region.id}
+                    name={region.region}
+                    title={region.label}
+                    preferTag={region.preferTag}
+                    isOnlyChildRegion={node.childRegions.length === 1}
+                  />
+                ) : null
+              )}
+            </HighlightBox>
+          ))}
         </div>
       </div>
     );
@@ -606,6 +648,8 @@ export interface SmartPreviewProps {
 }
 @observer
 class SmartPreview extends React.Component<SmartPreviewProps> {
+  dialogMountRef: React.RefObject<HTMLDivElement> = React.createRef();
+
   componentDidMount() {
     const store = this.props.store;
 
@@ -618,8 +662,14 @@ class SmartPreview extends React.Component<SmartPreviewProps> {
             store.outline,
             item => !item.isRegion && item.clickable
           );
-
-          first && isAlive(store) && store.setActiveId(first.id);
+          if (first && isAlive(store)) {
+            let region = first.childRegions.find(
+              (item: any) => item.region === 'body'
+            )?.region;
+            region =
+              region ?? first.childRegions.find((i: any) => i.region)?.region;
+            store.setActiveId(first.id, region);
+          }
         }
       }, 350);
     } else {
@@ -640,20 +690,32 @@ class SmartPreview extends React.Component<SmartPreviewProps> {
     }
   }
 
+  @autobind
+  getDialogMountRef() {
+    return this.dialogMountRef.current;
+  }
+
   render() {
     const {editable, store, appLocale, autoFocus, env, data, manager, ...rest} =
       this.props;
 
-    return render(
-      editable ? store.filteredSchema : store.filteredSchemaForPreview,
-      {
-        ...rest,
-        key: editable ? 'edit-mode' : 'preview-mode',
-        theme: env.theme,
-        data: data ?? store.ctx,
-        locale: appLocale
-      },
-      env
+    return (
+      // 弹窗挂载节点
+      <div ref={this.dialogMountRef} className="ae-Dialog-preview-mount-node">
+        {render(
+          editable ? store.filteredSchema : store.filteredSchemaForPreview,
+          {
+            ...rest,
+            key: editable ? 'edit-mode' : 'preview-mode',
+            theme: env.theme,
+            data: data,
+            context: store.ctx,
+            locale: appLocale,
+            editorDialogMountNode: this.getDialogMountRef
+          },
+          env
+        )}
+      </div>
     );
   }
 }

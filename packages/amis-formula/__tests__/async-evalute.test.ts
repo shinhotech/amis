@@ -270,14 +270,14 @@ test('evalute:literal', async () => {
 
 test('evalute:variableName', async () => {
   const data = {
-    'a-b': 'c',
+    'a_b': 'c',
     '222': 10222,
     '222_221': 233,
     '222_abcde': 'abcde',
     '222-221': 333
   };
 
-  expect(await evaluateForAsync('${a-b}', data)).toBe('c');
+  expect(await evaluateForAsync('${a_b}', data)).toBe('c');
   expect(await evaluateForAsync('${222}', data)).toBe(222);
   expect(await evaluateForAsync('${222_221}', data)).toBe('233');
   expect(await evaluateForAsync('${222-221}', data)).toBe(1);
@@ -586,4 +586,34 @@ test('evalute:ISTYPE', async () => {
     true
   );
   expect(await evaluateForAsync('${ISTYPE(g, "date")}', data)).toBe(true);
+});
+
+test('async-evalute:namespace', async () => {
+  localStorage.setItem('a', '1');
+  localStorage.setItem('b', '2');
+  localStorage.setItem('c', '{"a": 1, "b": 2, "c": {"d": 4}}');
+  localStorage.setItem('key', 'c');
+  localStorage.setItem('spec-var-name', 'you are right');
+
+  expect(await evaluateForAsync('${ls: a}', {})).toBe(1);
+  expect(await evaluateForAsync('${ls: b}', {})).toBe(2);
+  expect(await evaluateForAsync('${ls: c}', {})).toMatchObject({
+    a: 1,
+    b: 2,
+    c: {d: 4}
+  });
+  // 被认为是减操作
+  expect(await evaluateForAsync('${ls: spec-var-name}', {})).toBe(0);
+  expect(await evaluateForAsync('${ls: spec\\-var\\-name}', {})).toBe(
+    'you are right'
+  );
+  expect(await evaluateForAsync('${ls: &["spec-var-name"]}', {})).toBe(
+    'you are right'
+  );
+  expect(await evaluateForAsync('${ls: &["c"]["c"]}', {})).toMatchObject({
+    d: 4
+  });
+  expect(await evaluateForAsync('${ls: &["c"][key]}', {})).toMatchObject({
+    d: 4
+  });
 });

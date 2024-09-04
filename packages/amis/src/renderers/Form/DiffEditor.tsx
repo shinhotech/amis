@@ -3,7 +3,8 @@ import {
   FormItem,
   FormControlProps,
   FormBaseControl,
-  resolveEventData
+  resolveEventData,
+  getVariable
 } from 'amis-core';
 import {LazyComponent} from 'amis-core';
 import {isPureVariable, resolveVariableAndFilter} from 'amis-core';
@@ -15,7 +16,7 @@ import type {ListenerAction} from 'amis-core';
 
 /**
  * Diff 编辑器
- * 文档：https://baidu.gitee.io/amis/docs/components/form/diff
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/diff
  */
 export interface DiffControlSchema extends FormBaseControlSchema {
   /**
@@ -67,13 +68,13 @@ function normalizeValue(value: any, language?: string) {
     } catch (e) {}
   }
 
-  return value;
+  return value || '';
 }
 
 export class DiffEditor extends React.Component<DiffEditorProps, any> {
   static defaultProps: Partial<DiffEditorProps> = {
     language: 'javascript',
-    theme: 'vs',
+    editorTheme: 'vs',
     options: {
       automaticLayout: false,
       selectOnLineNumbers: true,
@@ -112,14 +113,21 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
     this.toDispose.forEach(fn => fn());
   }
 
-  doAction(action: ListenerAction, args: any) {
+  doAction(
+    action: ListenerAction,
+    data: any,
+    throwErrors: boolean = false,
+    args?: any
+  ) {
     const actionType = action?.actionType as string;
-    const {onChange, resetValue} = this.props;
+    const {onChange, resetValue, formStore, store, name} = this.props;
 
     if (actionType === 'clear') {
       onChange('');
     } else if (actionType === 'reset') {
-      onChange(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      onChange(pristineVal ?? '');
     } else if (actionType === 'focus') {
       this.focus();
     }
@@ -143,7 +151,7 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
 
     const rendererEvent = await dispatchEvent(
       'focus',
-      resolveEventData(this.props, {value}, 'value')
+      resolveEventData(this.props, {value})
     );
 
     if (rendererEvent?.prevented) {
@@ -162,7 +170,7 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
 
     const rendererEvent = await dispatchEvent(
       'blur',
-      resolveEventData(this.props, {value}, 'value')
+      resolveEventData(this.props, {value})
     );
 
     if (rendererEvent?.prevented) {
@@ -199,7 +207,14 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
       value !== prevProps.value &&
       !this.state.focused
     ) {
-      this.modifiedEditor.getModel().setValue(normalizeValue(value, language));
+      this.modifiedEditor.getModel().setValue(
+        isPureVariable(value as string)
+          ? normalizeValue(
+              resolveVariableAndFilter(value || '', data, '| raw', () => ''),
+              language
+            )
+          : normalizeValue(value, language)
+      );
     }
   }
 
@@ -259,7 +274,7 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
 
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(this.props, {value}, 'value')
+      resolveEventData(this.props, {value})
     );
 
     if (rendererEvent?.prevented) {
@@ -297,7 +312,7 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
       size,
       options,
       language,
-      theme,
+      editorTheme,
       classnames: cx
     } = this.props;
 
@@ -319,7 +334,7 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
           onChange={onChange}
           disabled={disabled}
           language={language}
-          theme={theme}
+          editorTheme={editorTheme}
           editorDidMount={this.handleEditorMounted}
           editorFactory={this.editorFactory}
           options={{

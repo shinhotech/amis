@@ -146,21 +146,26 @@ order: 54
 
 还能通过 `copyable` 来增加一个复制按钮来复制当前行
 
+> 6.6.0 起支持配置 `copyData` 属性，来指定复制的数据。默认值为 `{&: "$$"}`
+
 ```schema: scope="body"
 {
   "type": "form",
   "api": "/api/mock2/form/saveForm",
+  "debug": true,
   "body": [
     {
     "type":"input-table",
     "name":"table",
     "addable": true,
     "copyable": true,
+    "copyData": {"&": "$$$$", "id": "$${'__undefined'}", "copyFrom": "$${id}"},
     "editable": true,
     "value": [
       {
         "a": "a1",
-        "b": "b1"
+        "b": "b1",
+        "id": 1
       }
     ],
     "columns":[
@@ -249,6 +254,7 @@ order: 54
       "type": "input-table",
       "name": "table",
       "label": "Table",
+      "needConfirm": false,
       "columns": [
         {
           "label": "A",
@@ -257,6 +263,17 @@ order: 54
         {
           "label": "B",
           "name": "b"
+        },
+        {
+          "type": "operation",
+          "label": "操作",
+          "buttons": [
+            {
+              "label": "删除",
+              "type": "button",
+              "level": "link"
+            }
+          ]
         }
       ]
     },
@@ -675,6 +692,54 @@ order: 54
 }
 ```
 
+## 树形模式
+
+配置 `childrenAddable` 为 true，可以开启新增子节点功能。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "a": "a3",
+        "b": "b3"
+      }
+    ]
+  },
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "input-table",
+      "name": "table",
+      "label": "Table",
+      "addable": true,
+      "childrenAddable": true,
+      "editable": true,
+      "removable": true,
+      "columns": [
+        {
+          "label": "A",
+          "name": "a"
+        },
+        {
+          "label": "B",
+          "name": "b"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ## 获取父级数据
 
 默认情况下，Table 内表达项无法获取父级数据域的数据，如下，我们添加 Table 表单项时，尽管 Table 内的文本框的`name`与父级数据域中的`super_text`变量同名，但是没有自动映射值。
@@ -778,7 +843,7 @@ order: 54
         "name": "table",
         "addable": true,
         "editable": true,
-        "rowClassNameExpr": "<%= data.a === 'a' ? 'bg-success' : '' %>",
+        "rowClassNameExpr": "${ a === 'a' ? 'bg-success' : '' }",
         "columns": [
           {
             "name": "a",
@@ -789,6 +854,7 @@ order: 54
     ]
   }
 ```
+
 ## 表单项校验
 
 > 2.8.1 及以上版本
@@ -856,16 +922,21 @@ order: 54
 | ---------------------------- | ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------- |
 | type                         | `string`                                  | `"input-table"` | 指定为 Table 渲染器                                                                                  |
 | addable                      | `boolean`                                 | `false`         | 是否可增加一行                                                                                       |
+| copyable                     | `boolean`                                 | `false`         | 是否可复制一行                                                                                       |
+| copyData                     | `PlainObject`                             |                 | 控制复制时的数据映射，不配置时复制整行数据                                                           |
+| childrenAddable              | `boolean`                                 | `false`         | 是否可增加子级节点                                                                                   |
 | editable                     | `boolean`                                 | `false`         | 是否可编辑                                                                                           |
 | removable                    | `boolean`                                 | `false`         | 是否可删除                                                                                           |
-| showTableAddBtn              | `boolean`                                 | `true`          | 是否显示表格操作栏添加按钮，前提是要开启可新增功能                                                                           |
-| showFooterAddBtn             | `boolean`                                 | `true`          | 是否显示表格下方添加按，前提是要开启可新增功能                                                                           |钮                                                                             |
+| showTableAddBtn              | `boolean`                                 | `true`          | 是否显示表格操作栏添加按钮，前提是要开启可新增功能                                                   |
+| showFooterAddBtn             | `boolean`                                 | `true`          | 是否显示表格下方添加按，前提是要开启可新增功能                                                       |
 | addApi                       | [API](../../../docs/types/api)            | -               | 新增时提交的 API                                                                                     |
 | footerAddBtn                 | [SchemaNode](../../docs/types/schemanode) | -               | 底部新增按钮配置                                                                                     |
 | updateApi                    | [API](../../../docs/types/api)            | -               | 修改时提交的 API                                                                                     |
 | deleteApi                    | [API](../../../docs/types/api)            | -               | 删除时提交的 API                                                                                     |
 | addBtnLabel                  | `string`                                  |                 | 增加按钮名称                                                                                         |
 | addBtnIcon                   | `string`                                  | `"plus"`        | 增加按钮图标                                                                                         |
+| subAddBtnLabel               | `string`                                  |                 | 子级增加按钮名称                                                                                     |
+| subAddBtnIcon                | `string`                                  | `"sub-plus"`    | 子级增加按钮图标                                                                                     |
 | copyBtnLabel                 | `string`                                  |                 | 复制按钮文字                                                                                         |
 | copyBtnIcon                  | `string`                                  | `"copy"`        | 复制按钮图标                                                                                         |
 | editBtnLabel                 | `string`                                  | `""`            | 编辑按钮名称                                                                                         |
@@ -887,33 +958,1761 @@ order: 54
 | columns[x].quickEditOnUpdate | `boolean` 或者 `object`                   | -               | 可以用来区分新建模式和更新模式的编辑配置                                                             |
 
 ## 事件表
-当前组件会对外派发以下事件，可以通过onEvent来监听这些事件，并通过actions来配置执行的动作，在actions中可以通过${事件参数名}来获取事件产生的数据（< 2.3.2 及以下版本 为 ${event.data.[事件参数名]}），详细请查看事件动作。
 
-[name]表示当前组件绑定的名称，即name属性，如果没有配置name属性，则通过value取值。
+当前组件会对外派发以下事件，可以通过 onEvent 来监听这些事件，并通过 actions 来配置执行的动作，在 actions 中可以通过${事件参数名}或${event.data.[事件参数名]}来获取事件产生的数据，详细查看事件动作。
 
-| 事件名称      | 事件参数                                                                                                                                                  | 说明                                                                 |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| add           | `[name]: object[]` 表格数据                                                                                                                               | 点击左下角添加按钮 或 某一行右侧操作栏添加按钮时触发                 |
-| addConfirm    | `index: number` 添加项的行索引 <br /> `item: object` 添加项数据 <br/> `[name]: object[]`表格数据                                                          | 开启`needConfirm`，点击添加按钮，填入数据后点击“保存”按钮后触发      |
-| addSuccess    | `index: number` 添加项的行索引 <br /> `item: object` 添加项数据 <br/> `[name]: object[]`表格数据                                                          | 开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口成功时触发    |
-| addFail       | `index: number` 添加项的行索引 <br /> `item: object` 添加项数据 <br/> `[name]: object[]`表格数据<br />`error: object` `addApi`请求失败后返回的错误信息    | 开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口失败时触发    |
-| edit          | `index: number` 编辑项的行索引 <br /> `item: object` 编辑项数据 <br/> `[name]: object[]`表格数据                                                          | 点击某一行右侧操作栏“编辑”按钮时触发                                 |
-| editConfirm   | `index: number` 编辑项的行索引 <br /> `item: object` 编辑项数据 <br/> `[name]: object[]`表格数据                                                          | 开启`needConfirm`，点击“编辑”按钮，填入数据后点击“保存”按钮后触发    |
-| editSuccess   | `index: number` 编辑项的行索引 <br /> `item: object` 编辑项数据 <br/> `[name]: object[]`表格数据                                                          | 开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口成功时触发 |
-| editFail      | `index: number` 编辑项的行索引 <br /> `item: object` 编辑项数据 <br/> `[name]: object[]`表格数据<br />`error: object` `updateApi`请求失败后返回的错误信息 | 开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口失败时触发 |
-| delete        | `index: number` 删除项的行索引 <br /> `item: object` 删除项数据 <br/> `[name]: object[]`表格数据                                                          | 点击某一行右侧操作栏“删除”按钮时触发                                 |
-| deleteSuccess | `index: number` 删除项的行索引 <br /> `item: object` 删除项数据 <br/> `[name]: object[]`表格数据                                                          | 配置了`deleteApi`，调用接口成功时触发                                |
-| deleteFail    | `index: number` 删除项的行索引 <br /> `item: object` 删除项数据 <br/> `[name]: object[]`表格数据<br />`error: object` `deleteApi`请求失败后返回的错误信息 | 配置了`deleteApi`，调用接口失败时触发                                |
-| change        | `[name]: object[]` 表格数据                                                                                                                               | 组件数据发生改变时触发                                               |
+| 事件名称      | 事件参数                                                                                                                                                                                              | 说明                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| add           | `index: number` 新增行记录索引 <br />`indexPath: string` 新增行记录索引路径 <br /> `item: object` 新增行记录 <br/> `value: object[]` 列表记录                                                         | 点击左下角添加按钮 或 某一行右侧操作栏添加按钮时触发                 |
+| addConfirm    | `index: number` 新增行记录索引 <br /> `item: object` 新增行记录 <br/>`indexPath: string` 新增行记录索引路径 <br /> `value: object[]`列表记录                                                          | 开启`needConfirm`，点击添加按钮，填入数据后点击“保存”按钮后触发      |
+| addSuccess    | `index: number` 新增行记录索引 <br /> `item: object` 新增行记录 <br/>`indexPath: string` 新增行记录索引路径 <br /> `value: object[]`列表记录                                                          | 开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口成功时触发    |
+| addFail       | `index: number` 新增行记录索引 <br /> `item: object` 新增行记录 <br/>`indexPath: string` 新增行记录索引路径 <br /> `value: object[]`列表记录<br />`error: object` `addApi`请求失败后返回的错误信息    | 开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口失败时触发    |
+| edit          | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录                                                          | 点击某一行右侧操作栏“编辑”按钮时触发                                 |
+| editConfirm   | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录                                                          | 开启`needConfirm`，点击“编辑”按钮，填入数据后点击“保存”按钮后触发    |
+| editSuccess   | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录                                                          | 开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口成功时触发 |
+| editFail      | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录<br />`error: object` `updateApi`请求失败后返回的错误信息 | 开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口失败时触发 |
+| delete        | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录                                                          | 点击某一行右侧操作栏“删除”按钮时触发                                 |
+| deleteSuccess | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录                                                          | 配置了`deleteApi`，调用接口成功时触发                                |
+| deleteFail    | `index: number` 所在行记录索引 <br /> `item: object` 所在行记录 <br/>`indexPath: string` 所在行记录索引路径 <br /> `value: object[]`列表记录<br />`error: object` `deleteApi`请求失败后返回的错误信息 | 配置了`deleteApi`，调用接口失败时触发                                |
+| change        | `value: object[]` 列表记录                                                                                                                                                                            | 组件数据发生改变时触发                                               |
+| orderChange   | `movedItems: item[]` 已排序数据                                                                                                                                                                       | 手动拖拽行排序时触发                                                 |
+| rowClick      | `item: object` 行点击数据<br/>`index: number` 行索引 <br/>`indexPath: string` 行索引路径                                                                                                              | 单击整行时触发                                                       |
+| rowDbClick    | `item: object` 行点击数据<br/>`index: number` 行索引 <br/>`indexPath: string` 行索引路径                                                                                                              | 双击整行时触发                                                       |
+| rowMouseEnter | `item: object` 行移入数据<br/>`index: number` 行索引 <br/>`indexPath: string` 行索引路径                                                                                                              | 移入整行时触发                                                       |
+| rowMouseLeave | `item: object` 行移出数据<br/>`index: number` 行索引 <br/>`indexPath: string` 行索引路径                                                                                                              | 移出整行时触发                                                       |
+
+### add
+
+点击左下角添加按钮 或 某一行右侧操作栏添加按钮时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "perPage": 5,
+      "childrenAddable": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "needConfirm": false,
+      "onEvent": {
+        "add": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "add事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### addConfirm
+
+开启`needConfirm`，点击添加按钮，填入数据后点击“保存”按钮后触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "needConfirm": true,
+      "onEvent": {
+        "addConfirm": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "addConfirm事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### addSuccess
+
+开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口成功时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "needConfirm": true,
+      "addApi": "/api/mock2/table/addSuccess",
+      "onEvent": {
+        "addSuccess": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "addSuccess事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### addFail
+
+开启`needConfirm`并且配置`addApi`，点击“保存”后调用接口失败时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "needConfirm": true,
+      "addApi": "/api/mock2/table/addFail",
+      "onEvent": {
+        "addFail": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "addFail事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### edit
+
+点击某一行右侧操作栏“编辑”按钮时触发
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "needConfirm": true,
+      "editable": true,
+      "onEvent": {
+        "edit": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "edit事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### editConfirm
+
+开启`needConfirm`，点击“编辑”按钮，填入数据后点击“保存”按钮后触发.
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "editable": true,
+      "onEvent": {
+        "editConfirm": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "editConfirm事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### editSuccess
+
+开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口成功时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "editable": true,
+      "needConfirm": true,
+      "updateApi": "/api/mock2/table/editSuccess",
+      "onEvent": {
+        "editSuccess": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "editSuccess事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### editFail
+
+开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口失败时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "editable": true,
+      "needConfirm": true,
+      "updateApi": "/api/mock2/table/editFail",
+      "onEvent": {
+        "editFail": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "editFail事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### delete
+
+点击某一行右侧操作栏“删除”按钮时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "removable": true,
+      "needConfirm": false,
+      "onEvent": {
+        "delete": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "delete事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### deleteSuccess
+
+开启`needConfirm`并且配置`updateApi`，点击“保存”后调用接口成功时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "removable": true,
+      "needConfirm": false,
+      "deleteApi": "/api/mock2/table/deleteSuccess",
+      "onEvent": {
+        "deleteSuccess": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "deleteSuccess事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### deleteFail
+
+配置了`deleteApi`，调用接口失败时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "removable": true,
+      "needConfirm": false,
+      "deleteApi": "/api/mock2/table/deleteFail",
+      "onEvent": {
+        "deleteFail": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "deleteFail事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### change
+
+组件数据发生改变时触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "onEvent": {
+        "change": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "position": "top-right",
+                "title": "change事件",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### orderChange
+
+在开启拖拽排序行记录后才会用到，排序确认后触发。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "draggable": true,
+      "onEvent": {
+          "orderChange": {
+              "actions": [
+                  {
+                      "actionType": "toast",
+                      "args": {
+                          "msgType": "info",
+                          "msg": "上下文 ${event.data | json:0}"
+                      }
+                  }
+              ]
+          }
+      }
+    }
+  ]
+}
+```
+
+### rowClick
+
+点击行记录。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "onEvent": {
+        "rowClick": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### rowDbClick
+
+双击行记录。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "onEvent": {
+        "rowDbClick": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### rowMouseEnter
+
+鼠标移入行记录。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "onEvent": {
+        "rowMouseEnter": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### rowMouseLeave
+
+鼠标移出行记录。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      }
+    ]
+  },
+  "body": [
+    {
+      "showIndex": true,
+      "type": "input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "onEvent": {
+        "rowMouseLeave": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msgType": "info",
+                "msg": "上下文 ${event.data | json:0}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
 
 ## 动作表
 
-当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，动作配置可以通过`args: {动作配置项名称: xxx}`来配置具体的参数，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
+当前组件对外暴露以下特性动作，其他组件可以通过指定 actionType: 动作名称、componentId: 该组件 id 来触发这些动作，动作配置可以通过 args: {动作配置项名称: xxx}来配置具体的参数，详细请查看事件动作。
 
-| 动作名称   | 动作配置                                                                                                                                                     | 说明                                                                 |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| addItem    | `item: object\|Array<object>` 添加的数据<br />`index: number` 指定添加的位置，如果未指定则在数据尾端插入                                                     | 在已有数据的基础上插入数据                                           |
+| 动作名称   | 动作配置                                                                                                                           | 说明                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| addItem    | `item: object\|Array<object>` 添加的数据<br />`index: number` 指定添加的位置，如果未指定则在数据尾端插入                           | 在已有数据的基础上插入数据                                           |
 | deleteItem | `condition:` 删除条件[表达式](../../../docs/concepts/expression)，用于支持批量删除的场景<br /> `index: number ` 指定删除哪一行数据 | 删除某一行数据                                                       |
-| setValue   | `value: object \| Array<object>` 替换的值<br /> `index?: number` 可选，替换第几行数据，如果没有指定，则替换全部表格数据                                      | 替换表格数据                                                         |
-| clear      | -                                                                                                                                                            | 清空表格数据                                                         |
-| reset      | -                                                                                                                                                            | 将表格数据重置为`resetValue`，若没有配置`resetValue`，则清空表格数据 |
+| setValue   | `value: object \| Array<object>` 替换的值<br /> `index?: number` 可选，替换第几行数据，如果没有指定，则替换全部表格数据            | 替换表格数据                                                         |
+| clear      | -                                                                                                                                  | 清空表格数据                                                         |
+| reset      | -                                                                                                                                  | 将表格数据重置为`resetValue`，若没有配置`resetValue`，则清空表格数据 |
+| initDrag   | -                                                                                                                                  | 开启表格拖拽排序功能                                                 |
+| cancelDrag | -                                                                                                                                  | 取消表格拖拽排序功能                                                 |
+
+### addItem
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  },
+  "body": [
+    {
+      "type": "button",
+      "label": "新增一行（未指定添加位置）",
+      "className": "mr-2",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "addItem-input-table",
+              "groupType": "component",
+              "actionType": "addItem",
+              "args": {
+                "item": [
+                  {
+                    "a": "a-noIndex",
+                    "b": "b-noIndex"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "新增一行（指定添加位置）",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "addItem-input-table",
+              "groupType": "component",
+              "actionType": "addItem",
+              "args": {
+                "index": 3,
+                "item": [
+                  {
+                    "a": "a-index",
+                    "b": "b-index"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "name": "table",
+      "label": "表格表单",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "id": "addItem-input-table",
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ]
+}
+```
+
+### deleteItem
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "删除行（指定行号）",
+      "className": "mr-2",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "deleteItem-input-table",
+              "groupType": "component",
+              "actionType": "deleteItem",
+              "args": {
+                "index": "1,2,3"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "删除行（指定条件表达式）",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "deleteItem-input-table",
+              "groupType": "component",
+              "actionType": "deleteItem",
+              "args": {
+                "condition": "${a === 'a3' || b === 'b4'}"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "deleteItem-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```
+
+### setValue
+
+#### 更新列表记录
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "更新列表记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "setValue-input-table",
+              "groupType": "component",
+              "actionType": "setValue",
+              "args": {
+                "value": [
+                  {
+                    "a": "a-setValue1",
+                    "b": "b-setValue1"
+                  },
+                  {
+                    "a": "a-setValue2",
+                    "b": "b-setValue2"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "setValue-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```
+
+#### 更新指定行记录
+
+可以通过指定`index`或者`condition`来分别更新指定索引的行记录和指定满足条件（条件表达式或者 ConditionBuilder）的行记录。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "更新index为1和3的行记录",
+      "className": "mr-2",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "setValue-input-table",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "a": "a-setValue1",
+                    "b": "b-setValue1"
+                },
+                "index": '1,3'
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "更新a=a3的行记录",
+      "className": "mr-2",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "setValue-input-table",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "a": "a-setValue1",
+                    "b": "b-setValue1"
+                },
+                "condition": "${a === 'a3'}"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "更新a=a5的行记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "setValue-input-table",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "a": "a-setValue1",
+                    "b": "b-setValue1"
+                },
+                "condition": {
+                  conjunction: 'and',
+                  children: [
+                    {
+                      left: {
+                        type: 'field',
+                        field: 'a'
+                      },
+                      op: 'equal',
+                      right: "a5"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "setValue-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```
+
+#### 行记录内表单项联动
+
+需要通过表达式配置动态 `id` 和 `componentId`。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "setValue-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "type": "input-number",
+          "name": "num1",
+          "label": "数量",
+          "onEvent": {
+            "change": {
+              "actions": [
+                {
+                  "actionType": "setValue",
+                  "componentId": "num2_${index}",
+                  "args": {
+                    "value": "${num1 * 10}"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "num2",
+          "id": "num2_${index}",
+          "label": "金额"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "num1": 1,
+        "num2": "10"
+      },
+      {
+        "id": 2,
+        "num1": "2",
+        "num2": 20
+      }
+    ]
+  }
+}
+```
+
+### clear
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "清空",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "clear-input-table",
+              "groupType": "component",
+              "actionType": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "clear-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```
+
+### reset
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "重置",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "reset-input-table",
+              "groupType": "component",
+              "actionType": "reset"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "reset-input-table",
+      "name": "table",
+      "value": [
+        {
+          "a": "a-resetValue1",
+          "b": "b-resetValue1"
+        },
+        {
+          "a": "a-resetValue2",
+          "b": "b-resetValue2"
+        }
+      ],
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```
+
+### initDrag & cancelDrag
+
+> 6.4.0 版本开始支持
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "开始表格排序",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "drag-input-table",
+              "actionType": "initDrag"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "放弃表格排序",
+      "className": "ml-1",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "drag-input-table",
+              "actionType": "cancelDrag"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "input-table",
+      "label": "表格表单",
+      "id": "drag-input-table",
+      "name": "table",
+      "columns": [
+        {
+          "name": "a",
+          "label": "A"
+        },
+        {
+          "name": "b",
+          "label": "B"
+        }
+      ],
+      "addable": true,
+      "footerAddBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "hidden": true
+      },
+      "strictMode": true,
+      "minLength": 0,
+      "needConfirm": false,
+      "showTableAddBtn": false
+    }
+  ],
+  "data": {
+    "table": [
+      {
+        "id": 1,
+        "a": "a1",
+        "b": "b1"
+      },
+      {
+        "id": 2,
+        "a": "a2",
+        "b": "b2"
+      },
+      {
+        "id": 3,
+        "a": "a3",
+        "b": "b3"
+      },
+      {
+        "id": 4,
+        "a": "a4",
+        "b": "b4"
+      },
+      {
+        "id": 5,
+        "a": "a5",
+        "b": "b5"
+      }
+    ]
+  }
+}
+```

@@ -17,8 +17,12 @@ import {
   noop,
   ownerDocument,
   resizeSensor,
-  RootClose
+  RootClose,
+  uuid
 } from '../utils';
+import {EnvContext} from '../env';
+
+export const SubPopoverDisplayedID = 'data-sub-popover-displayed';
 
 function onScroll(elem: HTMLElement, callback: () => void) {
   const handler = () => {
@@ -35,7 +39,9 @@ class Position extends React.Component<any, any> {
   _lastTarget: any;
   resizeDispose: Array<() => void>;
   watchedTarget: any;
+  parentPopover: any;
   // setState: (state: any) => void;
+  componentId: string;
 
   static defaultProps = {
     containerPadding: 0,
@@ -54,10 +60,24 @@ class Position extends React.Component<any, any> {
     };
 
     this._lastTarget = null;
+    this.componentId = uuid();
   }
 
   updatePosition(target: any) {
     this._lastTarget = target;
+
+    /** 标记宿主元素的PopOver祖先，用于后续判断PopOver 是否可以 root close */
+    if (target) {
+      const parentPopover = target?.closest?.('[role=popover]');
+
+      if (!this.parentPopover && parentPopover) {
+        this.parentPopover = parentPopover;
+        this.parentPopover.setAttribute(
+          SubPopoverDisplayedID + '-' + this.componentId,
+          true
+        );
+      }
+    }
 
     if (!target) {
       return this.setState({
@@ -139,6 +159,20 @@ class Position extends React.Component<any, any> {
   };
 
   componentWillUnmount() {
+    // 一个 PopOver 关闭时，需把挂载父 PopOver 的标记去掉
+    // 这里可能会存在多个子 PopOver 的情况，所以需要加上 componentId
+    if (
+      this.parentPopover &&
+      this.parentPopover.getAttribute(
+        SubPopoverDisplayedID + '-' + this.componentId
+      )
+    ) {
+      this.parentPopover.removeAttribute(
+        SubPopoverDisplayedID + '-' + this.componentId
+      );
+      this.parentPopover = null;
+    }
+
     this.resizeDispose?.forEach(fn => fn());
   }
 
@@ -167,7 +201,8 @@ class Position extends React.Component<any, any> {
         ...child.props.style,
         left: positionLeft,
         top: positionTop
-      }
+      },
+      componentId: this.componentId
     });
   }
 }
@@ -181,9 +216,12 @@ interface OverlayProps {
   shouldUpdatePosition?: boolean;
   rootClose?: boolean;
   onHide?(props: any, ...args: any[]): any;
-  container?: HTMLElement | (() => HTMLElement | null | undefined);
+  container?:
+    | HTMLElement
+    | React.ReactNode
+    | (() => HTMLElement | React.ReactNode | null | undefined);
   containerSelector?: string;
-  target?: React.ReactNode | Function;
+  target?: React.ReactNode | HTMLElement | Function;
   watchTargetSizeChange?: boolean;
   offset?: [number, number];
   onEnter?(node: HTMLElement): any;
@@ -203,6 +241,8 @@ export default class Overlay extends React.Component<
   static defaultProps = {
     placement: 'auto'
   };
+  static contextType = EnvContext;
+  declare context: React.ContextType<typeof EnvContext>;
   constructor(props: OverlayProps) {
     super(props as any);
 
@@ -220,7 +260,7 @@ export default class Overlay extends React.Component<
     this.position?.maybeUpdatePosition(true);
   }
 
-  componentDidUpdate(prevProps: OverlayProps) {
+  componentDidUpdate(prevProps: OverlayProps, prevState: OverlayState) {
     const props = this.props;
     if (prevProps.show !== props.show && props.show) {
       this.setState({exited: false});
@@ -264,9 +304,10 @@ export default class Overlay extends React.Component<
       offset,
       ...props
     } = this.props;
-    const container = this.getContainerSelector()
-      ? this.getContainerSelector
-      : this.props.container;
+    const container =
+      (this.getContainerSelector()
+        ? this.getContainerSelector
+        : this.props.container) || this.context?.getModalContainer;
     const mountOverlay = props.show || (Transition && !this.state.exited);
     if (!mountOverlay) {
       // Don't bother showing anything if we don't have to.

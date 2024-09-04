@@ -1,15 +1,17 @@
 import React from 'react';
 import find from 'lodash/find';
-
+import pick from 'lodash/pick';
+import {isAlive} from 'mobx-state-tree';
+import {matchSorter} from 'match-sorter';
 import {
   OptionsControlProps,
   OptionsControl,
-  FormOptionsControl,
-  resolveEventData
-} from 'amis-core';
-import {SpinnerExtraProps, Transfer} from 'amis-ui';
-import type {Option} from 'amis-core';
-import {
+  resolveEventData,
+  str2function,
+  getOptionValueBindField,
+  isEffectiveApi,
+  isPureVariable,
+  resolveVariableAndFilter,
   autobind,
   filterTree,
   string2regExp,
@@ -17,21 +19,32 @@ import {
   findTree,
   findTreeIndex,
   getTree,
-  spliceTree
+  spliceTree,
+  mapTree,
+  optionValueCompare,
+  resolveVariable,
+  ActionObject,
+  toNumber,
+  evalExpression,
+  getVariable
 } from 'amis-core';
-import {Spinner} from 'amis-ui';
-import {optionValueCompare} from 'amis-core';
-import {resolveVariable} from 'amis-core';
-import {FormOptionsSchema, SchemaApi, SchemaObject} from '../../Schema';
-import {Selection as BaseSelection} from 'amis-ui';
-import {ResultList} from 'amis-ui';
-import {ActionObject, toNumber} from 'amis-core';
-import type {ItemRenderStates} from 'amis-ui/lib/components/Selection';
+import {SpinnerExtraProps, Transfer, Spinner, ResultList} from 'amis-ui';
+import {
+  FormOptionsSchema,
+  SchemaApi,
+  SchemaObject,
+  SchemaExpression,
+  SchemaClassName
+} from '../../Schema';
 import {supportStatic} from './StaticHoc';
+
+import type {ItemRenderStates} from 'amis-ui/lib/components/Selection';
+import type {Option} from 'amis-core';
+import type {PaginationSchema} from '../Pagination';
 
 /**
  * Transfer
- * 文档：https://baidu.gitee.io/amis/docs/components/form/transfer
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/transfer
  */
 export interface TransferControlSchema
   extends FormOptionsSchema,
@@ -157,6 +170,31 @@ export interface TransferControlSchema
    * 树形模式下，仅选中子节点
    */
   onlyChildren?: boolean;
+
+  /**
+   * 是否默认都展开
+   */
+  initiallyOpen?: boolean;
+  /**
+   * ui级联关系，true代表级联选中，false代表不级联，默认为true
+   */
+  autoCheckChildren?: boolean;
+
+  /**
+   * 分页配置，selectMode为默认和table才会生效
+   * @since 3.6.0
+   */
+  pagination?: {
+    /** 是否左侧选项分页，默认不开启 */
+    enable: SchemaExpression;
+    /** 分页组件CSS类名 */
+    className?: SchemaClassName;
+    /** 是否开启前端分页 */
+    loadDataOnce?: boolean;
+  } & Pick<
+    PaginationSchema,
+    'layout' | 'maxButtons' | 'perPageAvailable' | 'popOverContainerSelector'
+  >;
 }
 
 export interface BaseTransferProps
@@ -173,10 +211,24 @@ export interface BaseTransferProps
   resultItemRender?: (option: Option) => JSX.Element;
   virtualThreshold?: number;
   itemHeight?: number;
+  /**
+   * 检索函数
+   */
+  filterOption?: 'string';
 }
 
 type OptionsControlWithSpinnerProps = OptionsControlProps & SpinnerExtraProps;
 
+export const getCustomFilterOption = (filterOption?: string) => {
+  switch (typeof filterOption) {
+    case 'string':
+      return str2function(filterOption, 'options', 'inputValue', 'option');
+    case 'function':
+      return filterOption;
+    default:
+      return null;
+  }
+};
 export class BaseTransferRenderer<
   T extends OptionsControlWithSpinnerProps = BaseTransferProps
 > extends React.Component<T> {
@@ -204,7 +256,8 @@ export class BaseTransferRenderer<
       dispatchEvent,
       setOptions,
       selectMode,
-      deferApi
+      deferApi,
+      deferField = 'defer'
     } = this.props;
     let newValue: any = value;
     let newOptions = options.concat();
@@ -216,11 +269,18 @@ export class BaseTransferRenderer<
           optionValueCompare(
             item[(valueField as string) || 'value'],
             (valueField as string) || 'value'
-          )
+          ),
+          {
+            resolve: getOptionValueBindField(valueField),
+            value: item[valueField as string] || 'value'
+          }
         );
 
         if (!indexes) {
-          newOptions.push(item);
+          newOptions.push({
+            ...item,
+            visible: false
+          });
         } else if (optionModified) {
           const origin = getTree(newOptions, indexes);
           newOptions = spliceTree(newOptions, indexes, 1, {
@@ -251,7 +311,10 @@ export class BaseTransferRenderer<
       );
 
       if (!indexes) {
-        newOptions.push(value);
+        newOptions.push({
+          ...value,
+          visible: false
+        });
       } else if (optionModified) {
         const origin = getTree(newOptions, indexes);
         newOptions = spliceTree(newOptions, indexes, 1, {
@@ -267,25 +330,25 @@ export class BaseTransferRenderer<
       (!!deferApi ||
         !!findTree(
           options,
-          (option: Option) => option.deferApi || option.defer
+          (option: Option) => option.deferApi || option[deferField]
         ));
 
-    isTreeDefer === true ||
-      ((newOptions.length > options.length || optionModified) &&
-        setOptions(newOptions, true));
+    if (
+      isTreeDefer === true ||
+      newOptions.length > options.length ||
+      optionModified
+    ) {
+      setOptions(newOptions, true);
+    }
 
     // 触发渲染器事件
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(
-        this.props,
-        {
-          value: newValue,
-          options,
-          items: options // 为了保持名字统一
-        },
-        'value'
-      )
+      resolveEventData(this.props, {
+        value: newValue,
+        options,
+        items: options // 为了保持名字统一
+      })
     );
     if (rendererEvent?.prevented) {
       return;
@@ -300,7 +363,11 @@ export class BaseTransferRenderer<
   }
 
   @autobind
-  async handleSearch(term: string, cancelExecutor: Function) {
+  async handleSearch(
+    term: string,
+    cancelExecutor: Function,
+    targetPage?: {page: number; perPage?: number}
+  ) {
     const {
       searchApi,
       options,
@@ -308,14 +375,15 @@ export class BaseTransferRenderer<
       valueField,
       env,
       data,
-      translate: __
+      translate: __,
+      filterOption
     } = this.props;
 
     if (searchApi) {
       try {
         const payload = await env.fetcher(
           searchApi,
-          createObject(data, {term}),
+          createObject(data, {term, ...(targetPage ? targetPage : {})}),
           {
             cancelExecutor
           }
@@ -331,42 +399,85 @@ export class BaseTransferRenderer<
           throw new Error(__('CRUD.invalidArray'));
         }
 
-        return result.map(item => {
-          let resolved: any = null;
-          const value = item[valueField || 'value'];
+        let currentPage = {};
+        if (targetPage) {
+          currentPage = {
+            page: payload.data.page,
+            perPage: targetPage.perPage,
+            total: payload.data.count
+          };
+        }
+        return {
+          items: mapTree(result, item => {
+            let resolved: any = null;
+            const value = item[valueField || 'value'];
 
-          // 只有 value 值有意义的时候，再去找；否则直接返回
-          if (Array.isArray(options) && value !== null && value !== undefined) {
-            resolved = find(options, optionValueCompare(value, valueField));
-          }
+            // 只有 value 值有意义的时候，再去找；否则直接返回
+            if (
+              Array.isArray(options) &&
+              value !== null &&
+              value !== undefined
+            ) {
+              resolved = find(options, optionValueCompare(value, valueField));
+              if (item?.children) {
+                resolved = {
+                  ...resolved,
+                  children: item.children
+                };
+              }
+            }
 
-          return resolved || item;
-        });
+            return resolved || item;
+          }),
+          ...currentPage
+        };
       } catch (e) {
-        if (!env.isCancel(e)) {
+        if (!env.isCancel(e) && !searchApi.silent) {
           env.notify('error', e.message);
         }
 
-        return [];
+        return {
+          items: []
+        };
       }
     } else if (term) {
-      const regexp = string2regExp(term);
+      const labelKey = (labelField as string) || 'label';
+      const valueKey = (valueField as string) || 'value';
+      const option = {keys: [labelKey, valueKey]};
 
-      return filterTree(
-        options,
-        (option: Option) => {
-          return !!(
-            (Array.isArray(option.children) && option.children.length) ||
-            (option[(valueField as string) || 'value'] &&
-              (regexp.test(option[(labelField as string) || 'label']) ||
-                regexp.test(option[(valueField as string) || 'value'])))
-          );
-        },
-        0,
-        true
-      );
+      if (filterOption) {
+        const customFilterOption = getCustomFilterOption(filterOption);
+        if (customFilterOption) {
+          return {items: customFilterOption(options, term, option)};
+        } else {
+          env.notify('error', '自定义检索函数不符合要求');
+          return {items: []};
+        }
+      }
+
+      return {
+        items: filterTree(
+          options,
+          (
+            option: Option,
+            key: number,
+            level: number,
+            paths: Array<Option>
+          ) => {
+            return !!(
+              (Array.isArray(option.children) && option.children.length) ||
+              !!matchSorter([option].concat(paths), term, {
+                keys: [labelField || 'label', valueField || 'value'],
+                threshold: matchSorter.rankings.CONTAINS
+              }).length
+            );
+          },
+          0,
+          true
+        )
+      };
     } else {
-      return options;
+      return {items: options};
     }
   }
 
@@ -380,30 +491,46 @@ export class BaseTransferRenderer<
   }
 
   @autobind
+  handlePageChange(
+    page: number,
+    perPage?: number,
+    direction?: 'forward' | 'backward'
+  ) {
+    const {source, data, formItem, onChange} = this.props;
+    const ctx = createObject(data, {
+      page: page ?? 1,
+      perPage: perPage ?? 10,
+      ...(direction ? {pageDir: direction} : {})
+    });
+
+    if (!formItem || !isAlive(formItem)) {
+      return;
+    }
+
+    if (isPureVariable(source)) {
+      formItem.loadOptionsFromDataScope(source, ctx, onChange);
+    } else if (isEffectiveApi(source, ctx)) {
+      formItem.loadOptions(source, ctx, undefined, false, onChange, false);
+    }
+  }
+
+  @autobind
   optionItemRender(option: Option, states: ItemRenderStates) {
     const {menuTpl, render, data} = this.props;
 
-    if (menuTpl) {
-      return render(`item/${states.index}`, menuTpl, {
-        data: createObject(createObject(data, states), option)
-      });
-    }
-
-    return BaseSelection.itemRender(option, states);
+    return render(`item/${states.index}`, menuTpl, {
+      data: createObject(createObject(data, states), option)
+    });
   }
 
   @autobind
   resultItemRender(option: Option, states: ItemRenderStates) {
     const {valueTpl, render, data} = this.props;
 
-    if (valueTpl) {
-      return render(`value/${states.index}`, valueTpl, {
-        onChange: states.onChange,
-        data: createObject(createObject(data, states), option)
-      });
-    }
-
-    return ResultList.itemRender(option, states);
+    return render(`value/${states.index}`, valueTpl, {
+      onChange: states.onChange,
+      data: createObject(createObject(data, states), option)
+    });
   }
 
   @autobind
@@ -450,17 +577,25 @@ export class BaseTransferRenderer<
 
   // 动作
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     switch (action.actionType) {
       case 'clear':
         onChange?.('');
         break;
       case 'reset':
-        onChange?.(resetValue ?? '');
+        onChange?.(
+          getVariable(formStore?.pristine ?? store?.pristine, name) ??
+            resetValue ??
+            ''
+        );
         break;
       case 'selectAll':
         this.tranferRef?.selectAll();
         break;
+      case 'clearSearch': {
+        this.tranferRef?.clearSearch(data);
+        break;
+      }
     }
   }
 
@@ -486,17 +621,29 @@ export class BaseTransferRenderer<
       selectTitle,
       resultTitle,
       menuTpl,
+      valueTpl,
       searchPlaceholder,
       resultListModeFollowSelect = false,
       resultSearchPlaceholder,
       resultSearchable = false,
       statistics,
       labelField,
+      valueField,
       virtualThreshold,
       itemHeight,
       loadingConfig,
       showInvalidMatch,
-      onlyChildren
+      onlyChildren,
+      mobileUI,
+      noResultsText,
+      pagination,
+      formItem,
+      env,
+      popOverContainer,
+      data,
+      autoCheckChildren = true,
+      initiallyOpen = true,
+      testIdBuilder
     } = this.props;
 
     // 目前 LeftOptions 没有接口可以动态加载
@@ -522,6 +669,7 @@ export class BaseTransferRenderer<
           onlyChildren={onlyChildren}
           value={selectedOptions}
           options={options}
+          accumulatedOptions={formItem?.accumulatedOptions ?? []}
           disabled={disabled}
           onChange={this.handleChange}
           option2value={this.option2value}
@@ -546,8 +694,9 @@ export class BaseTransferRenderer<
           resultSearchPlaceholder={resultSearchPlaceholder}
           statistics={statistics}
           labelField={labelField}
-          optionItemRender={this.optionItemRender}
-          resultItemRender={this.resultItemRender}
+          valueField={valueField}
+          optionItemRender={menuTpl ? this.optionItemRender : undefined}
+          resultItemRender={valueTpl ? this.resultItemRender : undefined}
           onSelectAll={this.onSelectAll}
           onRef={this.getRef}
           virtualThreshold={virtualThreshold}
@@ -556,8 +705,38 @@ export class BaseTransferRenderer<
           }
           loadingConfig={loadingConfig}
           showInvalidMatch={showInvalidMatch}
+          mobileUI={mobileUI}
+          noResultsText={noResultsText}
+          pagination={{
+            ...pick(pagination, [
+              'className',
+              'layout',
+              'perPageAvailable',
+              'popOverContainerSelector'
+            ]),
+            enable:
+              (pagination && pagination.enable !== undefined
+                ? !!(typeof pagination.enable === 'string'
+                    ? evalExpression(pagination.enable, data)
+                    : pagination.enable)
+                : !!formItem?.enableSourcePagination) &&
+              (!selectMode ||
+                selectMode === 'list' ||
+                selectMode === 'table') &&
+              options.length > 0,
+            maxButtons: Number.isInteger(pagination?.maxButtons)
+              ? pagination.maxButtons
+              : 5,
+            page: formItem?.sourcePageNum,
+            perPage: formItem?.sourcePerPageNum,
+            total: formItem?.sourceTotalNum,
+            popOverContainer: popOverContainer ?? env?.getModalContainer
+          }}
+          onPageChange={this.handlePageChange}
+          initiallyOpen={initiallyOpen}
+          autoCheckChildren={autoCheckChildren}
+          testIdBuilder={testIdBuilder}
         />
-
         <Spinner
           overlay
           key="info"

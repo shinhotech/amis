@@ -10,19 +10,16 @@ import {
   Checkbox,
   Spinner
 } from 'amis';
-import {
-  FormControlProps,
-  generateIcon,
-  Renderer,
-  RendererProps
-} from 'amis-core';
-import {debounce, remove} from 'lodash';
+import {FormControlProps, Renderer, RendererProps} from 'amis-core';
+import debounce from 'lodash/debounce';
+import remove from 'lodash/remove';
 import React from 'react';
 import {EditorManager, EditorNodeType, autobind} from 'amis-editor-core';
-import type {DSField, DSFieldGroup} from 'amis-editor-core';
 import {matchSorter} from 'match-sorter';
-import {SchemaCollection} from 'amis/lib/Schema';
 import {default as cx} from 'classnames';
+
+import type {SchemaCollection} from 'amis';
+import type {DSField, DSFieldGroup} from '../builder';
 
 export interface DataBindingProps extends FormControlProps {
   node: EditorNodeType;
@@ -197,7 +194,8 @@ export class SimpleDataBindingControl extends React.Component<
   async handleSearch(keywords: string) {
     this.setState({
       filteredFields: matchSorter(this.props.fields, keywords, {
-        keys: ['label', 'value', 'children']
+        keys: ['label', 'value', 'children'],
+        threshold: matchSorter.rankings.CONTAINS
       })
     });
   }
@@ -226,7 +224,11 @@ export class SimpleDataBindingControl extends React.Component<
               item => item.value || item.label
             )}
             expandIcon={
-              generateIcon(cx, 'fa fa-chevron-right expandIcon', 'Icon')!
+              <Icon
+                cx={cx}
+                icon="fa fa-chevron-right expandIcon"
+                className="Icon"
+              />
             }
             expandIconPosition="right"
             // accordion={true}

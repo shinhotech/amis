@@ -3,11 +3,10 @@ import {registerEditorPlugin} from 'amis-editor-core';
 import {DateRangeControlPlugin} from './InputDateRange';
 
 export class QuarterRangePlugin extends DateRangeControlPlugin {
+  static id = 'QuarterRangePlugin';
   // 关联渲染器名字
   rendererName = 'input-quarter-range';
   $schema = '/schemas/MonthRangeControlSchema.json';
-
-  order = -440;
 
   // 组件名称
   icon = 'fa fa-calendar';

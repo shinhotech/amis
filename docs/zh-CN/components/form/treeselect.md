@@ -405,26 +405,557 @@ order: 60
 
 ## 事件表
 
-当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`来获取事件产生的数据（`< 2.3.2 及以下版本 为 ${event.data.[事件参数名]}`），详细请查看[事件动作](../../docs/concepts/event-action)。
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`或`${event.data.[事件参数名]}`来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
 
 > `[name]`表示当前组件绑定的名称，即`name`属性，如果没有配置`name`属性，则通过`value`取值。
 
-| 事件名称     | 事件参数                                                                                         | 说明                         |
-| ------------ | ------------------------------------------------------------------------------------------------ | ---------------------------- |
-| change       | `[name]: string` 组件的值                                                                        | 选中值变化时触发             |
-| blur         | `[name]: string` 组件的值                                                                        | 输入框失去焦点时触发         |
-| focus        | `[name]: string` 组件的值                                                                        | 输入框获取焦点时触发         |
-| add          | `[name]: object` 新增的节点信息<br/>``items: object[]`选项集合（< 2.3.2 及以下版本 为`options`） | 新增节点提交时触发           |
-| edit         | `[name]: object` 编辑的节点信息<br/>``items: object[]`选项集合（< 2.3.2 及以下版本 为`options`） | 编辑节点提交时触发           |
-| delete       | `[name]: object` 删除的节点信息<br/>``items: object[]`选项集合（< 2.3.2 及以下版本 为`options`） | 删除节点提交时触发           |
-| loadFinished | `[name]: object` deferApi 懒加载远程请求成功后返回的数据                                         | 懒加载接口远程请求成功时触发 |
+| 事件名称                             | 事件参数                                                                                                                      | 说明                         |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| change                               | `[name]: string` 组件的值 <br/>`item: object`选中的节点（6.2.0 及以上版本）<br/>`items: object[]`选项集合（3.6.0 及以上版本） | 选中值变化时触发             |
+| blur                                 | `[name]: string` 组件的值 <br/>``item: object`选中的节点（6.2.0 及以上版本）<br/>items: object[]`选项集合（3.6.4 及以上版本） | 输入框失去焦点时触发         |
+| focus                                | `[name]: string` 组件的值 <br/>`item: object`选中的节点（6.2.0 及以上版本）<br/>`items: object[]`选项集合（3.6.4 及以上版本） | 输入框获取焦点时触发         |
+| addConfirm (3.6.4 及以上版本)        | `[name]: string` 组件的值<br/>`item: object` 新增的节点信息<br/>`items: object[]`选项集合                                     | 新增节点提交时触发           |
+| editConfirm (3.6.4 及以上版本)       | `[name]: object` 组件的值<br/>`item: object` 编辑的节点信息<br/>`items: object[]`选项集合                                     | 编辑节点提交时触发           |
+| deleteConfirm (3.6.4 及以上版本)     | `[name]: string` 组件的值<br/>`item: object` 删除的节点信息<br/>`items: object[]`选项集合                                     | 删除节点提交时触发           |
+| deferLoadFinished (3.6.4 及以上版本) | `[name]: object` 组件的值<br/>`result: object` deferApi 懒加载远程请求成功后返回的数据 <br/>`items: object[]`选项集合         | 懒加载接口远程请求成功时触发 |
+| add（不推荐）                        | `[name]: object` 新增的节点信息<br/>`items: object[]`选项集合（< 2.3.2 及以下版本 为`options`）                               | 新增节点提交时触发           |
+| edit（不推荐）                       | `[name]: object` 编辑的节点信息<br/>`items: object[]`选项集合（< 2.3.2 及以下版本 为`options`）                               | 编辑节点提交时触发           |
+| delete（不推荐）                     | `[name]: object` 删除的节点信息<br/>`items: object[]`选项集合（< 2.3.2 及以下版本 为`options`）                               | 删除节点提交时触发           |
+| loadFinished（不推荐）               | `[name]: object` deferApi 懒加载远程请求成功后返回的数据                                                                      | 懒加载接口远程请求成功时触发 |
+
+### change
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "onEvent": {
+        "change": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.tree|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### focus
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "onEvent": {
+        "focus": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.tree|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### blur
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "onEvent": {
+        "blur": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.tree|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### addConfirm
+
+配置 `creatable`后，可监听确认新增操作。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "creatable": true,
+      "removable": true,
+      "editable": true,
+      "onEvent": {
+        "addConfirm": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.item|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### editConfirm
+
+配置 `editable`后，可监听确认编辑操作。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "creatable": true,
+      "removable": true,
+      "editable": true,
+      "onEvent": {
+        "editConfirm": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.item|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### deleteConfirm
+
+配置 `removable`后，可监听确认删除操作。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "creatable": true,
+      "removable": true,
+      "editable": true,
+      "onEvent": {
+        "deleteConfirm": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.item|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+### deferLoadFinished
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "tree-select",
+      "name": "tree",
+      "label": "Tree",
+      "deferApi": "/api/mock2/form/deferOptions?label=${label}&waitSeconds=2",
+      "onEvent": {
+        "deferLoadFinished": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.result|json}"
+              }
+            }
+          ]
+        }
+      },
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "collapsed": true,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "这下面是懒加载的",
+          "value": 4,
+          "defer": true
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
 
 ## 动作表
 
 当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，动作配置可以通过`args: {动作配置项名称: xxx}`来配置具体的参数，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
 
-| 动作名称 | 动作配置                               | 说明                                                                                    |
-| -------- | -------------------------------------- | --------------------------------------------------------------------------------------- |
-| clear    | -                                      | 清空                                                                                    |
-| reset    | -                                      | 将值重置为`resetValue`，若没有配置`resetValue`，则清空                                  |
-| setValue | `value: string` \| `string[]` 更新的值 | 更新数据，开启`multiple`支持设置多项，开启`joinValues`时，多值用`,`分隔，否则多值用数组 |
+| 动作名称 | 动作配置                               | 说明                                                                                                       |
+| -------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| add      | `item: Option, parentValue?: any`      | item 新增的数据项；parentValue 父级数据项的 value（如果配置了 valueField，以 valueField 的字段值为准）     |
+| edit     | `item: Option, originValue: any`       | item 编辑后的数据项；originValue 编辑前数据项的 value（如果配置了 valueField，以 valueField 的字段值为准） |
+| delete   | value: ` any`                          | 删除数据项的 value，（如果配置了 valueField，以 valueField 的字段值为准）                                  |
+| reload   | -                                      | 刷新                                                                                                       |
+| clear    | -                                      | 清空                                                                                                       |
+| reset    | -                                      | 将值重置为初始值。6.3.0 及以下版本为`resetValue`                                                           |
+| setValue | `value: string` \| `string[]` 更新的值 | 更新数据，开启`multiple`支持设置多项，开启`joinValues`时，多值用`,`分隔，否则多值用数组                    |
+
+### clear
+
+```schema: scope="body"
+{
+    "type": "form",
+    "debug": true,
+    "body": [
+        {
+          "type": "tree-select",
+        "name": "tree",
+        "label": "Tree",
+        "options": [
+          {
+            "label": "Folder A",
+            "value": 1,
+            "children": [
+              {
+                "label": "file A",
+                "value": 2
+              },
+              {
+                "label": "Folder B",
+                "value": 3,
+                "children": [
+                  {
+                    "label": "file b1",
+                    "value": 3.1
+                  },
+                  {
+                    "label": "file b2",
+                    "value": 3.2
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "label": "file C",
+            "value": 4
+          },
+          {
+            "label": "file D",
+            "value": 5
+          }
+        ],
+          "value": 5,
+          "id": "clear_text"
+        },
+        {
+            "type": "button",
+            "label": "清空",
+            "onEvent": {
+                "click": {
+                    "actions": [
+                        {
+                            "actionType": "clear",
+                            "componentId": "clear_text"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+
+### reset
+
+如果配置了`resetValue`，则重置时使用`resetValue`的值，否则使用初始值。
+
+```schema: scope="body"
+{
+    "type": "form",
+    "debug": true,
+    "body": [
+        {
+          "type": "tree-select",
+        "name": "tree",
+        "label": "Tree",
+        "options": [
+          {
+            "label": "Folder A",
+            "value": 1,
+            "children": [
+              {
+                "label": "file A",
+                "value": 2
+              },
+              {
+                "label": "Folder B",
+                "value": 3,
+                "children": [
+                  {
+                    "label": "file b1",
+                    "value": 3.1
+                  },
+                  {
+                    "label": "file b2",
+                    "value": 3.2
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "label": "file C",
+            "value": 4
+          },
+          {
+            "label": "file D",
+            "value": 5
+          }
+        ],
+          "value": 5,
+          "id": "reset_text"
+        },
+        {
+            "type": "button",
+            "label": "重置",
+            "onEvent": {
+                "click": {
+                    "actions": [
+                        {
+                            "actionType": "reset",
+                            "componentId": "reset_text"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+```

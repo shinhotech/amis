@@ -15,6 +15,7 @@ import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import isArray from 'lodash/isArray';
 
 export class CustomPlugin extends BasePlugin {
+  static id = 'CustomRegionPlugin';
   // 关联渲染器名字
   rendererName = 'custom';
   $schema = '/schemas/CustomSchema.json';
@@ -149,7 +150,8 @@ export class CustomPlugin extends BasePlugin {
         scaffoldForm: plugin.scaffoldForm,
         disabledRendererPlugin: plugin.disabledRendererPlugin,
         isBaseComponent: plugin.isBaseComponent,
-        rendererName: plugin.rendererName
+        rendererName: plugin.rendererName,
+        memberImmutable: plugin.memberImmutable
       };
     }
   }

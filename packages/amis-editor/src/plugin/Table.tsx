@@ -6,7 +6,6 @@ import {
   RendererPluginEvent
 } from 'amis-editor-core';
 import {findTree, setVariable, someTree} from 'amis-core';
-
 import {registerEditorPlugin, repeatArray, diff} from 'amis-editor-core';
 import {
   BasePlugin,
@@ -19,23 +18,32 @@ import {
   InsertEventContext,
   ScaffoldForm
 } from 'amis-editor-core';
+import {DSBuilderManager} from '../builder/DSBuilderManager';
 import {defaultValue, getSchemaTpl, tipedLabel} from 'amis-editor-core';
 import {mockValue} from 'amis-editor-core';
 import {EditorNodeType} from 'amis-editor-core';
-import {SchemaObject} from 'amis/lib/Schema';
+import type {DataScope, SchemaObject} from 'amis';
 import {
   getEventControlConfig,
   getArgsWrapper
 } from '../renderer/event-control/helper';
-import {schemaArrayFormat, schemaToArray} from '../util';
+import {
+  schemaArrayFormat,
+  schemaToArray,
+  resolveArrayDatasource
+} from '../util';
+import {reaction} from 'mobx';
+
+import type {EditorManager} from 'amis-editor-core';
 
 export class TablePlugin extends BasePlugin {
+  static id = 'TablePlugin';
   // 关联渲染器名字
   rendererName = 'table';
   $schema = '/schemas/TableSchema.json';
 
   // 组件名称
-  name = '表格';
+  name = '原子表格';
   tags = ['展示'];
   isBaseComponent = true;
   description =
@@ -175,13 +183,19 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.selectedItems': {
-              type: 'array',
-              title: '已选择行'
-            },
-            'event.data.unSelectedItems': {
-              type: 'array',
-              title: '未选择行'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                selectedItems: {
+                  type: 'array',
+                  title: '已选行记录'
+                },
+                unSelectedItems: {
+                  type: 'array',
+                  title: '未选行记录'
+                }
+              }
             }
           }
         }
@@ -195,13 +209,19 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.orderBy': {
-              type: 'string',
-              title: '列排序列名'
-            },
-            'event.data.orderDir': {
-              type: 'string',
-              title: '列排序值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                orderBy: {
+                  type: 'string',
+                  title: '列名'
+                },
+                orderDir: {
+                  type: 'string',
+                  title: '排序值'
+                }
+              }
             }
           }
         }
@@ -215,13 +235,19 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.filterName': {
-              type: 'string',
-              title: '列筛选列名'
-            },
-            'event.data.filterValue': {
-              type: 'string',
-              title: '列筛选值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                filterName: {
+                  type: 'string',
+                  title: '列名'
+                },
+                filterValue: {
+                  type: 'string',
+                  title: '筛选值'
+                }
+              }
             }
           }
         }
@@ -235,13 +261,19 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.searchName': {
-              type: 'string',
-              title: '列搜索列名'
-            },
-            'event.data.searchValue': {
+            data: {
               type: 'object',
-              title: '列搜索数据'
+              title: '数据',
+              properties: {
+                searchName: {
+                  type: 'string',
+                  title: '列名'
+                },
+                searchValue: {
+                  type: 'object',
+                  title: '搜索值'
+                }
+              }
             }
           }
         }
@@ -255,9 +287,15 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.movedItems': {
-              type: 'array',
-              title: '已排序数据'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                movedItems: {
+                  type: 'array',
+                  title: '已排序记录'
+                }
+              }
             }
           }
         }
@@ -271,9 +309,15 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.columns': {
-              type: 'array',
-              title: '当前显示的列配置数据'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                columns: {
+                  type: 'array',
+                  title: '当前显示的列配置'
+                }
+              }
             }
           }
         }
@@ -287,9 +331,113 @@ export class TablePlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.rowItem': {
+            data: {
               type: 'object',
-              title: '行点击数据'
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '当前行记录'
+                },
+                index: {
+                  type: 'number',
+                  title: '当前行索引'
+                },
+                indexPath: {
+                  type: 'number',
+                  title: '行索引路劲'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'rowDbClick',
+      eventLabel: '行双击',
+      description: '双击整行事件',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '当前行记录'
+                },
+                index: {
+                  type: 'number',
+                  title: '当前行索引'
+                },
+                indexPath: {
+                  type: 'number',
+                  title: '行索引路劲'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'rowMouseEnter',
+      eventLabel: '鼠标移入行事件',
+      description: '移入整行时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '当前行记录'
+                },
+                index: {
+                  type: 'number',
+                  title: '当前行索引'
+                },
+                indexPath: {
+                  type: 'number',
+                  title: '行索引路劲'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'rowMouseLeave',
+      eventLabel: '鼠标移出行事件',
+      description: '移出整行时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                item: {
+                  type: 'object',
+                  title: '当前行记录'
+                },
+                index: {
+                  type: 'number',
+                  title: '当前行索引'
+                },
+                indexPath: {
+                  type: 'number',
+                  title: '行索引路劲'
+                }
+              }
             }
           }
         }
@@ -304,18 +452,6 @@ export class TablePlugin extends BasePlugin {
       description: '设置表格的选中项',
       innerArgs: ['selected'],
       schema: getArgsWrapper([
-        /*
-        {
-          type: 'input-formula',
-          variables: '${variables}',
-          evalMode: false,
-          variableMode: 'tabs',
-          label: '选中项',
-          size: 'lg',
-          name: 'selected',
-          mode: 'horizontal'
-        }
-        */
         getSchemaTpl('formulaControl', {
           name: 'selected',
           label: '选中项',
@@ -339,9 +475,23 @@ export class TablePlugin extends BasePlugin {
       actionType: 'initDrag',
       actionLabel: '开启排序',
       description: '开启表格拖拽排序功能'
+    },
+    {
+      actionType: 'cancelDrag',
+      actionLabel: '取消排序',
+      description: '取消表格拖拽排序功能'
     }
   ];
+
   panelJustify = true;
+
+  dsManager: DSBuilderManager;
+
+  constructor(manager: EditorManager) {
+    super(manager);
+    this.dsManager = new DSBuilderManager(manager);
+  }
+
   panelBodyCreator = (context: BaseEventContext) => {
     const isCRUDBody = context.schema.type === 'crud';
     const i18nEnabled = getI18nEnabled();
@@ -360,13 +510,9 @@ export class TablePlugin extends BasePlugin {
 
               isCRUDBody
                 ? null
-                : {
-                    name: 'source',
-                    type: 'input-text',
-                    label: '数据源',
-                    pipeIn: defaultValue('${items}'),
-                    description: '绑定当前环境变量'
-                  },
+                : getSchemaTpl('sourceBindControl', {
+                    label: '数据源'
+                  }),
 
               {
                 name: 'combineNum',
@@ -388,6 +534,7 @@ export class TablePlugin extends BasePlugin {
                 formType: 'extend',
                 label: '头部',
                 name: 'showHeader',
+                pipeIn: (value: any) => value ?? true,
                 form: {
                   body: [
                     {
@@ -411,6 +558,7 @@ export class TablePlugin extends BasePlugin {
                 formType: 'extend',
                 label: '底部',
                 name: 'showFooter',
+                pipeIn: (value: any) => value ?? true,
                 form: {
                   body: [
                     {
@@ -472,15 +620,14 @@ export class TablePlugin extends BasePlugin {
             body: [
               {
                 name: 'columnsTogglable',
-                label: '展示列显示开关',
+                label: tipedLabel(
+                  '列显示开关',
+                  '是否展示表格列的显隐控件，“自动”即列数量大于5时自动开启'
+                ),
                 type: 'button-group-select',
                 pipeIn: defaultValue('auto'),
                 size: 'sm',
                 labelAlign: 'left',
-                horizontal: {
-                  left: 5,
-                  right: 7
-                },
                 options: [
                   {
                     label: '自动',
@@ -496,8 +643,7 @@ export class TablePlugin extends BasePlugin {
                     label: '关闭',
                     value: false
                   }
-                ],
-                description: '自动即列数量大于5个时自动开启'
+                ]
               },
 
               getSchemaTpl('switch', {
@@ -519,7 +665,7 @@ export class TablePlugin extends BasePlugin {
                 name: 'footable.expand',
                 type: 'button-group-select',
                 size: 'sm',
-                visibleOn: 'data.footable',
+                visibleOn: 'this.footable',
                 label: '底部默认展开',
                 pipeIn: defaultValue('none'),
                 options: [
@@ -550,7 +696,7 @@ export class TablePlugin extends BasePlugin {
                 name: 'rowClassNameExpr',
                 type: 'input-text',
                 label: '行高亮规则',
-                placeholder: `支持模板语法，如 <%= data.id % 2 ? 'bg-success' : '' %>`
+                placeholder: `支持模板语法，如 <%= this.id % 2 ? 'bg-success' : '' %>`
               }
             ]
           },
@@ -599,31 +745,33 @@ export class TablePlugin extends BasePlugin {
     ]);
   };
 
-  filterProps(props: any) {
-    const arr = Array.isArray(props.value)
-      ? props.value
-      : typeof props.source === 'string'
-      ? resolveVariable(props.source, props.data)
-      : resolveVariable('items', props.data);
+  filterProps(props: any, node: EditorNodeType) {
+    if (!node.state.value) {
+      const arr = resolveArrayDatasource(props);
 
-    if (!Array.isArray(arr) || !arr.length) {
-      const mockedData: any = {};
+      if (!Array.isArray(arr) || !arr.length) {
+        const mockedData: any = {};
 
-      if (Array.isArray(props.columns)) {
-        props.columns.forEach((column: any) => {
-          if (column.name) {
-            setVariable(mockedData, column.name, mockValue(column));
-          }
+        if (Array.isArray(props.columns)) {
+          props.columns.forEach((column: any) => {
+            if (column.name) {
+              setVariable(mockedData, column.name, mockValue(column));
+            }
+          });
+        }
+
+        node.updateState({
+          value: repeatArray(mockedData, 1).map((item, index) => ({
+            ...item,
+            id: index + 1
+          }))
+        });
+      } else {
+        // 只取10条预览，否则太多卡顿
+        node.updateState({
+          value: arr.slice(0, 3)
         });
       }
-
-      props.value = repeatArray(mockedData, 1).map((item, index) => ({
-        ...item,
-        id: index + 1
-      }));
-    } else {
-      // 只取10条预览，否则太多卡顿
-      props.value = arr.slice(0, 10);
     }
 
     // 编辑模式，不允许表格调整宽度
@@ -677,27 +825,99 @@ export class TablePlugin extends BasePlugin {
   async buildDataSchemas(
     node: EditorNodeType,
     region?: EditorNodeType,
-    trigger?: EditorNodeType
+    trigger?: EditorNodeType,
+    parent?: EditorNodeType
   ) {
-    const itemsSchema: any = {
-      $id: 'tableRow',
+    let itemsSchema: any = {
+      $id: `${node.id}-${node.type}-tableRows`,
       type: 'object',
       properties: {}
     };
     const columns: EditorNodeType = node.children.find(
       item => item.isRegion && item.region === 'columns'
     );
+    const parentScopeId = `${parent?.id}-${parent?.type}${
+      node.parent?.type === 'cell' ? '-currentRow' : ''
+    }`;
+    let isColumnChild = false;
 
-    for (let current of columns?.children) {
-      const schema = current.schema;
-      if (schema.name) {
-        itemsSchema.properties[schema.name] = current.info?.plugin
-          ?.buildDataSchemas
-          ? await current.info.plugin.buildDataSchemas(current, region)
-          : {
-              type: 'string',
-              title: schema.label || schema.name
-            };
+    // 追加当前行scope
+    if (trigger) {
+      isColumnChild = someTree(
+        columns?.children,
+        item => item.id === trigger.id
+      );
+
+      if (isColumnChild) {
+        const scopeId = `${node.id}-${node.type}-currentRow`;
+        if (this.manager.dataSchema.getScope(scopeId)) {
+          this.manager.dataSchema.removeScope(scopeId);
+        }
+
+        if (this.manager.dataSchema.getScope(parentScopeId)) {
+          this.manager.dataSchema.switchTo(parentScopeId);
+        }
+
+        this.manager.dataSchema.addScope([], scopeId);
+        this.manager.dataSchema.current.tag = '当前行记录';
+        this.manager.dataSchema.current.group = '组件上下文';
+      }
+    }
+
+    let index = 0;
+    const cells: any = columns.children.concat();
+    // 存在预览节点，限制下遍历数
+    while (cells.length > 0 && index < node.schema.columns.length) {
+      const cell = cells.shift() as EditorNodeType;
+      // cell的孩子貌似只会有一个
+      const items = cell.children.concat();
+      while (items.length) {
+        const current = items.shift() as EditorNodeType;
+        const schema = current.schema;
+        if (schema.name) {
+          const tmpSchema = await current.info.plugin.buildDataSchemas?.(
+            current,
+            region,
+            trigger,
+            node
+          );
+          itemsSchema.properties[schema.name] = {
+            ...tmpSchema,
+            ...(tmpSchema?.$id ? {} : {$id: `${current!.id}-${current!.type}`})
+          };
+        }
+      }
+      index++;
+    }
+
+    // 收集source绑定的列表成员
+    if (node.schema.source) {
+      const sourceMatch1 = node.schema.source.match(/\$\{(.*?)\}/);
+      const sourceMatch2 = node.schema.source.match(/\$(\w+$)/);
+      const source = sourceMatch1
+        ? sourceMatch1[1]
+        : sourceMatch2
+        ? sourceMatch2[1]
+        : '';
+      let scope: any = this.manager.dataSchema.getScope(
+        `${node.info.id}-${node.info.type}`
+      );
+
+      while (scope) {
+        const rowMembers: any = scope.schemas.find(
+          (item: any) => item.properties?.[source]
+        );
+
+        if (rowMembers) {
+          itemsSchema = {
+            ...itemsSchema,
+            properties: {
+              ...itemsSchema.properties,
+              ...(rowMembers.properties?.[source] as any)?.items?.properties
+            }
+          };
+        }
+        scope = rowMembers ? undefined : scope.parent;
       }
     }
 
@@ -705,28 +925,66 @@ export class TablePlugin extends BasePlugin {
       return itemsSchema;
     }
 
-    let cellProperties = {};
-    if (trigger) {
-      const isColumnChild = someTree(
-        columns?.children,
-        item => item.id === trigger.id
-      );
-
-      isColumnChild && (cellProperties = itemsSchema.properties);
+    // 追加当前行数据
+    if (isColumnChild) {
+      const scopeId = `${node.id}-${node.type}-currentRow`;
+      const scope = this.manager.dataSchema.getScope(scopeId);
+      scope?.addSchema(itemsSchema);
     }
 
     return {
-      $id: 'table',
+      $id: `${node.id}-${node.type}`,
       type: 'object',
       properties: {
-        ...cellProperties,
         rows: {
           type: 'array',
           title: '数据列表',
           items: itemsSchema
+        },
+        selectedItems: {
+          type: 'array',
+          title: '已选中行',
+          items: itemsSchema
+        },
+        unSelectedItems: {
+          type: 'array',
+          title: '未选中行',
+          items: itemsSchema
         }
       }
     };
+  }
+
+  async getAvailableContextFields(
+    scopeNode: EditorNodeType,
+    node: EditorNodeType,
+    region?: EditorNodeType
+  ) {
+    if (node?.info?.renderer?.name === 'table-cell') {
+      if (
+        scopeNode.parent?.type === 'service' &&
+        scopeNode.parent?.parent?.path?.endsWith('service')
+      ) {
+        return scopeNode.parent.parent.info.plugin.getAvailableContextFields?.(
+          scopeNode.parent.parent,
+          node,
+          region
+        );
+      }
+    }
+
+    const builder = this.dsManager.getBuilderBySchema(scopeNode.schema);
+
+    if (builder && scopeNode.schema.api) {
+      return builder.getAvailableContextFields(
+        {
+          schema: scopeNode.schema,
+          sourceKey: 'api',
+          feat: 'List'
+        },
+        node
+      );
+    }
   }
 
   editHeaderDetail(id: string) {
@@ -783,6 +1041,26 @@ export class TablePlugin extends BasePlugin {
           manager.panelChangeValue(newValue, diff(value, newValue));
         }
       });
+  }
+
+  unWatchWidthChange: {[propName: string]: () => void} = {};
+  componentRef(node: EditorNodeType, ref: any) {
+    if (ref) {
+      const store = ref.props.store;
+      this.unWatchWidthChange[node.id] = reaction(
+        () =>
+          store.columns.map((column: any) => column.pristine.width).join(','),
+        () => {
+          ref.updateTableInfoLazy(() => {
+            this.manager.store.highlightNodes.forEach(node =>
+              node.calculateHighlightBox()
+            );
+          });
+        }
+      );
+    } else {
+      this.unWatchWidthChange[node.id]?.();
+    }
   }
 }
 

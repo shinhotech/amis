@@ -5,6 +5,9 @@ import {extendObject, isEmpty, isObject} from '../utils/helper';
 import {ServerError} from '../utils/errors';
 import {normalizeApiResponseData} from '../utils/api';
 import {replaceText} from '../utils/replaceText';
+import {concatData} from '../utils/concatData';
+import {envOverwrite} from '../envOverwrite';
+import {filter} from '../utils';
 
 export const ServiceStore = iRendererStore
   .named('ServiceStore')
@@ -40,13 +43,20 @@ export const ServiceStore = iRendererStore
       self.busying = busying;
     }
 
-    function reInitData(data: object | undefined, replace: boolean = false) {
-      const newData = extendObject(self.pristine, data, !replace);
+    function reInitData(
+      data: object | undefined,
+      replace: boolean = false,
+      concatFields?: string | string[]
+    ) {
+      if (concatFields) {
+        data = concatData(data, self.data, concatFields);
+      }
+      const newData = extendObject(self.data, data, !replace);
       self.data = self.pristine = newData;
     }
 
     function updateMessage(msg?: string, error: boolean = false) {
-      self.msg = (msg && String(msg)) || '';
+      self.msg = (msg && filter(msg, self.data)) || '';
       self.error = error;
     }
 
@@ -88,16 +98,17 @@ export const ServiceStore = iRendererStore
               (options && options.errorMessage),
             true
           );
-          getEnv(self).notify(
-            'error',
-            self.msg,
-            json.msgTimeout !== undefined
-              ? {
-                  closeButton: true,
-                  timeout: json.msgTimeout
-                }
-              : undefined
-          );
+          !(api as ApiObject).silent &&
+            getEnv(self).notify(
+              'error',
+              self.msg,
+              json.msgTimeout !== undefined
+                ? {
+                    closeButton: true,
+                    timeout: json.msgTimeout
+                  }
+                : undefined
+            );
         } else {
           self.updatedAt = Date.now();
           let replace = !!(api as ApiObject).replaceData;
@@ -105,10 +116,10 @@ export const ServiceStore = iRendererStore
             ...(replace ? {} : self.data),
             ...normalizeApiResponseData(json.data)
           };
-          reInitData(data, replace);
+          reInitData(data, replace, (api as ApiObject).concatDataFields);
           self.hasRemoteData = true;
           if (options && options.onSuccess) {
-            const ret = options.onSuccess(json);
+            const ret = options.onSuccess(json, data);
 
             if (ret && ret.then) {
               yield ret;
@@ -147,7 +158,7 @@ export const ServiceStore = iRendererStore
         if (e && e.message === 'Network Error') {
           message = self.__('networkError');
         }
-        env.notify('error', message);
+        !(api as ApiObject).silent && env.notify('error', message);
         return;
       }
     });
@@ -190,7 +201,8 @@ export const ServiceStore = iRendererStore
             self.updateData(
               normalizeApiResponseData(json.data),
               undefined,
-              !!(api as ApiObject).replaceData
+              !!(api as ApiObject).replaceData,
+              (api as ApiObject).concatDataFields
             );
 
           self.hasRemoteData = true;
@@ -203,19 +215,20 @@ export const ServiceStore = iRendererStore
               (options && options.errorMessage),
             true
           );
-          getEnv(self).notify(
-            'error',
-            self.msg,
-            json.msgTimeout !== undefined
-              ? {
-                  closeButton: true,
-                  timeout: json.msgTimeout
-                }
-              : undefined
-          );
+          !(api as ApiObject).silent &&
+            getEnv(self).notify(
+              'error',
+              self.msg,
+              json.msgTimeout !== undefined
+                ? {
+                    closeButton: true,
+                    timeout: json.msgTimeout
+                  }
+                : undefined
+            );
         } else {
           if (options && options.onSuccess) {
-            const ret = options.onSuccess(json);
+            const ret = options.onSuccess(json, json.data);
 
             if (ret && ret.then) {
               yield ret;
@@ -253,7 +266,7 @@ export const ServiceStore = iRendererStore
         if (e && e.message === 'Network Error') {
           message = self.__('networkError');
         }
-        env.notify('error', message);
+        !(api as ApiObject).silent && env.notify('error', message);
         return;
       }
     });
@@ -287,7 +300,8 @@ export const ServiceStore = iRendererStore
             self.updateData(
               normalizeApiResponseData(json.data),
               undefined,
-              !!(api as ApiObject).replaceData
+              !!(api as ApiObject).replaceData,
+              (api as ApiObject).concatDataFields
             );
         }
 
@@ -310,7 +324,7 @@ export const ServiceStore = iRendererStore
           throw new ServerError(self.msg, json);
         } else {
           if (options && options.onSuccess) {
-            const ret = options.onSuccess(json);
+            const ret = options.onSuccess(json, json.data);
 
             if (ret && ret.then) {
               yield ret;
@@ -345,20 +359,23 @@ export const ServiceStore = iRendererStore
         }
 
         console.error(e);
-        if (e.type === 'ServerError') {
-          const result = (e as ServerError).response;
-          getEnv(self).notify(
-            'error',
-            e.message,
-            result.msgTimeout !== undefined
-              ? {
-                  closeButton: true,
-                  timeout: result.msgTimeout
-                }
-              : undefined
-          );
-        } else {
-          getEnv(self).notify('error', e.message);
+
+        if (!(api as ApiObject).silent) {
+          if (e.type === 'ServerError') {
+            const result = (e as ServerError).response;
+            getEnv(self).notify(
+              'error',
+              e.message,
+              result.msgTimeout !== undefined
+                ? {
+                    closeButton: true,
+                    timeout: result.msgTimeout
+                  }
+                : undefined
+            );
+          } else {
+            getEnv(self).notify('error', e.message);
+          }
         }
 
         throw e;
@@ -416,19 +433,21 @@ export const ServiceStore = iRendererStore
               self.__('fetchFailed'),
             true
           );
-          getEnv(self).notify(
-            'error',
-            self.msg,
-            json.msgTimeout !== undefined
-              ? {
-                  closeButton: true,
-                  timeout: json.msgTimeout
-                }
-              : undefined
-          );
+          !(api as ApiObject)?.silent &&
+            getEnv(self).notify(
+              'error',
+              self.msg,
+              json.msgTimeout !== undefined
+                ? {
+                    closeButton: true,
+                    timeout: json.msgTimeout
+                  }
+                : undefined
+            );
         } else {
           if (json.data) {
             const env = getEnv(self);
+            json.data = envOverwrite(json.data, env.locale);
             json.data = replaceText(
               json.data,
               env.replaceText,
@@ -437,17 +456,22 @@ export const ServiceStore = iRendererStore
 
             self.schema = Array.isArray(json.data)
               ? json.data
-              : {
-                  type: 'wrapper',
-                  wrap: false,
-                  ...normalizeApiResponseData(json.data)
-                };
+              : Object.assign(
+                  json.data?.type
+                    ? {}
+                    : {
+                        type: 'wrapper',
+                        wrap: false
+                      },
+                  normalizeApiResponseData(json.data)
+                );
             self.schemaKey = '' + Date.now();
             isObject(json.data.data) &&
               self.updateData(
                 json.data.data,
                 undefined,
-                !!(api as ApiObject).replaceData
+                !!(api as ApiObject).replaceData,
+                (api as ApiObject).concatDataFields
               );
           }
 
@@ -482,7 +506,7 @@ export const ServiceStore = iRendererStore
         if (e && e.message === 'Network Error') {
           message = self.__('networkError');
         }
-        env.notify('error', message);
+        !(api as ApiObject)?.silent && env.notify('error', message);
       }
     });
 
@@ -506,7 +530,8 @@ export const ServiceStore = iRendererStore
           self.updateData(
             json.data,
             undefined,
-            !!(api as ApiObject).replaceData
+            !!(api as ApiObject).replaceData,
+            (api as ApiObject).concatDataFields
           );
 
         if (!json.ok) {

@@ -1,19 +1,35 @@
 import React from 'react';
 import cx from 'classnames';
 import {
+  ActionObject,
+  IScopedContext,
   isNumeric,
   isObject,
   isPureVariable,
   Renderer,
   RendererProps,
-  resolveVariableAndFilter
+  resolveVariableAndFilter,
+  ScopedContext
 } from 'amis-core';
 import {FormItem, FormControlProps} from 'amis-core';
 import {filter} from 'amis-core';
-import {QRCodeSVG} from 'qrcode.react';
+import QRCodeRender from 'qrcode.react';
 import {BaseSchema, SchemaClassName} from '../Schema';
 import {getPropValue} from 'amis-core';
 import mapValues from 'lodash/mapValues';
+
+function downloadBlob(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 500);
+}
 
 export interface QRCodeImageSettings {
   src: string;
@@ -26,7 +42,7 @@ export interface QRCodeImageSettings {
 
 /**
  * 二维码展示控件。
- * 文档：https://baidu.gitee.io/amis/docs/components/qrcode
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/qrcode
  */
 export interface QRCodeSchema extends BaseSchema {
   type: 'qrcode' | 'qr-code';
@@ -71,6 +87,11 @@ export interface QRCodeSchema extends BaseSchema {
    * 图片配置
    */
   imageSettings?: QRCodeImageSettings;
+
+  /**
+   * 渲染模式
+   */
+  mode?: 'canvas' | 'svg';
 }
 
 export interface QRCodeProps
@@ -84,8 +105,16 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
     backgroundColor: '#fff',
     foregroundColor: '#000',
     level: 'L',
-    placeholder: '-'
+    placeholder: '-',
+    mode: 'canvas'
   };
+
+  ref: React.RefObject<HTMLDivElement>;
+
+  constructor(props: QRCodeProps) {
+    super(props);
+    this.ref = React.createRef();
+  }
 
   /**
    * 获取图片配置
@@ -119,6 +148,48 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
     });
   }
 
+  /**
+   * 接收动作事件
+   */
+  doAction(
+    action: ActionObject,
+    data: any,
+    throwErrors: boolean,
+    args?: any
+  ): any {
+    const codeSize = this.props.codeSize;
+    const actionType = action?.actionType as string;
+    if (actionType === 'saveAs') {
+      if (this.ref?.current) {
+        if (this.props.mode === 'svg') {
+          const svgElement = this.ref.current.querySelector('svg');
+          if (svgElement) {
+            const contentWithSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" height="${codeSize}" width="${codeSize}" viewBox="${
+              svgElement.getAttribute('viewBox') || '0 0 37 37'
+            }">
+         ${svgElement.innerHTML}
+         </svg>`;
+            const blob = new Blob([contentWithSvg], {type: 'image/svg+xml'});
+            downloadBlob(blob, args?.name || 'qr-code.svg');
+          }
+        } else {
+          const canvasElement = this.ref.current.querySelector('canvas');
+          if (canvasElement) {
+            canvasElement.toBlob(blob => {
+              blob &&
+                downloadBlob(
+                  blob,
+                  args?.name
+                    ? args.name.replace(/\.svg$/, '.png')
+                    : 'qr-code.png'
+                );
+            }, 'image/png');
+          }
+        }
+      }
+    }
+  }
+
   render() {
     const {
       className,
@@ -131,6 +202,8 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
       level,
       defaultValue,
       data,
+      mode,
+      translate: __,
       classPrefix: ns
     } = this.props;
 
@@ -140,16 +213,20 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
     );
 
     return (
-      <div className={cx(`${ns}QrCode`, className)} style={style}>
+      <div
+        className={cx(`${ns}QrCode`, className)}
+        style={style}
+        ref={this.ref}
+      >
         {!finalValue ? (
           <span className={`${ns}QrCode--placeholder`}>{placeholder}</span>
         ) : finalValue.length > 2953 ? (
           // https://github.com/zpao/qrcode.react/issues/69
           <span className="text-danger">
-            二维码值过长，请设置2953个字符以下的文本
+            {__('QRCode.tooLong', {max: 2953})}
           </span>
         ) : (
-          <QRCodeSVG
+          <QRCodeRender
             // @ts-ignore 其实是支持的
             className={qrcodeClassName}
             value={finalValue}
@@ -158,6 +235,7 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
             fgColor={foregroundColor}
             level={level || 'L'}
             imageSettings={this.getImageSettings()}
+            renderAs={mode}
           />
         )}
       </div>
@@ -169,4 +247,18 @@ export default class QRCode extends React.Component<QRCodeProps, any> {
   test: /(^|\/)qr\-?code$/,
   name: 'qrcode'
 })
-export class QRCodeRenderer extends QRCode {}
+export class QRCodeRenderer extends QRCode {
+  static contextType = ScopedContext;
+
+  constructor(props: QRCodeProps, context: IScopedContext) {
+    super(props);
+    const scoped = context;
+    scoped.registerComponent(this);
+  }
+
+  componentWillUnmount() {
+    super.componentWillUnmount?.();
+    const scoped = this.context as IScopedContext;
+    scoped.unRegisterComponent(this);
+  }
+}

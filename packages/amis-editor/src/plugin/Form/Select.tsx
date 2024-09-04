@@ -1,44 +1,79 @@
-import {getSchemaTpl} from 'amis-editor-core';
-import {registerEditorPlugin} from 'amis-editor-core';
-import {BasePlugin, BaseEventContext} from 'amis-editor-core';
+import React from 'react';
+import omit from 'lodash/omit';
+import {findObjectsWithKey} from 'amis-core';
+import {Button, Icon} from 'amis-ui';
+import {
+  registerEditorPlugin,
+  getSchemaTpl,
+  BasePlugin,
+  tipedLabel,
+  JSONPipeOut,
+  undefinedPipeOut,
+  RAW_TYPE_MAP
+} from 'amis-editor-core';
 
-import {tipedLabel} from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
-import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import {
+  OPTION_EDIT_EVENTS,
+  OPTION_EDIT_EVENTS_OLD,
+  resolveOptionEventDataSchame,
+  resolveOptionType
+} from '../../util';
+
+import type {Schema, SchemaType} from 'amis';
+import type {
+  EditorNodeType,
+  RendererPluginAction,
+  RendererPluginEvent,
+  BaseEventContext,
+  EditorManager
+} from 'amis-editor-core';
+import {inputStateTpl} from '../../renderer/style-control/helper';
 
 export class SelectControlPlugin extends BasePlugin {
+  static id = 'SelectControlPlugin';
+
   static scene = ['layout'];
-  // 关联渲染器名字
+
+  name = '下拉框';
+
+  panelTitle = '下拉框';
+
   rendererName = 'select';
+
+  icon = 'fa fa-th-list';
+
+  panelIcon = 'fa fa-th-list';
+
+  pluginIcon = 'select-plugin';
+
+  isBaseComponent = true;
+
+  panelJustify = true;
+
+  notRenderFormZone = true;
+
   $schema = '/schemas/SelectControlSchema.json';
 
-  order = -480;
-
-  // 组件名称
-  name = '下拉框';
-  isBaseComponent = true;
-  icon = 'fa fa-th-list';
-  pluginIcon = 'select-plugin';
   description = '支持多选，输入提示，可使用 source 获取选项';
+
+  searchKeywords = '选择器';
+
   docLink = '/amis/zh-CN/components/form/select';
+
   tags = ['表单项'];
+
   scaffold = {
     type: 'select',
     label: '选项',
     name: 'select',
     options: [
-      {
-        label: '选项A',
-        value: 'A'
-      },
-
-      {
-        label: '选项B',
-        value: 'B'
-      }
+      {label: '选项A', value: 'A'},
+      {label: '选项B', value: 'B'}
     ]
   };
+
   previewSchema: any = {
     type: 'form',
     className: 'text-left',
@@ -51,137 +86,87 @@ export class SelectControlPlugin extends BasePlugin {
     ]
   };
 
-  notRenderFormZone = true;
-
-  panelTitle = '下拉框';
-
   // 事件定义
-  events: RendererPluginEvent[] = [
-    {
-      eventName: 'change',
-      eventLabel: '值变化',
-      description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.selectedItems': {
-              type: 'object', // 也可能是array
-              title: '选中的项'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
-            }
-          }
-        }
-      ]
-    },
-    {
-      eventName: 'focus',
-      eventLabel: '获取焦点',
-      description: '输入框获取焦点时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
-            }
-          }
-        }
-      ]
-    },
-    {
-      eventName: 'blur',
-      eventLabel: '失去焦点',
-      description: '输入框失去焦点时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
-            }
-          }
-        }
-      ]
-    },
-    {
-      eventName: 'add',
-      eventLabel: '新增选项',
-      description: '新增选项',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
+  events: (schema: any) => RendererPluginEvent[] = (schema: any) => {
+    return [
+      {
+        eventName: 'change',
+        eventLabel: '值变化',
+        description: '选中值变化时触发',
+        dataSchema: (manager: EditorManager) => {
+          const {value, selectedItems, items} =
+            resolveOptionEventDataSchame(manager);
+
+          return [
+            {
               type: 'object',
-              title: '新增的选项'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+              properties: {
+                data: {
+                  type: 'object',
+                  title: '数据',
+                  properties: {
+                    value,
+                    selectedItems,
+                    items
+                  }
+                }
+              }
             }
-          }
+          ];
         }
-      ]
-    },
-    {
-      eventName: 'edit',
-      eventLabel: '编辑选项',
-      description: '编辑选项',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
+      },
+      {
+        eventName: 'focus',
+        eventLabel: '获取焦点',
+        description: '输入框获取焦点时触发',
+        dataSchema: (manager: EditorManager) => {
+          const {value, items} = resolveOptionEventDataSchame(manager);
+
+          return [
+            {
               type: 'object',
-              title: '编辑的选项'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+              properties: {
+                data: {
+                  type: 'object',
+                  title: '数据',
+                  properties: {
+                    value,
+                    items
+                  }
+                }
+              }
             }
-          }
+          ];
         }
-      ]
-    },
-    {
-      eventName: 'delete',
-      eventLabel: '删除选项',
-      description: '删除选项',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
+      },
+      {
+        eventName: 'blur',
+        eventLabel: '失去焦点',
+        description: '输入框失去焦点时触发',
+        dataSchema: (manager: EditorManager) => {
+          const {value, items} = resolveOptionEventDataSchame(manager);
+
+          return [
+            {
               type: 'object',
-              title: '删除的选项'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+              properties: {
+                data: {
+                  type: 'object',
+                  title: '数据',
+                  properties: {
+                    value,
+                    items
+                  }
+                }
+              }
             }
-          }
+          ];
         }
-      ]
-    }
-  ];
+      },
+      ...OPTION_EDIT_EVENTS,
+      ...OPTION_EDIT_EVENTS_OLD(schema)
+    ];
+  };
 
   // 动作定义
   actions: RendererPluginAction[] = [
@@ -193,7 +178,7 @@ export class SelectControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -207,7 +192,6 @@ export class SelectControlPlugin extends BasePlugin {
     }
   ];
 
-  panelJustify = true;
   panelBodyCreator = (context: BaseEventContext) => {
     return getSchemaTpl('tabs', [
       {
@@ -240,9 +224,6 @@ export class SelectControlPlugin extends BasePlugin {
                 ]
               }),
               getSchemaTpl('checkAll'),
-              getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema
-              }),
               getSchemaTpl('labelRemark'),
               getSchemaTpl('remark'),
               getSchemaTpl('placeholder'),
@@ -253,7 +234,29 @@ export class SelectControlPlugin extends BasePlugin {
             title: '选项',
             body: [
               getSchemaTpl('optionControlV2'),
-              getSchemaTpl('selectFirst'),
+              getSchemaTpl('selectFirst', {
+                onChange: (
+                  value: any,
+                  oldValue: any,
+                  model: any,
+                  form: any
+                ) => {
+                  if (value) {
+                    form.deleteValueByName('value');
+                  }
+                }
+              }),
+              getSchemaTpl('valueFormula', {
+                rendererSchema: (schema: Schema) => ({
+                  ...schema,
+                  type: 'input-text'
+                }),
+                pipeOut: undefinedPipeOut,
+                // 默认值组件设计有些问题，自动发起了请求，接口数据作为了默认值选项，接口形式应该是设置静态值或者FX
+                needDeleteProps: ['source'],
+                // 当数据源是自定义静态选项时，不额外配置默认值，在选项上直接勾选即可，放开会有个bug：当去掉勾选时，默认值配置组件不清空，只是schema清空了value
+                visibleOn: 'this.selectFirst !== true && this.source != null'
+              }),
               getSchemaTpl(
                 'loadingConfig',
                 {
@@ -266,51 +269,16 @@ export class SelectControlPlugin extends BasePlugin {
                 manager: this.manager,
                 onChange: (value: any) => {}
               }),
-              getSchemaTpl('creatable', {
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [
-                    getSchemaTpl('createBtnLabel'),
-                    getSchemaTpl('addApi')
-                    // {
-                    //   label: '按钮位置',
-                    //   name: 'valueType',
-                    //   type: 'button-group-select',
-                    //   size: 'sm',
-                    //   tiled: true,
-                    //   value: 'asUpload',
-                    //   mode: 'row',
-                    //   options: [
-                    //     {
-                    //       label: '顶部',
-                    //       value: ''
-                    //     },
-                    //     {
-                    //       label: '底部',
-                    //       value: ''
-                    //     },
-                    //   ],
-                    // },
-                  ]
-                }
+              /** 新增选项 */
+              getSchemaTpl('optionAddControl', {
+                manager: this.manager
               }),
-              getSchemaTpl('editable', {
-                type: 'ae-Switch-More',
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [getSchemaTpl('editApi')]
-                }
+              /** 编辑选项 */
+              getSchemaTpl('optionEditControl', {
+                manager: this.manager
               }),
-              getSchemaTpl('removable', {
-                type: 'ae-Switch-More',
-                formType: 'extend',
-                hiddenOnDefault: true,
-                form: {
-                  body: [getSchemaTpl('deleteApi')]
-                }
-              })
+              /** 删除选项 */
+              getSchemaTpl('optionDeleteControl')
             ]
           },
           {
@@ -335,7 +303,28 @@ export class SelectControlPlugin extends BasePlugin {
         title: '外观',
         body: [
           getSchemaTpl('collapseGroup', [
-            getSchemaTpl('style:formItem', {renderer: context.info.renderer}),
+            getSchemaTpl('theme:formItem'),
+            getSchemaTpl('theme:form-label'),
+            getSchemaTpl('theme:form-description'),
+            {
+              title: '选择框样式',
+              body: [
+                ...inputStateTpl('themeCss.selectControlClassName', '--select')
+              ]
+            },
+            {
+              title: '下拉框样式',
+              body: [
+                ...inputStateTpl(
+                  'themeCss.selectPopoverClassName',
+                  '--select',
+                  {
+                    state: ['default', 'hover', 'focused']
+                  }
+                )
+              ]
+            },
+            getSchemaTpl('theme:cssCode'),
             getSchemaTpl('style:classNames')
           ])
         ]
@@ -352,6 +341,57 @@ export class SelectControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      rawType: RAW_TYPE_MAP[node.schema.type as SchemaType] || 'string',
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.joinValues === false) {
+      dataSchema = {
+        ...dataSchema,
+        type: 'object',
+        title: node.schema?.label || node.schema?.name,
+        properties: {
+          [node.schema?.labelField || 'label']: {
+            type: 'string',
+            title: '文本'
+          },
+          [node.schema?.valueField || 'value']: {
+            type,
+            title: '值'
+          }
+        }
+      };
+    }
+
+    if (node.schema?.multiple) {
+      if (node.schema?.extractValue) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name
+        };
+      } else if (node.schema?.joinValues === false) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name,
+          items: {
+            type: 'object',
+            title: '成员',
+            properties: dataSchema.properties
+          },
+          originalValue: dataSchema.originalValue
+        };
+      }
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(SelectControlPlugin);

@@ -3,10 +3,10 @@
 exports[`Renderer:Nav 1`] = `
 <div>
   <div
-    class="cxd-Nav"
+    class="cxd-Nav w-md"
   >
     <ul
-      class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr w-md cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
+      class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
       data-menu-list="true"
       dir="ltr"
       role="menu"
@@ -40,16 +40,12 @@ exports[`Renderer:Nav 1`] = `
                   class="cxd-Nav-Menu-item-icon"
                 >
                   <img
-                    class=""
+                    class="cxd-Icon mr-2"
                     src="https://suda.cdn.bcebos.com/images%2F2021-01%2Fdiamond.svg"
                   />
                 </i>
                 <span
                   class="cxd-Nav-Menu-item-label"
-                  style="max-width: calc(100% - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      0px
-    ));"
                   title="Nav 1"
                 >
                   Nav 1
@@ -85,10 +81,6 @@ exports[`Renderer:Nav 1`] = `
               >
                 <span
                   class="cxd-Nav-Menu-item-label"
-                  style="max-width: calc(100% - (
-      
-      0px
-    ));"
                   title="Nav 2"
                 >
                   Nav 2
@@ -135,10 +127,6 @@ exports[`Renderer:Nav 1`] = `
               >
                 <span
                   class="cxd-Nav-Menu-item-label"
-                  style="max-width: calc(100% - (
-      
-      0px
-    ));"
                   title="Nav 3"
                 >
                   Nav 3
@@ -185,10 +173,6 @@ exports[`Renderer:Nav 1`] = `
               >
                 <span
                   class="cxd-Nav-Menu-item-label"
-                  style="max-width: calc(100% - (
-      
-      0px
-    ));"
                   title="外部地址"
                 >
                   外部地址
@@ -224,7 +208,37 @@ exports[`Renderer:Nav 1`] = `
 </div>
 `;
 
-exports[`Renderer:Nav with itemActions 1`] = `
+exports[`Renderer:Nav with Dialog 1`] = `
+<div>
+  <div
+    class="cxd-Page"
+  >
+    <div
+      class="cxd-Page-content"
+    >
+      <div
+        class="cxd-Page-main"
+      >
+        <div
+          class="cxd-Page-body"
+          role="page-body"
+        >
+          <button
+            class="cxd-Button cxd-Button--default cxd-Button--size-default"
+            type="button"
+          >
+            <span>
+              点击弹框
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Renderer:Nav with defer 1`] = `
 <div>
   <div
     class="cxd-Page"
@@ -243,7 +257,7 @@ exports[`Renderer:Nav with itemActions 1`] = `
             class="cxd-Nav"
           >
             <ul
-              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr w-md cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
+              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
               data-menu-list="true"
               dir="ltr"
               role="menu"
@@ -270,48 +284,20 @@ exports[`Renderer:Nav with itemActions 1`] = `
                       data-id="1"
                       title="Nav 1"
                     >
-                      <span
-                        class="cxd-Nav-Menu-item-dragBar"
-                        draggable="true"
-                      >
-                        <icon-mock />
-                      </span>
                       <i
                         class="cxd-Nav-Menu-item-icon"
                       >
                         <i
-                          class="fa fa-user"
+                          class="fa fa-user mr-2 fa fa-user"
                         />
                       </i>
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(100% - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      0px
-    ));"
                         title="Nav 1"
                       >
                         Nav 1
                       </span>
                     </a>
-                    <div
-                      class="cxd-Nav-Menu-item-extra"
-                    >
-                      <i
-                        class="fa fa-cloud"
-                      />
-                      <div
-                        class="cxd-DropDown "
-                      >
-                        <button
-                          class="cxd-Button cxd-Button--link cxd-Button--size-default"
-                        >
-                          <i
-                            class="m-r-xs fa fa-ellipsis-h"
-                          />
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </li>
               </ul>
@@ -338,37 +324,12 @@ exports[`Renderer:Nav with itemActions 1`] = `
                       data-id="2"
                     >
                       <span
-                        class="cxd-Nav-Menu-item-dragBar"
-                        draggable="true"
-                      >
-                        <icon-mock />
-                      </span>
-                      <span
                         class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
                         title="Nav 2"
                       >
                         Nav 2
                       </span>
                     </a>
-                    <div
-                      class="cxd-Nav-Menu-item-extra"
-                    >
-                      <div
-                        class="cxd-DropDown "
-                      >
-                        <button
-                          class="cxd-Button cxd-Button--link cxd-Button--size-default"
-                        >
-                          <i
-                            class="m-r-xs fa fa-ellipsis-h"
-                          />
-                        </button>
-                      </div>
-                    </div>
                   </div>
                   <span
                     class="cxd-Nav-Menu-submenu-arrow"
@@ -408,37 +369,12 @@ exports[`Renderer:Nav with itemActions 1`] = `
                           data-id="2.1"
                         >
                           <span
-                            class="cxd-Nav-Menu-item-dragBar"
-                            draggable="true"
-                          >
-                            <icon-mock />
-                          </span>
-                          <span
                             class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                            style="max-width: calc(100% - (
-      
-      var(--Menu-Submenu-title-paddingX)
-    ));"
                             title="Nav 2-1"
                           >
                             Nav 2-1
                           </span>
                         </a>
-                        <div
-                          class="cxd-Nav-Menu-item-extra"
-                        >
-                          <div
-                            class="cxd-DropDown "
-                          >
-                            <button
-                              class="cxd-Button cxd-Button--link cxd-Button--size-default"
-                            >
-                              <i
-                                class="m-r-xs fa fa-ellipsis-h"
-                              />
-                            </button>
-                          </div>
-                        </div>
                       </div>
                       <span
                         class="cxd-Nav-Menu-submenu-arrow"
@@ -472,49 +408,25 @@ exports[`Renderer:Nav with itemActions 1`] = `
                           title="Nav 2-2"
                         >
                           <span
-                            class="cxd-Nav-Menu-item-dragBar"
-                            draggable="true"
-                          >
-                            <icon-mock />
-                          </span>
-                          <span
                             class="cxd-Nav-Menu-item-label"
-                            style="max-width: calc(100% - (
-      
-      16px
-    ));"
                             title="Nav 2-2"
                           >
                             Nav 2-2
                           </span>
                         </a>
-                        <div
-                          class="cxd-Nav-Menu-item-extra"
-                        >
-                          <div
-                            class="cxd-DropDown "
-                          >
-                            <button
-                              class="cxd-Button cxd-Button--link cxd-Button--size-default"
-                            >
-                              <i
-                                class="m-r-xs fa fa-ellipsis-h"
-                              />
-                            </button>
-                          </div>
-                        </div>
                       </div>
                     </li>
                   </ul>
                 </ul>
               </li>
               <li
-                class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu"
+                class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-open"
                 role="none"
               >
                 <div
                   aria-controls="rc-menu-uuid-test-6-popup"
-                  aria-expanded="false"
+                  aria-disabled="false"
+                  aria-expanded="true"
                   aria-haspopup="true"
                   class="cxd-Nav-Menu-submenu-title"
                   data-menu-id="rc-menu-uuid-test-6"
@@ -531,17 +443,584 @@ exports[`Renderer:Nav with itemActions 1`] = `
                       data-id="3"
                     >
                       <span
-                        class="cxd-Nav-Menu-item-dragBar"
-                        draggable="true"
+                        class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
+                        title="Nav 3"
                       >
-                        <icon-mock />
+                        Nav 3
                       </span>
+                    </a>
+                  </div>
+                  <span
+                    class="cxd-Nav-Menu-submenu-arrow"
+                  >
+                    <icon-mock
+                      classname="icon icon-right-arrow-bold"
+                      icon="right-arrow-bold"
+                    />
+                  </span>
+                </div>
+                <ul
+                  class="cxd-Nav-Menu cxd-Nav-Menu-sub cxd-Nav-Menu-inline"
+                  data-menu-list="true"
+                  id="rc-menu-uuid-test-6-popup"
+                  role="menu"
+                >
+                  <ul
+                    class="cxd-Nav-Menu-item-tooltip-wrap"
+                    style="order: 0;"
+                  >
+                    <li
+                      aria-disabled="false"
+                      class="cxd-Nav-Menu-item"
+                      data-menu-id="rc-menu-uuid-test-7"
+                      role="menuitem"
+                      style="padding-left: 32px;"
+                      tabindex="-1"
+                    >
+                      <div
+                        class="cxd-Nav-Menu-item-wrap"
+                      >
+                        <a
+                          class="cxd-Nav-Menu-item-link"
+                          data-depth="2"
+                          data-id="3.1"
+                          title="Nav 3-1"
+                        >
+                          <span
+                            class="cxd-Nav-Menu-item-label"
+                            title="Nav 3-1"
+                          >
+                            Nav 3-1
+                          </span>
+                        </a>
+                      </div>
+                    </li>
+                  </ul>
+                  <ul
+                    class="cxd-Nav-Menu-item-tooltip-wrap"
+                    style="order: 1;"
+                  >
+                    <li
+                      aria-disabled="false"
+                      class="cxd-Nav-Menu-item"
+                      data-menu-id="rc-menu-uuid-test-8"
+                      role="menuitem"
+                      style="padding-left: 32px;"
+                      tabindex="-1"
+                    >
+                      <div
+                        class="cxd-Nav-Menu-item-wrap"
+                      >
+                        <a
+                          class="cxd-Nav-Menu-item-link"
+                          data-depth="2"
+                          data-id="3.2"
+                          title="Nav 3-2"
+                        >
+                          <span
+                            class="cxd-Nav-Menu-item-label"
+                            title="Nav 3-2"
+                          >
+                            Nav 3-2
+                          </span>
+                        </a>
+                      </div>
+                    </li>
+                  </ul>
+                </ul>
+              </li>
+            </ul>
+            <div
+              aria-hidden="true"
+              style="display: none;"
+            >
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              />
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              />
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 1;"
+              />
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              />
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 1;"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Renderer:Nav with icons 1`] = `
+<div>
+  <div
+    class="cxd-Page"
+  >
+    <div
+      class="cxd-Page-content"
+    >
+      <div
+        class="cxd-Page-main"
+      >
+        <div
+          class="cxd-Page-body"
+          role="page-body"
+        >
+          <div
+            class="cxd-Nav"
+          >
+            <ul
+              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
+              data-menu-list="true"
+              dir="ltr"
+              role="menu"
+              tabindex="0"
+            >
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              >
+                <li
+                  aria-disabled="false"
+                  class="cxd-Nav-Menu-item"
+                  data-menu-id="rc-menu-uuid-test-1"
+                  role="menuitem"
+                  style="padding-left: 16px;"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cxd-Nav-Menu-item-wrap"
+                  >
+                    <a
+                      class="cxd-Nav-Menu-item-link"
+                      data-depth="1"
+                      data-id="1"
+                      title="Nav 1"
+                    >
+                      <i
+                        class="cxd-Nav-Menu-item-icon"
+                      >
+                        <i
+                          class="fa fa-user mr-2 fa fa-user"
+                        />
+                      </i>
+                      <span
+                        class="cxd-Nav-Menu-item-label"
+                        title="Nav 1"
+                      >
+                        Nav 1
+                      </span>
+                    </a>
+                  </div>
+                </li>
+              </ul>
+              <li
+                class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-open"
+                role="none"
+              >
+                <div
+                  aria-controls="rc-menu-uuid-test-2-popup"
+                  aria-expanded="true"
+                  aria-haspopup="true"
+                  class="cxd-Nav-Menu-submenu-title"
+                  data-menu-id="rc-menu-uuid-test-2"
+                  role="menuitem"
+                  style="padding-left: 16px;"
+                  tabindex="-1"
+                >
+                  <div
+                    class="cxd-Nav-Menu-item-wrap"
+                  >
+                    <a
+                      class="cxd-Nav-Menu-item-link"
+                      data-depth="1"
+                      data-id="2"
+                    >
                       <span
                         class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
+                        title="Nav 2"
+                      >
+                        Nav 2
+                      </span>
+                    </a>
+                  </div>
+                  <span
+                    class="cxd-Nav-Menu-submenu-arrow"
+                  >
+                    <icon-mock
+                      classname="icon icon-right-arrow-bold"
+                      icon="right-arrow-bold"
+                    />
+                  </span>
+                </div>
+                <ul
+                  class="cxd-Nav-Menu cxd-Nav-Menu-sub cxd-Nav-Menu-inline"
+                  data-menu-list="true"
+                  id="rc-menu-uuid-test-2-popup"
+                  role="menu"
+                >
+                  <li
+                    class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu"
+                    role="none"
+                  >
+                    <div
+                      aria-controls="rc-menu-uuid-test-3-popup"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      class="cxd-Nav-Menu-submenu-title"
+                      data-menu-id="rc-menu-uuid-test-3"
+                      role="menuitem"
+                      style="padding-left: 32px;"
+                      tabindex="-1"
+                    >
+                      <div
+                        class="cxd-Nav-Menu-item-wrap"
+                      >
+                        <a
+                          class="cxd-Nav-Menu-item-link"
+                          data-depth="2"
+                          data-id="2.1"
+                        >
+                          <i
+                            class="cxd-Nav-Menu-item-icon"
+                          >
+                            <icon-mock
+                              classname="mr-2 icon-star"
+                              icon="star"
+                            />
+                            <icon-mock
+                              classname="mr-2 icon-search"
+                              icon="search"
+                            />
+                          </i>
+                          <span
+                            class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
+                            title="Nav 2-1"
+                          >
+                            Nav 2-1
+                          </span>
+                          <i
+                            class="cxd-Nav-Menu-item-icon-after"
+                          >
+                            <img
+                              class="cxd-Icon ml-2"
+                              src="https://suda.cdn.bcebos.com/images%2F2021-01%2Fdiamond.svg"
+                            />
+                          </i>
+                        </a>
+                      </div>
+                      <span
+                        class="cxd-Nav-Menu-submenu-arrow"
+                      >
+                        <icon-mock
+                          classname="icon icon-right-arrow-bold"
+                          icon="right-arrow-bold"
+                        />
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+            <div
+              aria-hidden="true"
+              style="display: none;"
+            >
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              />
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Renderer:Nav with itemActions 1`] = `
+<div>
+  <div
+    class="cxd-Page"
+  >
+    <div
+      class="cxd-Page-content"
+    >
+      <div
+        class="cxd-Page-main"
+      >
+        <div
+          class="cxd-Page-body"
+          role="page-body"
+        >
+          <div
+            class="cxd-Nav w-md"
+          >
+            <ul
+              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-disabled cxd-Nav-Menu-expand-before"
+              data-menu-list="true"
+              dir="ltr"
+              role="menu"
+              tabindex="0"
+            >
+              <ul
+                class="cxd-Nav-Menu-item-tooltip-wrap"
+                style="order: 0;"
+              >
+                <li
+                  aria-disabled="true"
+                  class="cxd-Nav-Menu-item cxd-Nav-Menu-item-disabled"
+                  data-menu-id="rc-menu-uuid-test-1"
+                  role="menuitem"
+                  style="padding-left: 16px;"
+                >
+                  <div
+                    class="cxd-Nav-Menu-item-wrap"
+                  >
+                    <a
+                      class="cxd-Nav-Menu-item-link"
+                      data-depth="1"
+                      data-id="1"
+                      title="Nav 1"
+                    >
+                      <i
+                        class="cxd-Nav-Menu-item-icon"
+                      >
+                        <i
+                          class="fa fa-user mr-2 fa fa-user"
+                        />
+                      </i>
+                      <span
+                        class="cxd-Nav-Menu-item-label"
+                        title="Nav 1"
+                      >
+                        Nav 1
+                      </span>
+                    </a>
+                    <div
+                      class="cxd-Nav-Menu-item-extra"
+                    >
+                      <i
+                        class="cloud fa fa-cloud"
+                      />
+                      <div
+                        class="cxd-DropDown "
+                      >
+                        <button
+                          class="cxd-Button cxd-Button--link cxd-Button--size-default"
+                        >
+                          <i
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <li
+                class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-open cxd-Nav-Menu-submenu-disabled"
+                role="none"
+              >
+                <div
+                  aria-controls="rc-menu-uuid-test-2-popup"
+                  aria-disabled="true"
+                  aria-expanded="true"
+                  aria-haspopup="true"
+                  class="cxd-Nav-Menu-submenu-title"
+                  data-menu-id="rc-menu-uuid-test-2"
+                  role="menuitem"
+                  style="padding-left: 16px;"
+                >
+                  <div
+                    class="cxd-Nav-Menu-item-wrap"
+                  >
+                    <a
+                      class="cxd-Nav-Menu-item-link"
+                      data-depth="1"
+                      data-id="2"
+                    >
+                      <span
+                        class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
+                        title="Nav 2"
+                      >
+                        Nav 2
+                      </span>
+                    </a>
+                    <div
+                      class="cxd-Nav-Menu-item-extra"
+                    >
+                      <div
+                        class="cxd-DropDown "
+                      >
+                        <button
+                          class="cxd-Button cxd-Button--link cxd-Button--size-default"
+                        >
+                          <i
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    class="cxd-Nav-Menu-submenu-arrow"
+                  >
+                    <icon-mock
+                      classname="icon icon-right-arrow-bold"
+                      icon="right-arrow-bold"
+                    />
+                  </span>
+                </div>
+                <ul
+                  class="cxd-Nav-Menu cxd-Nav-Menu-sub cxd-Nav-Menu-inline"
+                  data-menu-list="true"
+                  id="rc-menu-uuid-test-2-popup"
+                  role="menu"
+                >
+                  <li
+                    class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-disabled"
+                    role="none"
+                  >
+                    <div
+                      aria-controls="rc-menu-uuid-test-3-popup"
+                      aria-disabled="true"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      class="cxd-Nav-Menu-submenu-title"
+                      data-menu-id="rc-menu-uuid-test-3"
+                      role="menuitem"
+                      style="padding-left: 32px;"
+                    >
+                      <div
+                        class="cxd-Nav-Menu-item-wrap"
+                      >
+                        <a
+                          class="cxd-Nav-Menu-item-link"
+                          data-depth="2"
+                          data-id="2.1"
+                        >
+                          <span
+                            class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
+                            title="Nav 2-1"
+                          >
+                            Nav 2-1
+                          </span>
+                        </a>
+                        <div
+                          class="cxd-Nav-Menu-item-extra"
+                        >
+                          <div
+                            class="cxd-DropDown "
+                          >
+                            <button
+                              class="cxd-Button cxd-Button--link cxd-Button--size-default"
+                            >
+                              <i
+                                class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        class="cxd-Nav-Menu-submenu-arrow"
+                      >
+                        <icon-mock
+                          classname="icon icon-right-arrow-bold"
+                          icon="right-arrow-bold"
+                        />
+                      </span>
+                    </div>
+                  </li>
+                  <ul
+                    class="cxd-Nav-Menu-item-tooltip-wrap"
+                    style="order: 1;"
+                  >
+                    <li
+                      aria-disabled="true"
+                      class="cxd-Nav-Menu-item cxd-Nav-Menu-item-disabled"
+                      data-menu-id="rc-menu-uuid-test-5"
+                      role="menuitem"
+                      style="padding-left: 32px;"
+                    >
+                      <div
+                        class="cxd-Nav-Menu-item-wrap"
+                      >
+                        <a
+                          class="cxd-Nav-Menu-item-link"
+                          data-depth="2"
+                          data-id="2.2"
+                          title="Nav 2-2"
+                        >
+                          <span
+                            class="cxd-Nav-Menu-item-label"
+                            title="Nav 2-2"
+                          >
+                            Nav 2-2
+                          </span>
+                        </a>
+                        <div
+                          class="cxd-Nav-Menu-item-extra"
+                        >
+                          <div
+                            class="cxd-DropDown "
+                          >
+                            <button
+                              class="cxd-Button cxd-Button--link cxd-Button--size-default"
+                            >
+                              <i
+                                class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </ul>
+              </li>
+              <li
+                class="cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-inline cxd-Nav-Menu-submenu cxd-Nav-Menu-submenu-disabled"
+                role="none"
+              >
+                <div
+                  aria-controls="rc-menu-uuid-test-6-popup"
+                  aria-disabled="true"
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  class="cxd-Nav-Menu-submenu-title"
+                  data-menu-id="rc-menu-uuid-test-6"
+                  role="menuitem"
+                  style="padding-left: 16px;"
+                >
+                  <div
+                    class="cxd-Nav-Menu-item-wrap"
+                  >
+                    <a
+                      class="cxd-Nav-Menu-item-link"
+                      data-depth="1"
+                      data-id="3"
+                    >
+                      <span
+                        class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
                         title="Nav 3"
                       >
                         Nav 3
@@ -557,7 +1036,7 @@ exports[`Renderer:Nav with itemActions 1`] = `
                           class="cxd-Button cxd-Button--link cxd-Button--size-default"
                         >
                           <i
-                            class="m-r-xs fa fa-ellipsis-h"
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                           />
                         </button>
                       </div>
@@ -626,10 +1105,10 @@ exports[`Renderer:Nav with itemActions 2`] = `
           role="page-body"
         >
           <div
-            class="cxd-Nav"
+            class="cxd-Nav w-md"
           >
             <ul
-              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr w-md cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
+              class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
               data-menu-list="true"
               dir="ltr"
               role="menu"
@@ -666,15 +1145,11 @@ exports[`Renderer:Nav with itemActions 2`] = `
                         class="cxd-Nav-Menu-item-icon"
                       >
                         <i
-                          class="fa fa-user"
+                          class="fa fa-user mr-2 fa fa-user"
                         />
                       </i>
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(100% - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      0px
-    ));"
                         title="Nav 1"
                       >
                         Nav 1
@@ -684,58 +1159,18 @@ exports[`Renderer:Nav with itemActions 2`] = `
                       class="cxd-Nav-Menu-item-extra"
                     >
                       <i
-                        class="fa fa-cloud"
+                        class="cloud fa fa-cloud"
                       />
                       <div
                         class="cxd-DropDown  is-opened"
-                        style="position: relative;"
                       >
                         <button
                           class="cxd-Button cxd-Button--link cxd-Button--size-default"
                         >
                           <i
-                            class="m-r-xs fa fa-ellipsis-h"
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                           />
                         </button>
-                        <div
-                          class="resize-sensor"
-                          style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-  
-                          <div
-                            class="resize-sensor-expand"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-shrink"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-appear"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -771,10 +1206,6 @@ exports[`Renderer:Nav with itemActions 2`] = `
                       </span>
                       <span
                         class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
                         title="Nav 2"
                       >
                         Nav 2
@@ -790,7 +1221,7 @@ exports[`Renderer:Nav with itemActions 2`] = `
                           class="cxd-Button cxd-Button--link cxd-Button--size-default"
                         >
                           <i
-                            class="m-r-xs fa fa-ellipsis-h"
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                           />
                         </button>
                       </div>
@@ -841,10 +1272,6 @@ exports[`Renderer:Nav with itemActions 2`] = `
                           </span>
                           <span
                             class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                            style="max-width: calc(100% - (
-      
-      var(--Menu-Submenu-title-paddingX)
-    ));"
                             title="Nav 2-1"
                           >
                             Nav 2-1
@@ -860,7 +1287,7 @@ exports[`Renderer:Nav with itemActions 2`] = `
                               class="cxd-Button cxd-Button--link cxd-Button--size-default"
                             >
                               <i
-                                class="m-r-xs fa fa-ellipsis-h"
+                                class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                               />
                             </button>
                           </div>
@@ -905,10 +1332,6 @@ exports[`Renderer:Nav with itemActions 2`] = `
                           </span>
                           <span
                             class="cxd-Nav-Menu-item-label"
-                            style="max-width: calc(100% - (
-      
-      16px
-    ));"
                             title="Nav 2-2"
                           >
                             Nav 2-2
@@ -924,7 +1347,7 @@ exports[`Renderer:Nav with itemActions 2`] = `
                               class="cxd-Button cxd-Button--link cxd-Button--size-default"
                             >
                               <i
-                                class="m-r-xs fa fa-ellipsis-h"
+                                class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                               />
                             </button>
                           </div>
@@ -964,10 +1387,6 @@ exports[`Renderer:Nav with itemActions 2`] = `
                       </span>
                       <span
                         class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
                         title="Nav 3"
                       >
                         Nav 3
@@ -983,7 +1402,7 @@ exports[`Renderer:Nav with itemActions 2`] = `
                           class="cxd-Button cxd-Button--link cxd-Button--size-default"
                         >
                           <i
-                            class="m-r-xs fa fa-ellipsis-h"
+                            class="fa fa-ellipsis-h icon m-r-xs fa fa-ellipsis-h"
                           />
                         </button>
                       </div>
@@ -1028,10 +1447,10 @@ exports[`Renderer:Nav with itemActions 2`] = `
 exports[`Renderer:Nav with multi-level 1`] = `
 <div>
   <div
-    class="cxd-Nav"
+    class="cxd-Nav w-md"
   >
     <ul
-      class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr w-md cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
+      class="cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-inline cxd-Nav-Menu-ltr cxd-Nav-Menu-light cxd-Nav-Menu-expand-before"
       data-menu-list="true"
       dir="ltr"
       role="menu"
@@ -1062,15 +1481,11 @@ exports[`Renderer:Nav with multi-level 1`] = `
                 class="cxd-Nav-Menu-item-icon"
               >
                 <i
-                  class="fa fa-user"
+                  class="fa fa-user mr-2 fa fa-user"
                 />
               </i>
               <span
                 class="cxd-Nav-Menu-item-label"
-                style="max-width: calc(100% - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      0px
-    ));"
                 title="Nav 1"
               >
                 Nav 1
@@ -1103,10 +1518,6 @@ exports[`Renderer:Nav with multi-level 1`] = `
             >
               <span
                 class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                style="max-width: calc(100% - (
-      
-      0px
-    ));"
                 title="Nav 2"
               >
                 Nav 2
@@ -1152,10 +1563,6 @@ exports[`Renderer:Nav with multi-level 1`] = `
                 >
                   <span
                     class="cxd-Nav-Menu-item-label cxd-Nav-Menu-item-label-subTitle"
-                    style="max-width: calc(100% - (
-      
-      var(--Menu-Submenu-title-paddingX)
-    ));"
                     title="Nav 2-1"
                   >
                     Nav 2-1
@@ -1195,10 +1602,6 @@ exports[`Renderer:Nav with multi-level 1`] = `
                 >
                   <span
                     class="cxd-Nav-Menu-item-label"
-                    style="max-width: calc(100% - (
-      
-      16px
-    ));"
                     title="Nav 2-2"
                   >
                     Nav 2-2
@@ -1232,10 +1635,6 @@ exports[`Renderer:Nav with multi-level 1`] = `
             >
               <span
                 class="cxd-Nav-Menu-item-label"
-                style="max-width: calc(100% - (
-      
-      0px
-    ));"
                 title="Nav 3"
               >
                 Nav 3
@@ -1286,7 +1685,7 @@ exports[`Renderer:Nav with overflow 1`] = `
           role="page-body"
         >
           <div
-            class="cxd-Nav"
+            class="cxd-Nav cxd-Nav-horizontal"
           >
             <section
               class="cxd-Nav-Menu-overflow cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-horizontal cxd-Nav-Menu-ltr cxd-Nav-Menu-light"
@@ -1318,10 +1717,6 @@ exports[`Renderer:Nav with overflow 1`] = `
                     >
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(var(--Menu-width) - (
-      
-      var(--Menu-Submenu-title-paddingX) * 2
-    ));"
                         title="Nav 1"
                       >
                         Nav 1
@@ -1351,10 +1746,6 @@ exports[`Renderer:Nav with overflow 1`] = `
                     >
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(var(--Menu-width) - (
-      
-      var(--Menu-Submenu-title-paddingX) * 2
-    ));"
                         title="Nav 2"
                       >
                         Nav 2
@@ -1381,7 +1772,7 @@ exports[`Renderer:Nav with overflow 1`] = `
                     class="cxd-Nav-Menu-item-icon cxd-Nav-Menu-overflowedIcon thisisoverflowClassName"
                   >
                     <i
-                      class="cxd-Nav-itemIcon fas fa-angle-double-down"
+                      class="fas fa-angle-double-down icon Nav-item-icon fas fa-angle-double-down"
                     />
                     点击展开
                   </span>
@@ -1478,15 +1869,11 @@ exports[`Renderer:Nav with source 1`] = `
                         class="cxd-Nav-Menu-item-icon"
                       >
                         <i
-                          class="fa fa-user"
+                          class="fa fa-user mr-2 fa fa-user"
                         />
                       </i>
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(100% - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      0px
-    ));"
                         title="Nav 1"
                       >
                         Nav 1
@@ -1518,10 +1905,6 @@ exports[`Renderer:Nav with source 1`] = `
                     >
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
                         title="Nav 2"
                       >
                         Nav 2
@@ -1553,10 +1936,6 @@ exports[`Renderer:Nav with source 1`] = `
                     >
                       <span
                         class="cxd-Nav-Menu-item-label"
-                        style="max-width: calc(100% - (
-      
-      0px
-    ));"
                         title="Nav 3"
                       >
                         Nav 3
@@ -1594,7 +1973,7 @@ exports[`Renderer:Nav with source 1`] = `
 exports[`Renderer:Nav with stacked 1`] = `
 <div>
   <div
-    class="cxd-Nav"
+    class="cxd-Nav cxd-Nav-horizontal"
   >
     <ul
       class="cxd-Nav-Menu-overflow cxd-Nav-Menu cxd-Nav-Menu-root cxd-Nav-Menu-horizontal cxd-Nav-Menu-ltr cxd-Nav-Menu-light"
@@ -1628,15 +2007,11 @@ exports[`Renderer:Nav with stacked 1`] = `
                 class="cxd-Nav-Menu-item-icon"
               >
                 <i
-                  class="fa fa-user"
+                  class="fa fa-user mr-2 fa fa-user"
                 />
               </i>
               <span
                 class="cxd-Nav-Menu-item-label"
-                style="max-width: calc(var(--Menu-width) - (
-      var(--Menu-icon-size) + var(--gap-sm) +
-      var(--Menu-Submenu-title-paddingX) * 2
-    ));"
                 title="Nav 1"
               >
                 Nav 1
@@ -1667,10 +2042,6 @@ exports[`Renderer:Nav with stacked 1`] = `
             >
               <span
                 class="cxd-Nav-Menu-item-label"
-                style="max-width: calc(var(--Menu-width) - (
-      
-      var(--Menu-Submenu-title-paddingX) * 2
-    ));"
                 title="Nav 2"
               >
                 Nav 2
@@ -1701,10 +2072,6 @@ exports[`Renderer:Nav with stacked 1`] = `
             >
               <span
                 class="cxd-Nav-Menu-item-label"
-                style="max-width: calc(var(--Menu-width) - (
-      
-      var(--Menu-Submenu-title-paddingX) * 2
-    ));"
                 title="Nav 3"
               >
                 Nav 3

@@ -17,15 +17,12 @@ export function mockValue(schema: any) {
     schema.type === 'input-month'
   ) {
     return moment().format('X');
-  } else if (schema.type === 'number' || schema.type === 'input-number') {
-    const precision = schema.precision || 0;
-    return precision
-      ? (Math.random() * 10000).toFixed(precision)
-      : Math.random() * 10000;
   } else if (schema.type === 'image' || schema.type === 'static-image') {
     return placeholderImage;
   } else if (schema.type === 'images' || schema.type === 'static-images') {
     return [placeholderImage];
+  } else if (schema.type === 'number' || schema.type === 'input-number') {
+    return (Math.random() * 1000).toFixed(schema.precision ?? 0);
   }
 
   return '假数据';

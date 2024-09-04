@@ -12,6 +12,7 @@ import {
 } from 'amis-editor-core';
 import {getEventControlConfig} from '../renderer/event-control/helper';
 export class NavPlugin extends BasePlugin {
+  static id = 'NavPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'nav';
@@ -28,15 +29,18 @@ export class NavPlugin extends BasePlugin {
   scaffold = {
     type: 'nav',
     stacked: true,
+    popupClassName: 'app-popover :AMISCSSWrapper',
     links: [
       {
         label: '页面1',
         to: '?id=1',
+        target: '_self',
         id: '0'
       },
       {
         label: '页面2',
         to: '?id=2',
+        target: '_self',
         id: '1'
       }
     ]
@@ -165,9 +169,10 @@ export class NavPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前表单数据'
+              title: '数据',
+              description: '当前数据域，可以通过.字段名读取对应的值'
             }
           }
         }
@@ -181,9 +186,9 @@ export class NavPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前表单数据'
+              title: '数据'
             }
           }
         }
@@ -197,9 +202,9 @@ export class NavPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前表单数据'
+              title: '数据'
             }
           }
         }
@@ -213,9 +218,9 @@ export class NavPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前表单数据'
+              title: '数据'
             }
           }
         }
@@ -229,9 +234,9 @@ export class NavPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '当前表单数据'
+              title: '数据'
             }
           }
         }
@@ -374,7 +379,7 @@ export class NavPlugin extends BasePlugin {
           // },
           {
             title: '状态',
-            body: [getSchemaTpl('hidden')]
+            body: [getSchemaTpl('visible'), getSchemaTpl('hidden')]
           }
         ])
       },

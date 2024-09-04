@@ -1,4 +1,9 @@
-import {getI18nEnabled, registerEditorPlugin} from 'amis-editor-core';
+import {
+  RendererPluginAction,
+  RendererPluginEvent,
+  getI18nEnabled,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {
   ActiveEventContext,
   BaseEventContext,
@@ -8,8 +13,13 @@ import {
 } from 'amis-editor-core';
 import {defaultValue, getSchemaTpl, tipedLabel} from 'amis-editor-core';
 import {mockValue} from 'amis-editor-core';
+import {
+  getArgsWrapper,
+  getEventControlConfig
+} from '../renderer/event-control/helper';
 
 export class ImagePlugin extends BasePlugin {
+  static id = 'ImagePlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'image';
@@ -20,6 +30,7 @@ export class ImagePlugin extends BasePlugin {
   isBaseComponent = true;
   description =
     '可以用来展示一张图片，支持静态设置图片地址，也可以配置 <code>name</code> 与变量关联。';
+  docLink = '/amis/zh-CN/components/image';
   tags = ['展示'];
   icon = 'fa fa-photo';
   pluginIcon = 'image-plugin';
@@ -31,6 +42,112 @@ export class ImagePlugin extends BasePlugin {
     thumbMode: 'cover',
     value: mockValue({type: 'image'})
   };
+
+  // 事件定义
+  events: RendererPluginEvent[] = [
+    {
+      eventName: 'click',
+      eventLabel: '点击',
+      description: '点击时触发',
+      defaultShow: true,
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'mouseenter',
+      eventLabel: '鼠标移入',
+      description: '鼠标移入时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      eventName: 'mouseleave',
+      eventLabel: '鼠标移出',
+      description: '鼠标移出时触发',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            context: {
+              type: 'object',
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ];
+
+  // 动作定义
+  actions: RendererPluginAction[] = [
+    {
+      actionType: 'preview',
+      actionLabel: '预览',
+      description: '预览图片'
+    },
+    {
+      actionType: 'zoom',
+      actionLabel: '调整图片比例',
+      description: '将图片等比例放大或缩小',
+      schema: {
+        type: 'container',
+        body: [
+          getArgsWrapper([
+            getSchemaTpl('formulaControl', {
+              name: 'scale',
+              mode: 'horizontal',
+              variables: '${variables}',
+              horizontal: {
+                leftFixed: 4 // 需要设置下leftFixed，否则这个字段的控件没有与其他字段的控件左对齐
+              },
+              label: tipedLabel(
+                '调整比例',
+                '定义每次放大或缩小图片的百分比大小，正值为放大，负值为缩小，默认50'
+              ),
+              value: 50,
+              size: 'lg'
+            })
+          ])
+        ]
+      }
+    }
+  ];
 
   panelTitle = '图片';
   panelJustify = true;
@@ -61,7 +178,7 @@ export class ImagePlugin extends BasePlugin {
                 pipeIn: defaultValue('thumb'),
                 options: [
                   {
-                    label: '缩率图',
+                    label: '缩略图',
                     value: 'thumb'
                   },
                   {
@@ -73,22 +190,47 @@ export class ImagePlugin extends BasePlugin {
               {
                 name: 'width',
                 label: '宽度',
-                type: 'input-number'
+                type: 'input-number',
+                onChange: (value: any) => {
+                  const node = context.node;
+                  node.updateState({
+                    width: value
+                  });
+                  requestAnimationFrame(() => {
+                    node.calculateHighlightBox();
+                  });
+                }
               },
               {
                 name: 'height',
                 label: '高度',
-                type: 'input-number'
+                type: 'input-number',
+                onChange: (value: any) => {
+                  const node = context.node;
+                  node.updateState({
+                    height: value
+                  });
+                  requestAnimationFrame(() => {
+                    node.calculateHighlightBox();
+                  });
+                }
               },
 
               isUnderField
                 ? null
                 : getSchemaTpl('imageUrl', {
                     name: 'src',
-                    type: 'input-text',
                     label: '缩略图地址',
                     description: '如果已绑定字段名，可以不用设置，支持用变量。'
                   }),
+
+              getSchemaTpl('backgroundImageUrl', {
+                name: 'editorSetting.mock.src',
+                label: tipedLabel(
+                  '假数据图片',
+                  '只在编辑区显示的模拟图片，运行时将显示图片实际内容'
+                )
+              }),
               {
                 type: 'ae-switch-more',
                 mode: 'normal',
@@ -121,6 +263,24 @@ export class ImagePlugin extends BasePlugin {
               getSchemaTpl('imageUrl', {
                 name: 'defaultImage',
                 label: tipedLabel('占位图', '无数据时显示的图片')
+              }),
+              getSchemaTpl('formulaControl', {
+                name: 'maxScale',
+                mode: 'horizontal',
+                label: tipedLabel(
+                  '放大极限',
+                  '定义动作调整图片大小的最大百分比，默认200'
+                ),
+                value: 200
+              }),
+              getSchemaTpl('formulaControl', {
+                name: 'minScale',
+                mode: 'horizontal',
+                label: tipedLabel(
+                  '缩小极限',
+                  '定义动作调整图片大小的最小百分比，默认50'
+                ),
+                value: 50
               })
             ]
           },
@@ -138,11 +298,17 @@ export class ImagePlugin extends BasePlugin {
               //   name: 'showDimensions',
               //   label: '显示图片尺寸'
               // }),
+              getSchemaTpl('layout:display', {
+                flexHide: true,
+                value: 'inline-block',
+                label: '显示类型'
+              }),
 
               {
                 name: 'thumbMode',
+                visibleOn: '${!imageMode || imageMode ===  "thumb"}',
                 type: 'select',
-                label: '缩略图展示模式',
+                label: '展示模式',
                 mode: 'horizontal',
                 labelAlign: 'left',
                 horizontal: {
@@ -172,50 +338,76 @@ export class ImagePlugin extends BasePlugin {
                   }
                 ]
               },
-              {
-                name: 'thumbRatio',
-                type: 'button-group-select',
-                label: '缩略图比率',
-                size: 'sm',
-                pipeIn: defaultValue('1:1'),
-                options: [
-                  {
-                    label: '1:1',
-                    value: '1:1'
-                  },
 
-                  {
-                    label: '4:3',
-                    value: '4:3'
-                  },
-
-                  {
-                    label: '16:9',
-                    value: '16:9'
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            title: 'CSS类名',
-            body: [
-              getSchemaTpl('className', {
-                label: '外层'
-              }),
-
-              getSchemaTpl('className', {
-                name: 'imageClassName',
-                label: '图片'
-              }),
-
-              getSchemaTpl('className', {
-                name: 'thumbClassName',
-                label: '缩略图'
+              getSchemaTpl('theme:size', {
+                label: '尺寸',
+                name: 'themeCss.imageControlClassName.size:default'
               })
             ]
-          }
+          },
+          getSchemaTpl('theme:base', {
+            classname: 'imageControlClassName',
+            title: '图片'
+          }),
+          {
+            title: '其他',
+            body: [
+              getSchemaTpl('theme:font', {
+                label: '标题文字',
+                name: 'themeCss.titleControlClassName.font',
+                editorValueToken: '--image-image-normal'
+              }),
+              getSchemaTpl('theme:paddingAndMargin', {
+                label: '标题边距',
+                name: 'themeCss.titleControlClassName.padding-and-margin',
+                editorValueToken: '--image-image-normal-title'
+              }),
+              getSchemaTpl('theme:font', {
+                label: '描述文字',
+                name: 'themeCss.desControlClassName.font',
+                editorValueToken: '--image-image-description'
+              }),
+              getSchemaTpl('theme:paddingAndMargin', {
+                label: '描述边距',
+                name: 'themeCss.desControlClassName.padding-and-margin',
+                editorValueToken: '--image-image-description'
+              }),
+              {
+                name: 'themeCss.iconControlClassName.--image-image-normal-icon',
+                label: '放大图标',
+                type: 'icon-select',
+                returnSvg: true
+              },
+              {
+                name: 'themeCss.galleryControlClassName.--image-images-prev-icon',
+                label: '左切换图标',
+                type: 'icon-select',
+                returnSvg: true
+              },
+              {
+                name: 'themeCss.galleryControlClassName.--image-images-next-icon',
+                label: '右切换图标',
+                type: 'icon-select',
+                returnSvg: true
+              },
+              getSchemaTpl('theme:select', {
+                label: '切换图标大小',
+                name: 'themeCss.galleryControlClassName.--image-images-item-size'
+              })
+            ]
+          },
+          getSchemaTpl('theme:cssCode')
         ])
+      },
+      {
+        title: '事件',
+        className: 'p-none',
+        body: [
+          getSchemaTpl('eventControl', {
+            name: 'onEvent',
+            ...getEventControlConfig(this.manager, context)
+          })
+        ]
       }
     ]);
   };
@@ -324,6 +516,7 @@ export class ImagePlugin extends BasePlugin {
 
         resizer.removeAttribute('data-value');
         node.updateSchema(state);
+        node.updateState({}, true);
         requestAnimationFrame(() => {
           node.calculateHighlightBox();
         });

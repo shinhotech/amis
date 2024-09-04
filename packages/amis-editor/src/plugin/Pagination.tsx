@@ -1,17 +1,18 @@
-import {registerEditorPlugin} from 'amis-editor-core';
 import {
   BasePlugin,
   RegionConfig,
   BaseEventContext,
-  tipedLabel
+  tipedLabel,
+  defaultValue,
+  getSchemaTpl,
+  RendererPluginEvent,
+  registerEditorPlugin
 } from 'amis-editor-core';
-import {ValidatorTag} from '../validator';
+import sortBy from 'lodash/sortBy';
 import {getEventControlConfig} from '../renderer/event-control/helper';
-import {RendererPluginEvent} from 'amis-editor-core';
-
-import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 
 export class PaginationPlugin extends BasePlugin {
+  static id = 'PaginationPlugin';
   // 关联渲染器名字
   rendererName = 'pagination';
   $schema = '/schemas/PaginationSchema.json';
@@ -19,9 +20,9 @@ export class PaginationPlugin extends BasePlugin {
   // 组件名称
   name = '分页组件';
   isBaseComponent = true;
-  disabledRendererPlugin = true;
   description = '分页组件，可以对列表进行分页展示，提高页面性能';
-  tags = ['容器'];
+  docLink = '/amis/zh-CN/components/pagination';
+  tags = ['展示'];
   icon = 'fa fa-window-minimize';
   lastLayoutSetting = ['pager'];
   layoutOptions = [
@@ -41,21 +42,44 @@ export class PaginationPlugin extends BasePlugin {
     disabled: false,
     perPageAvailable: [10, 20, 50, 100],
     perPage: 10,
-    maxButtons: 7
+    maxButtons: 7,
+    ellipsisPageGap: 5
   };
   previewSchema = {
     ...this.scaffold
   };
   panelTitle = '分页器';
 
-  // 事件定义
   events: RendererPluginEvent[] = [
     {
-      eventName: 'pageChange',
-      eventLabel: '分页改变',
-      description: '分页改变'
+      eventName: 'change',
+      eventLabel: '值变化',
+      description: '输入内容变化',
+      dataSchema: [
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                page: {
+                  type: 'number',
+                  title: '当前页码值'
+                },
+                perPage: {
+                  type: 'number',
+                  title: '每页显示的记录数'
+                }
+              },
+              description: '当前数据域，可以通过.字段名读取对应的值'
+            }
+          }
+        }
+      ]
     }
   ];
+
   panelJustify = true;
 
   panelBodyCreator = (context: BaseEventContext) => {
@@ -90,7 +114,7 @@ export class PaginationPlugin extends BasePlugin {
               //   mode: 'row',
               //   inputClassName: 'inline-flex justify-between flex-row-reverse',
               //   type: 'switch',
-              //   visibleOn: 'data.mode === "simple"'
+              //   visibleOn: 'this.mode === "simple"'
               // },
               // {
               //   name: 'activePage',
@@ -101,13 +125,13 @@ export class PaginationPlugin extends BasePlugin {
               //   name: 'lastPage',
               //   label: tipedLabel('最后页码', '支持使用 \\${xxx} 来获取变量'),
               //   type: 'input-text',
-              //   visibleOn: 'data.mode === "normal"'
+              //   visibleOn: 'this.mode === "normal"'
               // },
               // {
               //   name: 'total',
               //   label: tipedLabel('总条数', '支持使用 \\${xxx} 来获取变量'),
               //   type: 'input-text',
-              //   visibleOn: 'data.mode === "normal"'
+              //   visibleOn: 'this.mode === "normal"'
               // },
               getSchemaTpl('combo-container', {
                 name: 'layout',
@@ -116,7 +140,7 @@ export class PaginationPlugin extends BasePlugin {
                   '启用功能',
                   '选中表示启用该项，可以拖拽排序调整功能的顺序'
                 ),
-                visibleOn: 'data.mode === "normal"',
+                visibleOn: '!this.mode || this.mode === "normal"',
                 mode: 'normal',
                 multiple: true,
                 multiLine: false,
@@ -131,24 +155,40 @@ export class PaginationPlugin extends BasePlugin {
                   {
                     type: 'checkbox',
                     name: 'checked',
-                    className: 'm-t-n-xxs'
+                    inputClassName: 'p-t-none mt-1.5'
                   },
                   {
                     type: 'tpl',
                     name: 'text',
-                    className: 'p-t-xs'
+                    className: 'inline-block pt-1.5'
                   }
                 ],
                 pipeIn: (value: any) => {
-                  if (!value) {
-                    value = this.lastLayoutSetting;
-                  } else if (typeof value === 'string') {
+                  if (typeof value === 'string') {
                     value = (value as string).split(',');
+                  } else if (!value || !Array.isArray(value)) {
+                    value = this.lastLayoutSetting;
                   }
-                  return this.layoutOptions.map(v => ({
-                    ...v,
-                    checked: value.includes(v.value)
-                  }));
+
+                  return sortBy(
+                    this.layoutOptions.map(op => ({
+                      ...op,
+                      checked: value.includes(op.value)
+                    })),
+                    [
+                      item => {
+                        const idx = value.findIndex(
+                          (v: string) => v === item.value
+                        );
+                        return ~idx ? idx : Infinity;
+                      }
+                    ]
+                  );
+
+                  // return this.layoutOptions.map(v => ({
+                  //   ...v,
+                  //   checked: value.includes(v.value)
+                  // }));
                 },
                 pipeOut: (value: any[]) => {
                   this.lastLayoutSetting = value
@@ -163,14 +203,14 @@ export class PaginationPlugin extends BasePlugin {
               //   mode: 'row',
               //   inputClassName: 'inline-flex justify-between flex-row-reverse',
               //   type: 'switch',
-              //   visibleOn: 'data.mode === "normal"'
+              //   visibleOn: 'this.mode === "normal"'
               // },
               getSchemaTpl('combo-container', {
                 name: 'perPageAvailable',
                 type: 'combo',
                 label: '每页条数选项',
                 visibleOn:
-                  'data.mode === "normal" && data.layout && data.layout.includes("perPage")',
+                  '(!this.mode || this.mode === "normal") && this.layout && this.layout.includes("perPage")',
                 mode: 'normal',
                 multiple: true,
                 multiLine: false,
@@ -192,15 +232,18 @@ export class PaginationPlugin extends BasePlugin {
                   return value?.map(v => ({value: v})) || [10];
                 },
                 pipeOut: (value: any[]) => {
-                  return value.map(v => v.value);
+                  const pages = value.map(v => v.value);
+                  return pages.map(
+                    page => page || Math.max(...pages.filter(Boolean)) + 5
+                  );
                 }
               }),
               {
                 name: 'perPage',
-                type: 'input-text',
+                type: 'input-number',
                 label: '默认每页条数',
                 visibleOn:
-                  'data.mode === "normal" && data.layout?.includes("perPage")'
+                  '(!this.mode || this.mode === "normal") && this.layout?.includes("perPage")'
               },
               {
                 name: 'maxButtons',
@@ -212,19 +255,55 @@ export class PaginationPlugin extends BasePlugin {
                 min: 5,
                 max: 20,
                 pipeOut: (value: any) => value || 5,
-                visibleOn: 'data.mode === "normal"'
+                visibleOn: '!this.mode || this.mode === "normal"'
+              },
+              {
+                name: 'ellipsisPageGap',
+                label: '多页跳转页数',
+                type: 'input-number',
+                min: 1,
+                pipeIn: (value: any) => value || 5,
+                pipeOut: (value: any) => value || 5,
+                visibleOn: 'this.mode && this.mode === "normal"'
               }
             ]
           },
           {
             title: '状态',
-            body: [getSchemaTpl('disabled')]
+            body: [
+              getSchemaTpl('disabled'),
+              getSchemaTpl('hidden'),
+              getSchemaTpl('visible')
+            ]
           }
         ])
       },
       {
         title: '外观',
         body: getSchemaTpl('collapseGroup', [
+          {
+            title: '基本',
+            body: [
+              {
+                type: 'select',
+                name: 'size',
+                label: '尺寸',
+                value: '',
+                pipeIn: defaultValue('md'),
+                options: [
+                  {
+                    label: '正常',
+                    value: 'md'
+                  },
+
+                  {
+                    label: '微型',
+                    value: 'sm'
+                  }
+                ]
+              }
+            ]
+          },
           getSchemaTpl('style:classNames', {isFormItem: false})
         ])
       },

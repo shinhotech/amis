@@ -21,7 +21,7 @@ import {
 } from 'amis-core';
 /**
  * Mapping 映射展示控件。
- * 文档：https://baidu.gitee.io/amis/docs/components/mapping
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/mapping
  */
 export interface MappingSchema extends BaseSchema {
   /**
@@ -87,7 +87,11 @@ export const Store = StoreNode.named('MappingStore')
             const data = normalizeApiResponseData(ret.data);
 
             (self as any).setMap(
-              Array.isArray(data.options) ? data.options : data
+              Array.isArray(data.options)
+                ? data.options
+                : Array.isArray(data.items)
+                ? data.items
+                : data
             );
           } else {
             throw new Error(ret.msg || 'fetch error');
@@ -171,7 +175,11 @@ export const MappingField = withStore(props =>
     componentDidUpdate(prevProps: MappingProps) {
       const props = this.props;
       const {store, source, data} = this.props;
-      store.syncProps(props, prevProps, ['valueField', 'map']);
+      store.syncProps(
+        props,
+        prevProps,
+        source ? ['valueField'] : ['valueField', 'map']
+      );
 
       if (isPureVariable(source)) {
         const prev = resolveVariableAndFilter(
@@ -245,7 +253,7 @@ export const MappingField = withStore(props =>
     }
 
     renderViewValue(value: any) {
-      const {render, itemSchema, data, labelField} = this.props;
+      const {render, itemSchema, data, labelField, name} = this.props;
 
       if (!itemSchema) {
         let label = value;
@@ -257,32 +265,34 @@ export const MappingField = withStore(props =>
               // object 也没有 type，不能作为schema渲染
               // 默认取 label 字段
               label = value['label'];
+            } else {
+              // 不会下发 value 了，所以要把 name 下发一下
+              label = {
+                name,
+                ...label
+              };
             }
           } else {
             label = value[labelField || 'label'];
           }
         }
-        let realValue = value;
+        // 处理 table column 渲染 mapping 的值是 tagSchema 不正常渲染的情况
         if (
-          isObject(label)
-          && label.type === 'tag'
-          && !isObject(label.label)
-          && label.label != null
+          isObject(label) &&
+          label.type === 'tag' &&
+          !isObject(label.label) &&
+          label.label != null
         ) {
-          realValue = label.label;
+          return render('mapping-tag', label, {
+            // 避免渲染tag时从 props.value 取值而无法渲染 label
+            value: null
+          });
         }
-        return render('tpl', label, {
-          data: createObject(data, {
-            value: realValue,
-            label: realValue
-          }),
-          value: null
-        });
+        return render('tpl', label);
       }
       return render('mappingItemSchema', itemSchema, {
         data: createObject(data, isObject(value) ? value : {item: value}),
-        // 阻止 itemSchema 从props.value 取值，否则渲染不正确
-        value: null
+        ...((itemSchema as any)?.type === 'tag' ? {value: null} : {})
       });
     }
 

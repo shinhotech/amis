@@ -1,5 +1,12 @@
 import React from 'react';
-import {FormHorizontal, Renderer, RendererProps, buildStyle} from 'amis-core';
+import {
+  FormHorizontal,
+  Renderer,
+  RendererProps,
+  buildStyle,
+  CustomStyle,
+  setThemeClassName
+} from 'amis-core';
 import pick from 'lodash/pick';
 import {BaseSchema, SchemaClassName, SchemaCollection} from '../Schema';
 
@@ -9,6 +16,11 @@ import {Spinner, SpinnerExtraProps} from 'amis-ui';
 export const ColProps = ['lg', 'md', 'sm', 'xs'];
 
 export type GridColumnObject = {
+  /**
+   * 组件唯一 id
+   */
+  id?: string;
+
   /**
    * 极小屏（<768px）时宽度占比
    */
@@ -55,6 +67,10 @@ export type GridColumnObject = {
    * 样式
    */
   style?: any;
+
+  wrapperCustomStyle?: any;
+
+  themeCss?: any;
 };
 
 export type GridColumn = GridColumnObject;
@@ -63,7 +79,7 @@ export interface ColumnArray extends Array<ColumnNode> {}
 
 /**
  * Grid 格子布局渲染器。
- * 文档：https://baidu.gitee.io/amis/docs/components/grid
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/grid
  */
 export interface GridSchema extends BaseSchema {
   /**
@@ -158,9 +174,12 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
       formHorizontal,
       translate: __,
       disabled,
-      data
+      data,
+      env
     } = this.props;
     const styleVar = buildStyle(column.style, data);
+
+    const {id, themeCss, wrapperCustomStyle} = column;
     return (
       <div
         key={key}
@@ -169,7 +188,19 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
           fromBsClass((column as any).columnClassName!),
           {
             [`Grid-col--v${ucFirst(column.valign)}`]: column.valign
-          }
+          },
+          setThemeClassName({
+            ...column,
+            name: 'baseControlClassName',
+            id,
+            themeCss
+          }),
+          setThemeClassName({
+            ...column,
+            name: 'wrapperCustomStyle',
+            id,
+            themeCss
+          })
         )}
         style={styleVar}
       >
@@ -179,6 +210,21 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
           formHorizontal:
             column.horizontal || subFormHorizontal || formHorizontal
         })}
+
+        <CustomStyle
+          {...column}
+          config={{
+            wrapperCustomStyle,
+            id,
+            themeCss,
+            classNames: [
+              {
+                key: 'baseControlClassName'
+              }
+            ]
+          }}
+          env={env}
+        />
       </div>
     );
   }
@@ -201,7 +247,11 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
       align: hAlign,
       loading = false,
       loadingConfig,
-      data
+      data,
+      id,
+      wrapperCustomStyle,
+      env,
+      themeCss
     } = this.props;
     const styleVar = buildStyle(style, data);
     return (
@@ -213,12 +263,39 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
             [`Grid--v${ucFirst(vAlign)}`]: vAlign,
             [`Grid--h${ucFirst(hAlign)}`]: hAlign
           },
-          className
+          className,
+          setThemeClassName({
+            ...this.props,
+            name: 'baseControlClassName',
+            id,
+            themeCss
+          }),
+          setThemeClassName({
+            ...this.props,
+            name: 'wrapperCustomStyle',
+            id,
+            themeCss: wrapperCustomStyle
+          })
         )}
         style={styleVar}
+        data-id={id}
       >
         {this.renderColumns(this.props.columns)}
         <Spinner loadingConfig={loadingConfig} overlay show={loading} />
+        <CustomStyle
+          {...this.props}
+          config={{
+            wrapperCustomStyle,
+            id,
+            themeCss,
+            classNames: [
+              {
+                key: 'baseControlClassName'
+              }
+            ]
+          }}
+          env={env}
+        />
       </div>
     );
   }

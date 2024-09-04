@@ -1,10 +1,18 @@
 import {getSchemaTpl} from 'amis-editor-core';
 
-export const inputStateTpl = (className: string, path: string = '') => {
+export const inputStateTpl = (
+  className: string,
+  token: string = '',
+  options: {
+    state: string[];
+  } = {
+    state: ['default', 'hover', 'focused', 'disabled']
+  }
+) => {
   return [
     {
       type: 'select',
-      name: 'editorState',
+      name: `__editorState${className}`,
       label: '状态',
       selectFirst: true,
       options: [
@@ -17,24 +25,39 @@ export const inputStateTpl = (className: string, path: string = '') => {
           value: 'hover'
         },
         {
-          label: '点击',
-          value: 'active'
+          label: '选中',
+          value: 'focused'
+        },
+        {
+          label: '禁用',
+          value: 'disabled'
         }
-      ]
-    },
-    {
-      type: 'hidden',
-      name: 'editorPath',
-      value: path
+      ].filter(item => options.state.includes(item.value))
     },
     ...inputStateFunc(
-      "${editorState == 'default' || !editorState}",
+      `\${__editorState${className} == 'default' || !__editorState${className}}`,
       'default',
       className,
-      path
+      token
     ),
-    ...inputStateFunc("${editorState == 'hover'}", 'hover', className, path),
-    ...inputStateFunc("${editorState == 'active'}", 'active', className, path)
+    ...inputStateFunc(
+      `\${__editorState${className} == 'hover'}`,
+      'hover',
+      className,
+      token
+    ),
+    ...inputStateFunc(
+      `\${__editorState${className} == 'focused'}`,
+      'focused',
+      className,
+      token
+    ),
+    ...inputStateFunc(
+      `\${__editorState${className} == 'disabled'}`,
+      'disabled',
+      className,
+      token
+    )
   ];
 };
 
@@ -42,15 +65,16 @@ export const inputStateFunc = (
   visibleOn: string,
   state: string,
   className: string,
-  path: string,
+  token: string,
   options: any = []
 ) => {
+  const cssToken = state === 'focused' ? 'active' : state;
   return [
     getSchemaTpl('theme:font', {
       label: '文字',
       name: `${className}.font:${state}`,
       visibleOn: visibleOn,
-      editorThemePath: `${path}.${state}.body.font`,
+      editorValueToken: `${token}-${cssToken}`,
       state
     }),
     getSchemaTpl('theme:colorPicker', {
@@ -58,26 +82,27 @@ export const inputStateFunc = (
       name: `${className}.background:${state}`,
       labelMode: 'input',
       needGradient: true,
+      needImage: true,
       visibleOn: visibleOn,
-      editorThemePath: `${path}.${state}.body.bg-color`,
+      editorValueToken: `${token}-${cssToken}-bg-color`,
       state
     }),
     getSchemaTpl('theme:border', {
       name: `${className}.border:${state}`,
       visibleOn: visibleOn,
-      editorThemePath: `${path}.${state}.body.border`,
+      editorValueToken: `${token}-${cssToken}`,
       state
     }),
     getSchemaTpl('theme:paddingAndMargin', {
       name: `${className}.padding-and-margin:${state}`,
       visibleOn: visibleOn,
-      editorThemePath: `${path}.${state}.body.padding-and-margin`,
+      editorValueToken: `${token}-${cssToken}`,
       state
     }),
     getSchemaTpl('theme:radius', {
       name: `${className}.radius:${state}`,
       visibleOn: visibleOn,
-      editorThemePath: `${path}.${state}.body.border`,
+      editorValueToken: `${token}-${cssToken}`,
       state
     }),
     ...options

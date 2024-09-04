@@ -1,7 +1,10 @@
 /**
  * @file 定义插件的 interface，以及提供一个 BasePlugin 基类，把一些通用的方法放在这。
  */
+
+import omit from 'lodash/omit';
 import {RegionWrapperProps} from './component/RegionWrapper';
+import {makeAsyncLayer} from './component/AsyncLayer';
 import {EditorManager} from './manager';
 import {EditorStoreType} from './store/editor';
 import {EditorNodeType} from './store/node';
@@ -10,10 +13,12 @@ import {EditorDNDManager} from './dnd';
 import React from 'react';
 import {DiffChange} from './util';
 import find from 'lodash/find';
-import type {RendererConfig} from 'amis-core/lib/factory';
+import {RAW_TYPE_MAP} from './util';
+import type {RendererConfig, Schema} from 'amis-core';
 import type {MenuDivider, MenuItem} from 'amis-ui/lib/components/ContextMenu';
-import type {BaseSchema, SchemaCollection} from 'amis/lib/Schema';
-import {DSFieldGroup} from './builder/DSBuilder';
+import type {BaseSchema, SchemaCollection} from 'amis';
+import type {AsyncLayerOptions} from './component/AsyncLayer';
+import type {SchemaType} from 'packages/amis/src/Schema';
 
 /**
  * 区域的定义，容器渲染器都需要定义区域信息。
@@ -33,7 +38,7 @@ export interface RegionConfig {
   /**
    * 区域占位字符，用于提示
    */
-  placeholder?: string;
+  placeholder?: string | JSX.Element;
 
   /**
    * 对于复杂的控件需要用到这个配置。
@@ -111,7 +116,9 @@ export interface RegionConfig {
     | 'default'
     | 'position-h'
     | 'position-v'
-    | (new (dnd: EditorDNDManager) => DNDModeInterface);
+    | 'flex'
+    // | (new (dnd: EditorDNDManager) => DNDModeInterface)
+    | ((node: any) => string | undefined);
 
   /**
    * 可以用来判断是否允许拖入当前节点。
@@ -197,12 +204,23 @@ export interface RendererInfo extends RendererScaffoldInfo {
 
   isBaseComponent?: boolean;
 
+  /**
+   * 是否列表类型组件，自身没数据但是绑定了数据源里面的数组字段
+   * 子组件需要能获取到单项字段，如list、each、cards
+   */
+  isListComponent?: boolean;
+
   disabledRendererPlugin?: boolean;
 
   /**
    * 配置区域。
    */
   regions?: Array<RegionConfig>;
+
+  /**
+   *  选中不需要高亮
+   */
+  notHighlight?: boolean;
 
   /**
    * 哪些容器属性需要自动转成数组的。如果不配置默认就从 regions 里面读取。
@@ -291,6 +309,13 @@ export interface RendererInfo extends RendererScaffoldInfo {
   memberIndex?: number;
 
   tipName?: string;
+  /** 共享上下文 */
+  sharedContext?: Record<string, any>;
+  dialogTitle?: string; //弹窗标题用于弹窗大纲的展示
+  dialogType?: string; //区分确认对话框类型
+  getSubEditorVariable?: (
+    schema?: any
+  ) => Array<{label: string; children: any}>; // 传递给子编辑器的组件自定义变量，如listSelect的选项名称和值
 }
 
 export type BasicRendererInfo = Omit<
@@ -315,6 +340,8 @@ export interface PopOverForm {
 export interface ScaffoldForm extends PopOverForm {
   // 内容是否是分步骤的，如果是，body必须是?: Array<{title: string,body: any[]}>
   stepsBody?: boolean;
+  /** 是否可跳过创建向导直接创建 */
+  canSkip?: boolean;
   mode?:
     | 'normal'
     | 'horizontal'
@@ -335,7 +362,8 @@ export interface ScaffoldForm extends PopOverForm {
    * value 是具体错误信息。
    */
   validate?: (
-    values: any
+    values: any,
+    formStore: any
   ) =>
     | void
     | {[propName: string]: string}
@@ -510,17 +538,18 @@ export interface InsertEventContext extends BaseEventContext {
   beforeId?: string;
   index: number;
   data: any;
-  subRenderer?: SubRendererInfo;
+  subRenderer?: SubRendererInfo | RendererInfo;
   dragInfo?: {
     id: string;
     type: string;
     data: any;
+    position?: string;
   };
 }
 
 export interface ReplaceEventContext extends BaseEventContext {
   data: any;
-  subRenderer?: SubRendererInfo;
+  subRenderer?: SubRendererInfo | RendererInfo;
   region?: string;
 }
 
@@ -592,9 +621,12 @@ export type PluginEvent<T, P = any> = {
 
   // 当前值
   data?: P;
+
+  // value值
+  value?: any;
 };
 
-export type PluginEventFn = (e: PluginEvent<EventContext>) => false | void;
+export type PluginEventFn = (e: PluginEvent<EventContext>) => any;
 
 /**
  * 创建事件。
@@ -780,7 +812,7 @@ export interface PluginInterface
    *
    * 事件定义集合
    */
-  events?: RendererPluginEvent[];
+  events?: RendererPluginEvent[] | ((schema: any) => RendererPluginEvent[]);
 
   /**
    *
@@ -794,6 +826,16 @@ export interface PluginInterface
   panelJustify?: boolean;
 
   /**
+   * panelBodyAsyncCreator设置后异步加载层的配置项
+   */
+  async?: AsyncLayerOptions;
+
+  /**
+   * 拖拽模式
+   */
+  dragMode?: string;
+
+  /**
    * 有数据域的容器，可以为子组件提供读取的字段绑定页面
    */
   getAvailableContextFields?: (
@@ -805,11 +847,20 @@ export interface PluginInterface
     region?: EditorNodeType
   ) => Promise<SchemaCollection | void>;
 
+  /** 配置面板表单的 pipeOut function */
+  panelFormPipeOut?: (value: any, oldValue: any) => any;
+
   /**
    * @deprecated 用 panelBodyCreator
    */
   panelControlsCreator?: (context: BaseEventContext) => Array<any>;
   panelBodyCreator?: (context: BaseEventContext) => SchemaCollection;
+  /**
+   * 配置面板内容区的异步加载方法，设置后优先级大于panelBodyCreator
+   */
+  panelBodyAsyncCreator?: (
+    context: BaseEventContext
+  ) => Promise<SchemaCollection>;
 
   // 好像没用，先注释了
   // /**
@@ -895,7 +946,8 @@ export interface PluginInterface
   buildDataSchemas?: (
     node: EditorNodeType,
     region?: EditorNodeType,
-    trigger?: EditorNodeType
+    trigger?: EditorNodeType,
+    parent?: EditorNodeType
   ) => any | Promise<any>;
 
   rendererBeforeDispatchEvent?: (
@@ -904,7 +956,27 @@ export interface PluginInterface
     data: any
   ) => void;
 
+  /**
+   * 给 schema 打补丁，纠正一下 schema 配置。
+   * @param schema
+   * @param renderer
+   * @param props
+   * @returns
+   */
+  patchSchema?: (
+    schema: Schema,
+    renderer: RendererConfig,
+    props?: any
+  ) => Schema | void;
+
   dispose?: () => void;
+
+  /**
+   * 组件 ref 回调，mount 和 unmount 的时候都会调用
+   * @param ref
+   * @returns
+   */
+  componentRef?: (node: EditorNodeType, ref: any) => void;
 }
 
 export interface RendererPluginEvent {
@@ -914,7 +986,7 @@ export interface RendererPluginEvent {
   defaultShow?: boolean; // 是否默认展示
   isBroadcast?: boolean; // 广播事件
   owner?: string; // 标记来源，主要用于广播
-  dataSchema?: any[]; // 上下文schema
+  dataSchema?: any[] | ((manager: EditorManager) => any[]); // 上下文schema
   strongDesc?: string;
 }
 
@@ -926,7 +998,7 @@ export interface RendererPluginAction {
   schema?: any; // 动作配置schema
   supportComponents?: string[] | string; // 如果schema中包含选择组件，可以指定该动作支持的组件类型，用于组件数树过滤
   innerArgs?: string[]; // 动作专属配置参数，主要是为了区分特性字段和附加参数
-  descDetail?: (info: any) => string | JSX.Element; // 动作详细描述
+  descDetail?: (info: any, context: any, props: any) => string | JSX.Element; // 动作详细描述
   outputVarDataSchema?: any | any[]; // 动作出参的结构定义
   actions?: SubRendererPluginAction[]; // 分支动作（配置面板包含多种动作的情况）
   children?: RendererPluginAction[]; // 子类型，for动作树
@@ -940,7 +1012,9 @@ export interface SubRendererPluginAction
   > {}
 
 export interface PluginEvents {
-  [propName: string]: RendererPluginEvent[];
+  [propName: string]:
+    | RendererPluginEvent[]
+    | ((schema: any) => RendererPluginEvent[]);
 }
 
 export interface PluginActions {
@@ -954,6 +1028,9 @@ export abstract class BasePlugin implements PluginInterface {
   constructor(readonly manager: EditorManager) {}
 
   static scene = ['global'];
+
+  name?: string;
+  rendererName?: string;
 
   /**
    * 如果配置里面有 rendererName 自动返回渲染器信息。
@@ -993,7 +1070,10 @@ export abstract class BasePlugin implements PluginInterface {
         scaffoldForm: plugin.scaffoldForm,
         disabledRendererPlugin: plugin.disabledRendererPlugin,
         isBaseComponent: plugin.isBaseComponent,
-        rendererName: plugin.rendererName
+        isListComponent: plugin.isListComponent,
+        rendererName: plugin.rendererName,
+        memberImmutable: plugin.memberImmutable,
+        getSubEditorVariable: plugin.getSubEditorVariable
       };
     }
   }
@@ -1020,10 +1100,17 @@ export abstract class BasePlugin implements PluginInterface {
       (plugin.panelControls ||
         plugin.panelControlsCreator ||
         plugin.panelBody ||
-        plugin.panelBodyCreator) &&
+        plugin.panelBodyCreator ||
+        plugin.panelBodyAsyncCreator) &&
       context.info.plugin === this
     ) {
-      const body = plugin.panelBodyCreator
+      const enableAsync = !!(
+        plugin.panelBodyAsyncCreator &&
+        typeof plugin.panelBodyAsyncCreator === 'function'
+      );
+      const body = plugin.panelBodyAsyncCreator
+        ? plugin.panelBodyAsyncCreator(context)
+        : plugin.panelBodyCreator
         ? plugin.panelBodyCreator(context)
         : plugin.panelBody!;
 
@@ -1033,22 +1120,36 @@ export abstract class BasePlugin implements PluginInterface {
         plugin
       });
 
+      const baseProps = {
+        definitions: plugin.panelDefinitions,
+        submitOnChange: plugin.panelSubmitOnChange,
+        api: plugin.panelApi,
+        controls: plugin.panelControlsCreator
+          ? plugin.panelControlsCreator(context)
+          : plugin.panelControls!,
+        justify: plugin.panelJustify,
+        panelById: store.activeId,
+        pipeOut: plugin.panelFormPipeOut?.bind?.(plugin)
+      };
+
       panels.push({
         key: 'config',
         icon: plugin.panelIcon || plugin.icon || 'fa fa-cog',
         pluginIcon: plugin.pluginIcon,
         title: plugin.panelTitle || '设置',
-        render: this.manager.makeSchemaFormRender({
-          definitions: plugin.panelDefinitions,
-          submitOnChange: plugin.panelSubmitOnChange,
-          api: plugin.panelApi,
-          body: body,
-          controls: plugin.panelControlsCreator
-            ? plugin.panelControlsCreator(context)
-            : plugin.panelControls!,
-          justify: plugin.panelJustify,
-          panelById: store.activeId
-        })
+        render: enableAsync
+          ? makeAsyncLayer(async () => {
+              const panelBody = await (body as Promise<SchemaCollection>);
+
+              return this.manager.makeSchemaFormRender({
+                ...baseProps,
+                body: panelBody
+              });
+            }, omit(plugin.async, 'enable'))
+          : this.manager.makeSchemaFormRender({
+              ...baseProps,
+              body: body as SchemaCollection
+            })
       });
     } else if (
       context.info.plugin === this &&
@@ -1163,6 +1264,30 @@ export abstract class BasePlugin implements PluginInterface {
         ? plugin.rendererName === rendererNameOrKlass
         : plugin instanceof rendererNameOrKlass
     );
+  }
+
+  buildDataSchemas(
+    node: EditorNodeType,
+    region?: EditorNodeType,
+    trigger?: EditorNodeType,
+    parent?: EditorNodeType
+  ) {
+    return {
+      type: 'string',
+      rawType: RAW_TYPE_MAP[node.schema.type as SchemaType] || 'string',
+      title:
+        typeof node.schema.label === 'string'
+          ? node.schema.label
+          : node.schema.name,
+      originalValue: node.schema.value // 记录原始值，循环引用检测需要
+    } as any;
+  }
+
+  getKeyAndName() {
+    return {
+      key: this.rendererName,
+      name: this.name
+    };
   }
 }
 

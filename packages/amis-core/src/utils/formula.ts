@@ -212,7 +212,7 @@ export function isExpression(expression: any): boolean {
   // 备注1: "\\${xxx}"不作为表达式，至少含一个${xxx}才算是表达式
 
   // 备注2: safari 不支持 /(?<!\\)(\${).+(\})/.test(expression)
-  return /(^|[^\\])\$\{.+\}/.test(expression);
+  return /(^|[^\\])\$\{[\s\S]+\}/.test(expression);
 }
 
 // 用于判断是否需要执行表达式:
@@ -225,7 +225,8 @@ export function isNeedFormula(
     const variables = FormulaExec.collect(expression);
     return variables.some(
       (variable: string) =>
-        FormulaExec.var(variable, prevData) !== FormulaExec.var(variable, curData)
+        FormulaExec.var(variable, prevData) !==
+        FormulaExec.var(variable, curData)
     );
   } catch (e) {
     console.warn(
@@ -236,11 +237,6 @@ export function isNeedFormula(
     );
     return false;
   }
-}
-
-export function isNowFormula(expression: string): boolean {
-  const block = expression.split(/\${|\||}/).filter(item => item);
-  return block[1] === 'now';
 }
 
 // 将 \${xx} 替换成 ${xx}

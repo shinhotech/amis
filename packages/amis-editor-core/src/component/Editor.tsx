@@ -3,21 +3,22 @@ import cx from 'classnames';
 import Preview from './Preview';
 import {autobind} from '../util';
 import {MainStore, EditorStoreType} from '../store/editor';
-import {SchemaObject} from 'amis/lib/Schema';
 import {EditorManager, EditorManagerConfig, PluginClass} from '../manager';
 import {reaction} from 'mobx';
-import {RenderOptions, toast} from 'amis';
+import {RenderOptions, closeContextMenus, toast} from 'amis';
 import {PluginEventListener, RendererPluginAction} from '../plugin';
 import {reGenerateID} from '../util';
 import {SubEditor} from './SubEditor';
 import Breadcrumb from './Breadcrumb';
-import {destroy} from 'mobx-state-tree';
+import {destroy, isAlive} from 'mobx-state-tree';
 import {ScaffoldModal} from './ScaffoldModal';
 import {PopOverForm} from './PopOverForm';
 import {ContextMenuPanel} from './Panel/ContextMenuPanel';
 import {LeftPanels} from './Panel/LeftPanels';
 import {RightPanels} from './Panel/RightPanels';
+import type {SchemaObject} from 'amis';
 import type {VariableGroup, VariableOptions} from '../variable';
+import type {EditorNodeType} from '../store/node';
 
 export interface EditorProps extends PluginEventListener {
   value: SchemaObject;
@@ -30,6 +31,10 @@ export interface EditorProps extends PluginEventListener {
   $schemaUrl?: string;
   schemas?: Array<any>;
   theme?: string;
+  /** 工具栏模式 */
+  toolbarMode?: 'default' | 'mini';
+  /** 是否需要弹框 */
+  noDialog?: boolean;
   /** 应用语言类型 */
   appLocale?: string;
   /** 是否开启多语言 */
@@ -38,6 +43,9 @@ export interface EditorProps extends PluginEventListener {
   amisDocHost?: string;
   superEditorData?: any;
   withSuperDataSchema?: boolean;
+  /** 当前 Editor 为 SubEditor 时触发的宿主节点 */
+  hostManager?: EditorManager;
+  hostNode?: EditorNodeType;
   dataBindingChange?: (
     value: string,
     data: any,
@@ -48,7 +56,7 @@ export interface EditorProps extends PluginEventListener {
    * Preview 预览前可以修改配置。
    * 比如把api地址替换成 proxy 地址。
    */
-  schemaFilter?: (schema: any) => any;
+  schemaFilter?: (schema: any, isPreview?: boolean) => any;
   amisEnv?: RenderOptions;
 
   /**
@@ -81,10 +89,6 @@ export interface EditorProps extends PluginEventListener {
    */
   previewProps?: any;
 
-  // 如果配置了，编辑器变成 iframe 模式。
-  // 需要自己写代码去建立连接。
-  iframeUrl?: string;
-
   isHiddenProps?: (key: string) => boolean;
 
   /**
@@ -116,13 +120,29 @@ export interface EditorProps extends PluginEventListener {
   onRedo?: () => void; // 用于触发外部 redo 事件
   onSave?: () => void; // 用于触发外部 save 事件
   onPreview?: (preview: boolean) => void; // 用于触发外部 预览 事件
+
+  /** 打开公式编辑器之前触发的事件 */
+  onFormulaEditorOpen?: (
+    node: EditorNodeType,
+    manager: EditorManager,
+    ctx: Record<string, any>,
+    host?: {
+      node?: EditorNodeType;
+      manager?: EditorManager;
+    }
+  ) => Promise<void | boolean>;
+
+  getHostNodeDataSchema?: () => Promise<any>;
+
+  getAvaiableContextFields?: (node: EditorNodeType) => Promise<any>;
+  readonly?: boolean;
 }
 
 export default class Editor extends Component<EditorProps> {
   readonly store: EditorStoreType;
   readonly manager: EditorManager;
   readonly mainRef = React.createRef<HTMLDivElement>();
-  unReaction: () => void;
+  toDispose: Array<Function> = [];
   lastResult: any;
   curCopySchemaData: any; // 用于记录当前复制的元素
 
@@ -140,6 +160,7 @@ export default class Editor extends Component<EditorProps> {
       onChange,
       showCustomRenderersPanel,
       superEditorData,
+      hostManager,
       ...rest
     } = props;
 
@@ -150,9 +171,10 @@ export default class Editor extends Component<EditorProps> {
       {
         isMobile: props.isMobile,
         theme: props.theme,
+        toolbarMode: props.toolbarMode || 'default',
+        noDialog: props.noDialog,
         isSubEditor,
         amisDocHost: props.amisDocHost,
-        ctx: props.ctx,
         superEditorData,
         appLocale: props.appLocale,
         appCorpusData: props?.amisEnv?.replaceText,
@@ -160,11 +182,13 @@ export default class Editor extends Component<EditorProps> {
       },
       config
     );
+    this.store.setCtx(props.ctx);
     this.store.setSchema(value);
     if (showCustomRenderersPanel !== undefined) {
       this.store.setShowCustomRenderersPanel(showCustomRenderersPanel);
     }
-    this.manager = new EditorManager(config, this.store);
+
+    this.manager = new EditorManager(config, this.store, hostManager);
 
     // 子编辑器不再重新设置 editorStore
     if (!(props.isSubEditor && (window as any).editorStore)) {
@@ -176,21 +200,32 @@ export default class Editor extends Component<EditorProps> {
 
     window.addEventListener('message', this.handleMessage, false);
 
-    this.unReaction = reaction(
-      () => this.store.schemaRaw,
-      (raw: any) => {
-        this.lastResult = raw;
+    this.toDispose.push(
+      reaction(
+        () => this.store.schemaRaw,
+        (raw: any) => {
+          this.lastResult = raw;
 
-        if (this.isInternalChange) {
-          return;
+          if (this.isInternalChange) {
+            return;
+          }
+          props.onChange(raw);
         }
-        props.onChange(raw);
-      }
+      )
+    );
+    this.toDispose.push(
+      this.manager.on('preview2editor', () => this.manager.rebuild())
     );
   }
 
   componentDidMount() {
-    if (!this.props.isSubEditor) {
+    const store = this.manager.store;
+    if (this.props.isSubEditor) {
+      // 等待子编辑器动画结束重新获取高亮组件位置
+      setTimeout(() => {
+        store.calculateHighlightBox(store.highlightNodes.map(node => node.id));
+      }, 500);
+    } else {
       this.manager.trigger('init', {
         data: this.manager
       });
@@ -226,9 +261,10 @@ export default class Editor extends Component<EditorProps> {
   componentWillUnmount() {
     document.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('message', this.handleMessage);
-    this.unReaction();
+    this.toDispose.forEach(fn => fn());
+    this.toDispose = [];
     this.manager.dispose();
-    destroy(this.store);
+    setTimeout(() => destroy(this.store), 4);
   }
 
   // 快捷功能键
@@ -237,6 +273,10 @@ export default class Editor extends Component<EditorProps> {
     // 弹窗模式不处理
     if (this.props.isSubEditor) {
       // e.defaultPrevented // 或者已经阻止不处理
+      return;
+    }
+
+    if (this.props.readonly) {
       return;
     }
 
@@ -273,7 +313,7 @@ export default class Editor extends Component<EditorProps> {
       (e.key === 'c' || e.key === 'C') &&
       (e.metaKey || e.ctrlKey)
     ) {
-      e.preventDefault();
+      // e.preventDefault(); // 注释掉阻止默认行为的方法，允许用户copy设计器中的文字
       this.copy(); // 复制
       return;
     } else if (
@@ -352,11 +392,16 @@ export default class Editor extends Component<EditorProps> {
       // 删除快捷键
       if (this.store.activeId) {
         const node = store.getNodeById(this.store.activeId);
-        if (node && store.activeRegion) {
+        if (
+          node &&
+          store.activeRegion &&
+          node.info?.regions &&
+          node.info.regions.length > 1
+        ) {
           toast.warning('区域节点不可以直接删除。');
         } else if (store.isRootSchema(this.store.activeId)) {
           toast.warning('根节点不允许删除。');
-        } else if (node && node.moveable) {
+        } else if (node && (node.removable || node.removable === undefined)) {
           this.manager.del(this.store.activeId);
         } else {
           toast.warning('当前元素不允许删除。');
@@ -386,7 +431,9 @@ export default class Editor extends Component<EditorProps> {
 
   // 右键菜单
   @autobind
-  handleContextMenu(e: React.MouseEvent<HTMLElement>) {
+  async handleContextMenu(e: React.MouseEvent<HTMLElement>) {
+    e.persist();
+    await closeContextMenus();
     let targetId: string = '';
     let region = '';
 
@@ -428,11 +475,20 @@ export default class Editor extends Component<EditorProps> {
 
     e.preventDefault();
     e.stopPropagation();
-
     const manager = this.manager;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    // 说明是 iframe 里面
+    if ((e.target as HTMLElement).ownerDocument !== document) {
+      const rect = manager.store.getIframe()!.getBoundingClientRect();
+      offsetX = rect.left;
+      offsetY = rect.top;
+    }
+
     manager.openContextMenu(targetId, region, {
-      x: window.scrollX + e.clientX,
-      y: window.scrollY + e.clientY
+      x: window.scrollX + e.clientX + offsetX,
+      y: window.scrollY + e.clientY + offsetY
     });
   }
 
@@ -469,7 +525,7 @@ export default class Editor extends Component<EditorProps> {
 
   preview() {
     if (this.props.onPreview) {
-      this.props.onPreview(true);
+      this.props.onPreview(!this.props.preview);
     }
   }
 
@@ -499,9 +555,9 @@ export default class Editor extends Component<EditorProps> {
       );
       if (this.store.activeId === this.curCopySchemaData.$$id) {
         // 复制和粘贴是同一个元素，则直接追加到当前元素后面
-        this.manager.appendSiblingSchema(reGenerateID(curSimpleSchema));
+        this.manager.appendSiblingSchema(reGenerateID(curSimpleSchema), false);
       } else {
-        this.manager.addElem(reGenerateID(curSimpleSchema));
+        this.manager.addElem(reGenerateID(curSimpleSchema), false);
       }
     }
   }
@@ -519,11 +575,11 @@ export default class Editor extends Component<EditorProps> {
       theme,
       appLocale,
       data,
-      iframeUrl,
       previewProps,
       autoFocus,
       isSubEditor,
-      amisEnv
+      amisEnv,
+      readonly
     } = this.props;
 
     return (
@@ -538,7 +594,7 @@ export default class Editor extends Component<EditorProps> {
         )}
       >
         <div className="ae-Editor-inner" onContextMenu={this.handleContextMenu}>
-          {!preview && (
+          {!preview && !readonly && (
             <LeftPanels
               store={this.store}
               manager={this.manager}
@@ -548,11 +604,16 @@ export default class Editor extends Component<EditorProps> {
 
           <div className="ae-Main">
             {!preview && (
-              <Breadcrumb store={this.store} manager={this.manager} />
+              <div className="ae-Header">
+                <Breadcrumb store={this.store} manager={this.manager} />
+                <div
+                  id="aeHeaderRightContainer"
+                  className="ae-Header-Right-Container"
+                ></div>
+              </div>
             )}
             <Preview
               {...previewProps}
-              iframeUrl={iframeUrl}
               editable={!preview}
               isMobile={isMobile}
               store={this.store}
@@ -563,6 +624,7 @@ export default class Editor extends Component<EditorProps> {
               amisEnv={amisEnv}
               autoFocus={autoFocus}
               toolbarContainer={this.getToolbarContainer}
+              readonly={readonly}
             ></Preview>
           </div>
 
@@ -573,6 +635,7 @@ export default class Editor extends Component<EditorProps> {
               theme={theme}
               appLocale={appLocale}
               amisEnv={amisEnv}
+              readonly={readonly}
             />
           )}
 
@@ -584,6 +647,7 @@ export default class Editor extends Component<EditorProps> {
           manager={this.manager}
           theme={theme}
           amisEnv={amisEnv}
+          readonly={readonly}
         />
         <ScaffoldModal
           store={this.store}

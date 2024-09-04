@@ -17,10 +17,11 @@ import {
   getSchemaTpl
 } from 'amis-editor-core';
 
-import type {SchemaObject, SchemaCollection, SchemaApi} from 'amis/lib/Schema';
+import type {SchemaObject, SchemaCollection, SchemaApi} from 'amis';
 import type {Api} from 'amis';
 import type {FormControlProps} from 'amis-core';
-import type {ActionSchema} from 'amis/lib/renderers/Action';
+import type {ActionSchema} from 'amis';
+import debounce from 'lodash/debounce';
 
 export type ApiObject = Api & {
   messages?: Record<
@@ -306,12 +307,9 @@ export default class APIControl extends React.Component<
     );
   }
 
-  @autobind
-  handleSimpleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.currentTarget.value;
-
-    this.handleSubmit(value, 'input');
-  }
+  handleSimpleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.handleSubmit(e.currentTarget.value, 'input');
+  };
 
   @autobind
   handleSubmit(values: SchemaApi, action?: 'input' | 'picker-submit') {
@@ -411,11 +409,7 @@ export default class APIControl extends React.Component<
                 tooltip: labelRemark,
                 className: cx(`Form-lableRemark`, labelRemark?.className),
                 useMobileUI,
-                container: popOverContainer
-                  ? popOverContainer
-                  : env && env.getModalContainer
-                  ? env.getModalContainer
-                  : undefined
+                container: popOverContainer || env.getModalContainer
               })
             : null}
         </label>
@@ -517,6 +511,7 @@ export default class APIControl extends React.Component<
         closeOnEsc: true,
         closeOnOutside: false,
         showCloseButton: true,
+        // data: {},
         body: [this.renderApiConfigTabs()]
       }
     };
@@ -527,7 +522,7 @@ export default class APIControl extends React.Component<
 
     return {
       type: 'form',
-      className: 'ae-ApiControl-form',
+      className: 'ae-ApiControl-form :AMISCSSWrapper',
       mode: 'horizontal',
       submitOnChange,
       wrapWithPanel: false,
@@ -611,6 +606,20 @@ export default class APIControl extends React.Component<
                     }
                   ],
                   disabled: false
+                },
+                {
+                  type: 'group',
+                  body: [
+                    {
+                      type: 'switch',
+                      label: tipedLabel(
+                        '静默请求',
+                        '是否静默发送请求，屏蔽报错提示'
+                      ),
+                      name: 'silent',
+                      mode: 'horizontal'
+                    }
+                  ]
                 },
                 {
                   type: 'switch',
@@ -913,9 +922,7 @@ export default class APIControl extends React.Component<
                   ]
                 },
                 getSchemaTpl(
-                  name === 'validateApi'
-                    ? 'validateApiAdaptor'
-                    : 'apiAdaptor'
+                  name === 'validateApi' ? 'validateApiAdaptor' : 'apiAdaptor'
                 )
               ]
             },

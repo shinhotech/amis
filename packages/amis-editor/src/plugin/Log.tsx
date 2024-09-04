@@ -6,6 +6,7 @@ import {BaseEventContext, BasePlugin} from 'amis-editor-core';
 import {getSchemaTpl, tipedLabel} from 'amis-editor-core';
 
 export class LogPlugin extends BasePlugin {
+  static id = 'LogPlugin';
   // 关联渲染器名字
   rendererName = 'log';
   $schema = '/schemas/LogSchema.json';
@@ -16,6 +17,7 @@ export class LogPlugin extends BasePlugin {
   icon = 'fa fa-file-text-o';
   pluginIcon = 'log-plugin';
   description = '用来实时显示日志';
+  searchKeywords = '实时日志';
   docLink = '/amis/zh-CN/components/log';
   tags = ['展示'];
   previewSchema = {

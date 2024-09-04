@@ -2,6 +2,11 @@
   position: relative;
   border-radius: var(--Table-borderRadius);
 
+  .#{$ns}Table-cell-wrapper .#{$ns}Table-badge {
+    width: 100%;
+    height: 100%;
+  }
+
   &.#{$ns}Table-bordered {
     border-width: var(--Table-borderWidth) var(--Table-borderWidth) 0
       var(--Table-borderWidth);
@@ -193,6 +198,8 @@
 
     > thead > tr {
       > th {
+        height: var(--table-body-line-height);
+        vertical-align: middle;
         background: var(--Table-thead-bg);
         padding: var(--table-paddingTop) var(--table-paddingRight)
           var(--table-paddingBottom) var(--table-paddingLeft);
@@ -228,6 +235,7 @@
 
         .#{$ns}Table-head-cell-wrapper {
           display: flex;
+          align-items: center;
         }
       }
     }
@@ -258,6 +266,8 @@
 
       > td,
       > th {
+        height: px2rem(40px);
+        vertical-align: middle;
         padding: var(--table-paddingTop) var(--table-paddingRight)
           var(--table-paddingBottom) var(--table-paddingLeft);
 
@@ -268,6 +278,10 @@
         &:last-child {
           padding-right: var(--TableCell--edge-paddingX-default);
         }
+
+        .#{$ns}Form-static {
+          min-height: auto;
+        }
       }
 
       .#{$ns}Table-cell-wrapper-prefix {
@@ -276,6 +290,16 @@
         .#{$ns}Table-expandBtn {
           margin-right: 5px;
         }
+      }
+
+      .#{$ns}Form-static {
+        padding: 0;
+        margin: 0;
+        min-height: inherit;
+        line-height: inherit;
+        font-size: inherit;
+        color: inherit;
+        font-weight: inherit;
       }
 
       .#{$ns}Table-cell-height-large {
@@ -383,6 +407,7 @@
 
       &.is-dragging {
         opacity: var(--Table-onDragging-opacity);
+        background-color: var(--Table-onDragging-bg);
       }
     }
 
@@ -526,12 +551,9 @@
       color: var(--TableRow-onDisabled-color);
     }
 
-    > tbody
-      > tr:not(.#{$ns}Table-row-disabled)
-      > td.#{$ns}Table-cell-row-hover {
-      background: var(--Table-onHover-bg);
-      border-color: var(--Table-onHover-borderColor);
-      color: var(--Table-onHover-color);
+    > tbody > tr > td.#{$ns}Table-cell-fix-left,
+    > tbody > tr > td.#{$ns}Table-cell-fix-right {
+      background: inherit;
     }
 
     > thead > tr > th.#{$ns}Table-cell-fix-left-last,
@@ -552,7 +574,7 @@
 
     > thead > tr > th.#{$ns}Table-cell-fix-right-first,
     > tbody > tr > td.#{$ns}Table-cell-fix-right-first,
-    > tfoot > tr > td.#{$ns}Table-cell-fix-right-last {
+    > tfoot > tr > td.#{$ns}Table-cell-fix-right-first {
       &:after {
         position: absolute;
         top: 0;
@@ -609,10 +631,6 @@
         > td.#{$ns}Table-cell-fix-left {
           border-right: none;
         }
-
-        > td.#{$ns}Table-cell-fix-left:not(.#{$ns}Table-cell-row-hover) {
-          background: #fff;
-        }
       }
 
       > tfoot > tr > td:not(:last-child) {
@@ -621,7 +639,7 @@
         }
       }
 
-      > thead > tr > th:not(:last-child):not(:first-child) {
+      > thead > tr > th:not(:last-child) {
         &.#{$ns}Table-cell-fix-left-last {
           border-right: none;
         }
@@ -642,10 +660,6 @@
       > tbody > tr:not(.#{$ns}Table-row-disabled) {
         > td.#{$ns}Table-cell-fix-right {
           border-right: none;
-        }
-
-        > td.#{$ns}Table-cell-fix-right:not(.#{$ns}Table-cell-row-hover) {
-          background: #fff;
         }
       }
     }
@@ -678,7 +692,24 @@
           bottom: 0;
           user-select: none;
           cursor: col-resize;
-          z-index: 3000;
+          z-index: 15;
+          opacity: 0.5;
+
+          &--disabled {
+            cursor: not-allowed;
+          }
+
+          &:hover,
+          &.is-resizing {
+            background: var(--primary);
+          }
+        }
+
+        &:last-child {
+          .#{$ns}Table-thead-resizable {
+            width: 4px;
+            right: 0;
+          }
         }
       }
     }
@@ -686,13 +717,12 @@
 
   .#{$ns}Table-loading {
     padding: var(--Table-loading-padding);
-    text-align: center;
   }
 
   .#{$ns}TableCell-sortBtn {
     cursor: pointer;
     width: var(--TableCell-sortBtn-width);
-    height: 100%;
+    height: 14px;
     vertical-align: middle;
     position: static;
     display: inline-block;
@@ -744,6 +774,7 @@
     cursor: pointer;
     color: var(--table-icon-color);
     margin-left: var(--TableCell-icon-gap);
+    height: 18px;
 
     svg {
       width: 12px;
@@ -771,7 +802,7 @@
   .#{$ns}TableCell-filterBtn {
     cursor: pointer;
     width: var(--TableCell-filterBtn-width);
-    height: 100%;
+    height: 14px;
     vertical-align: middle;
     position: static;
     display: inline-block;

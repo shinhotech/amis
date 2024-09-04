@@ -12,13 +12,16 @@ import {
   prompt,
   setRenderSchemaFn
 } from './Alert';
-import {default as ContextMenu, openContextMenus} from './ContextMenu';
+import {
+  default as ContextMenu,
+  openContextMenus,
+  closeContextMenus
+} from './ContextMenu';
 import AsideNav from './AsideNav';
 import Avatar from './Avatar';
 import Button from './Button';
 import Breadcrumb from './Breadcrumb';
 import Checkbox from './Checkbox';
-import Checkboxes from './Selection';
 import Collapse from './Collapse';
 import CollapseGroup from './CollapseGroup';
 import DatePicker from './DatePicker';
@@ -38,7 +41,7 @@ import Radios from './Radios';
 import Range from './Range';
 import Rating from './Rating';
 // import RichText from './RichText';
-import Select from './Select';
+import Select, {value2array} from './Select';
 import SparkLine from './SparkLine';
 import {default as Spinner, type SpinnerExtraProps} from './Spinner';
 import Switch from './Switch';
@@ -70,11 +73,14 @@ import SchemaVariableListPicker from './schema-editor/SchemaVariableListPicker';
 import SchemaVariableList from './schema-editor/SchemaVariableList';
 import VariableList from './formula/VariableList';
 import FormulaPicker from './formula/Picker';
+import {FormulaEditor} from './formula/Editor';
+import FormulaCodeEditor from './formula/CodeEditor';
+import type {VariableItem, FuncGroup} from './formula/CodeEditor';
 import PickerContainer from './PickerContainer';
 import InputJSONSchema from './json-schema';
 import {Badge, withBadge} from './Badge';
 import type {BadgeObject} from './Badge';
-import {getIcon, Icon, registerIcon} from './icons';
+import {getIcon, getIconNames, Icon, registerIcon} from './icons';
 import {withRemoteConfig} from './WithRemoteConfig';
 import type {RemoteOptionsProps} from './WithRemoteConfig';
 import ConditionBuilder from './condition-builder';
@@ -122,6 +128,11 @@ import ConfirmBox from './ConfirmBox';
 import DndContainer from './DndContainer';
 import Menu from './menu';
 import InputBoxWithSuggestion from './InputBoxWithSuggestion';
+import {CodeMirrorEditor} from './CodeMirror';
+import type CodeMirror from 'codemirror';
+import OverflowTpl from './OverflowTpl';
+import Signature from './Signature';
+import VerificationCode from './VerificationCode';
 
 export {
   NotFound,
@@ -133,12 +144,13 @@ export {
   setRenderSchemaFn,
   ContextMenu,
   openContextMenus,
+  closeContextMenus,
   Alert2,
   AsideNav,
   Button,
   Breadcrumb,
   Checkbox,
-  Checkboxes,
+  Selection as Checkboxes,
   Collapse,
   CollapseGroup,
   DatePicker,
@@ -159,6 +171,7 @@ export {
   Rating,
   // RichText,
   Select,
+  value2array,
   SparkLine,
   Spinner,
   SpinnerExtraProps,
@@ -193,6 +206,10 @@ export {
   PickerContainer,
   ConfirmBox,
   FormulaPicker,
+  FormulaCodeEditor,
+  VariableItem,
+  FuncGroup,
+  FormulaEditor,
   InputJSONSchema,
   withBadge,
   BadgeObject,
@@ -218,6 +235,7 @@ export {
   UserSelect,
   UserTabSelect,
   getIcon,
+  getIconNames,
   registerIcon,
   Badge,
   HeadCellDropDown,
@@ -248,5 +266,10 @@ export {
   InputTable,
   InputTableColumnProps,
   DndContainer,
-  Menu
+  Menu,
+  CodeMirror,
+  CodeMirrorEditor,
+  OverflowTpl,
+  Signature,
+  VerificationCode
 };

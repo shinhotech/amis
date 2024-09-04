@@ -5,6 +5,7 @@ import {registerEditorPlugin} from 'amis-editor-core';
 import {BaseEventContext, BasePlugin, RegionConfig} from 'amis-editor-core';
 
 export class FieldSetControlPlugin extends BasePlugin {
+  static id = 'FieldSetControlPlugin';
   // 关联渲染器名字
   rendererName = 'fieldset';
   $schema = '/schemas/FieldSetControlSchema.json';
@@ -14,6 +15,7 @@ export class FieldSetControlPlugin extends BasePlugin {
   isBaseComponent = true;
   icon = 'fa fa-toggle-down';
   description = '多个表单项的组合，可配置是否折叠';
+  searchKeywords = '表单项集合';
   docLink = '/amis/zh-CN/components/form/fieldset';
   tags = ['表单项'];
   scaffold = {

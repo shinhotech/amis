@@ -6,13 +6,19 @@ import {
   RendererInfo,
   defaultValue,
   getSchemaTpl,
-  noop
+  noop,
+  EditorNodeType,
+  isEmpty,
+  getI18nEnabled,
+  JSONPipeOut
 } from 'amis-editor-core';
 import {getEventControlConfig} from '../renderer/event-control/helper';
-import {InlineModal} from './Dialog';
 import {tipedLabel} from 'amis-editor-core';
+import omit from 'lodash/omit';
+import {InlineModal} from './Dialog';
 
 export class DrawerPlugin extends BasePlugin {
+  static id = 'DrawerPlugin';
   // 关联渲染器名字
   rendererName = 'drawer';
   $schema = '/schemas/DrawerSchema.json';
@@ -62,9 +68,10 @@ export class DrawerPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '抽屉数据'
+              title: '数据',
+              description: '当前数据域，可以通过.字段名读取对应的值'
             }
           }
         }
@@ -78,9 +85,10 @@ export class DrawerPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data': {
+            data: {
               type: 'object',
-              title: '抽屉数据'
+              title: '数据',
+              description: '当前数据域，可以通过.字段名读取对应的值'
             }
           }
         }
@@ -109,6 +117,7 @@ export class DrawerPlugin extends BasePlugin {
   panelTitle = '弹框';
   panelJustify = true;
   panelBodyCreator = (context: BaseEventContext) => {
+    const i18nEnabled = getI18nEnabled();
     return getSchemaTpl('tabs', [
       {
         title: '属性',
@@ -116,12 +125,82 @@ export class DrawerPlugin extends BasePlugin {
           {
             title: '基本',
             body: [
+              {
+                type: 'input-text',
+                label: '组件名称',
+                name: 'editorSetting.displayName'
+              },
+
+              {
+                type: 'radios',
+                label: '弹出方式',
+                name: 'actionType',
+                pipeIn: (value: any, store: any, data: any) =>
+                  value ?? data.type,
+                inline: false,
+                options: [
+                  {
+                    label: '弹窗',
+                    value: 'dialog'
+                  },
+                  {
+                    label: '抽屉',
+                    value: 'drawer'
+                  },
+                  {
+                    label: '确认对话框',
+                    value: 'confirmDialog'
+                  }
+                ]
+              },
+
               getSchemaTpl('layout:originPosition', {value: 'left-top'}),
               {
                 label: '标题',
-                type: 'input-text',
+                type: i18nEnabled ? 'input-text-i18n' : 'input-text',
                 name: 'title'
               },
+              getSchemaTpl('switch', {
+                name: 'overlay',
+                label: '显示蒙层',
+                pipeIn: defaultValue(true)
+              }),
+              getSchemaTpl('switch', {
+                name: 'showCloseButton',
+                label: '展示关闭按钮',
+                pipeIn: defaultValue(true)
+              }),
+              getSchemaTpl('switch', {
+                name: 'closeOnOutside',
+                label: '点击遮罩关闭'
+              }),
+              getSchemaTpl('switch', {
+                label: '可按 Esc 关闭',
+                name: 'closeOnEsc'
+              }),
+              {
+                type: 'ae-StatusControl',
+                label: '隐藏按钮区',
+                mode: 'normal',
+                name: 'hideActions',
+                expressionName: 'hideActionsOn'
+              },
+              getSchemaTpl('switch', {
+                name: 'resizable',
+                label: '可拖拽抽屉大小',
+                value: false
+              }),
+              getSchemaTpl('dataMap')
+            ]
+          }
+        ])
+      },
+      {
+        title: '外观',
+        body: getSchemaTpl('collapseGroup', [
+          {
+            title: '样式',
+            body: [
               {
                 type: 'button-group-select',
                 name: 'position',
@@ -160,40 +239,6 @@ export class DrawerPlugin extends BasePlugin {
                   }
                 }
               },
-              getSchemaTpl('switch', {
-                name: 'overlay',
-                label: '显示蒙层',
-                pipeIn: defaultValue(true)
-              }),
-              getSchemaTpl('switch', {
-                name: 'showCloseButton',
-                label: '展示关闭按钮',
-                pipeIn: defaultValue(true)
-              }),
-              getSchemaTpl('switch', {
-                name: 'closeOnOutside',
-                label: '点击外部关闭'
-              }),
-              getSchemaTpl('switch', {
-                label: '可按 Esc 关闭',
-                name: 'closeOnEsc'
-              }),
-              getSchemaTpl('switch', {
-                name: 'resizable',
-                label: '可拖拽抽屉大小',
-                value: false
-              }),
-              getSchemaTpl('dataMap')
-            ]
-          }
-        ])
-      },
-      {
-        title: '外观',
-        body: getSchemaTpl('collapseGroup', [
-          {
-            title: '基本',
-            body: [
               {
                 type: 'button-group-select',
                 name: 'size',
@@ -231,37 +276,88 @@ export class DrawerPlugin extends BasePlugin {
                     '宽度',
                     '位置为 "左" 或 "右" 时生效。 默认宽度为"尺寸"字段配置的宽度，值单位默认为 px，也支持百分比等单位 ，如：100%'
                   ),
-                  disabledOn:
-                    'this.position === "top" || this.position === "bottom"'
+                  visibleOn:
+                    'this.position === "left" || this.position === "right" || !this.position'
                 },
                 heightSchema: {
                   label: tipedLabel(
                     '高度',
                     '位置为 "上" 或 "下" 时生效。 默认宽度为"尺寸"字段配置的高度，值单位默认为 px，也支持百分比等单位 ，如：100%'
                   ),
-                  disabledOn:
-                    'this.position === "left" || this.position === "right" || !this.position'
+                  visibleOn:
+                    'this.position === "top" || this.position === "bottom"'
                 }
+              }),
+              getSchemaTpl('theme:border', {
+                name: 'themeCss.drawerClassName.border'
+              }),
+              getSchemaTpl('theme:radius', {
+                name: 'themeCss.drawerClassName.radius'
+              }),
+              getSchemaTpl('theme:shadow', {
+                name: 'themeCss.drawerClassName.box-shadow'
+              }),
+              getSchemaTpl('theme:colorPicker', {
+                label: '背景',
+                name: 'themeCss.drawerClassName.background',
+                labelMode: 'input'
+              }),
+              getSchemaTpl('theme:colorPicker', {
+                label: '遮罩颜色',
+                name: 'themeCss.drawerMaskClassName.background',
+                labelMode: 'input'
               })
             ]
           },
           {
-            title: 'CSS类名',
+            title: '标题区',
             body: [
-              getSchemaTpl('className', {
-                label: '外层'
+              getSchemaTpl('theme:font', {
+                label: '文字',
+                name: 'themeCss.drawerTitleClassName.font'
               }),
-              getSchemaTpl('className', {
-                label: '标题区域',
-                name: 'headClassName'
+              getSchemaTpl('theme:paddingAndMargin', {
+                name: 'themeCss.drawerHeaderClassName.padding-and-margin',
+                label: '间距'
               }),
-              getSchemaTpl('className', {
-                label: '内容区域',
-                name: 'bodyClassName'
+              getSchemaTpl('theme:colorPicker', {
+                label: '背景',
+                name: 'themeCss.drawerHeaderClassName.background',
+                labelMode: 'input'
+              })
+            ]
+          },
+          {
+            title: '内容区',
+            body: [
+              getSchemaTpl('theme:border', {
+                name: 'themeCss.drawerBodyClassName.border'
               }),
-              getSchemaTpl('className', {
-                label: '页脚区域',
-                name: 'footClassName'
+              getSchemaTpl('theme:radius', {
+                name: 'themeCss.drawerBodyClassName.radius'
+              }),
+              getSchemaTpl('theme:paddingAndMargin', {
+                name: 'themeCss.drawerBodyClassName.padding-and-margin',
+                label: '间距'
+              }),
+              getSchemaTpl('theme:colorPicker', {
+                label: '背景',
+                name: 'themeCss.drawerBodyClassName.background',
+                labelMode: 'input'
+              })
+            ]
+          },
+          {
+            title: '底部区',
+            body: [
+              getSchemaTpl('theme:paddingAndMargin', {
+                name: 'themeCss.drawerFooterClassName.padding-and-margin',
+                label: '间距'
+              }),
+              getSchemaTpl('theme:colorPicker', {
+                label: '背景',
+                name: 'themeCss.drawerFooterClassName.background',
+                labelMode: 'input'
               })
             ]
           }
@@ -281,6 +377,61 @@ export class DrawerPlugin extends BasePlugin {
   };
 
   buildSubRenderers() {}
+
+  /**
+   * drawer 高亮区域应该是里面的内容
+   */
+  wrapperResolve(dom: HTMLElement): HTMLElement | Array<HTMLElement> {
+    return dom.lastChild as HTMLElement;
+  }
+
+  async buildDataSchemas(
+    node: EditorNodeType,
+    region?: EditorNodeType,
+    trigger?: EditorNodeType
+  ) {
+    const renderer = this.manager.store.getNodeById(node.id)?.getComponent();
+    const data = omit(renderer.props.$schema.data, '$$id');
+    const inputParams = JSONPipeOut(renderer.props.$schema.inputParams);
+    let dataSchema: any = {
+      ...inputParams?.properties
+    };
+
+    if (renderer.props.$schema.data === undefined || !isEmpty(data)) {
+      // 静态数据
+      for (const key in data) {
+        if (!['&'].includes(key)) {
+          dataSchema[key] = {
+            type: typeof data[key] ?? 'string', // 默认文本，不好确定类型
+            title: key
+          };
+        }
+      }
+
+      // 弹窗改版可能会有多个按钮触发一个弹窗，无法确定按钮的上下文
+      // 数据链
+      // const hostNodeDataSchema =
+      //   await this.manager.config.getHostNodeDataSchema?.();
+      // hostNodeDataSchema
+      //   ?.filter(
+      //     (item: any) => !['system-variable', 'page-global'].includes(item.$id)
+      //   )
+      //   ?.forEach((item: any) => {
+      //     dataSchema = {
+      //       ...dataSchema,
+      //       ...item.properties
+      //     };
+      //   });
+    }
+
+    return {
+      $id: 'drawer',
+      type: 'object',
+      ...inputParams,
+      title: node.schema?.label || node.schema?.name,
+      properties: dataSchema
+    };
+  }
 }
 
 registerEditorPlugin(DrawerPlugin);

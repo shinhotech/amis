@@ -17,6 +17,8 @@
     var(--collapse-default-bottom-left-border-radius);
   padding: 0;
   line-height: px2rem(20px);
+  // 很神奇，设计态弹窗里面放个字段级 fieldset 就会撑开好宽
+  min-width: 0;
   // overflow: hidden;
 
   &-header {
@@ -41,6 +43,17 @@
     &:hover {
       background: var(--Collapse-header-onHover-bg);
       color: var(--collapse-default-header-hover-color);
+    }
+
+    &.is-mobile {
+      background: none;
+      border-radius: 0 !important;
+      position: relative;
+      padding-left: 0;
+
+      &:hover {
+        background: none;
+      }
     }
   }
 
@@ -76,7 +89,7 @@
   //   display: inline-block;
   // }
 
-  &.is-active > &-header > &-arrow-wrap > &-arrow {
+  &.is-active > .#{$ns}Collapse-header > .#{$ns}Collapse-arrow-wrap > &-arrow {
     transform: rotate(var(--collapse-icon-rotate));
     transform-origin: 50% 50%;
   }
@@ -112,7 +125,10 @@
     transform: rotate(var(--collapse-icon-rotate));
   }
 
-  &--title-bottom.is-active &-arrow {
+  &--title-bottom.is-active
+    > .#{$ns}Collapse-header
+    > .#{$ns}Collapse-arrow-wrap
+    > &-arrow {
     top: 0;
     transform: rotate(calc(-1 * var(--collapse-icon-rotate)));
   }
@@ -133,21 +149,88 @@
     line-height: var(--collapse-default-content-lineHeight);
     background: var(--collapse-default-bg-color);
   }
+
+  &.is-mobile {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .#{$ns}Collapse-icon-tranform,
+    .#{$ns}Collapse-arrow-wrap {
+      margin-right: px2rem(-18px);
+      float: right;
+      margin-top: px2rem(2px);
+    }
+
+    .#{$ns}Collapse-content {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
 }
 
 //FieldSet Form + Collapse
 .#{$ns}Form {
   .#{$ns}Collapse {
     border: none;
-    &-header {
+
+    .#{$ns}Collapse-header {
       background-color: var(--white);
       display: inline-flex;
       justify-content: flex-end;
+      align-items: center;
       flex-direction: row-reverse;
       border-radius: 0;
     }
-    &-content {
+
+    .#{$ns}Collapse-content {
       padding: 0;
+    }
+  }
+
+  /* 恢复 Form 嵌套场景下的样式 */
+  .#{$ns}Collapse-fieldset--disabled {
+    border-width: var(--collapse-default-top-border-width)
+      var(--collapse-default-right-border-width)
+      var(--collapse-default-bottom-border-width)
+      var(--collapse-default-left-border-width);
+    border-style: var(--collapse-default-top-border-style)
+      var(--collapse-default-right-border-style)
+      var(--collapse-default-bottom-border-style)
+      var(--collapse-default-left-border-style);
+    border-color: var(--collapse-default-top-border-color)
+      var(--collapse-default-right-border-color)
+      var(--collapse-default-bottom-border-color)
+      var(--collapse-default-left-border-color);
+    border-radius: var(--collapse-default-top-left-border-radius)
+      var(--collapse-default-top-right-border-radius)
+      var(--collapse-default-bottom-right-border-radius)
+      var(--collapse-default-bottom-left-border-radius);
+
+    .#{$ns}Collapse-header {
+      background: var(--Collapse-header-bg);
+      display: block;
+      border-radius: unset;
+    }
+
+    .#{$ns}Collapse-content {
+      padding: var(--Collapse-content-padding);
+    }
+  }
+}
+
+/* 移动端样式调整 */
+@include media-breakpoint-down(sm) {
+  .#{$ns}Collapse {
+    border: none;
+    position: relative;
+    margin-bottom: var(--Collapse-mobile-marginBottom);
+    &::before {
+      @include hairline-bottom(var(--collapse-default-bottom-border-color));
     }
   }
 }

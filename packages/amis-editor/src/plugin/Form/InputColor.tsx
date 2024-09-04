@@ -47,7 +47,7 @@ const presetColors = [
   '#9013fe'
 ];
 
-const colorFormat = ['hex', 'rgb', 'rgba', 'hsl'];
+const colorFormat = ['hex', 'hexa', 'rgb', 'rgba', 'hsl'];
 const presetColorsByFormat = colorFormat.reduce<{
   [propsName: string]: string[];
 }>((res, fmt) => {
@@ -55,6 +55,7 @@ const presetColorsByFormat = colorFormat.reduce<{
   return res;
 }, {});
 export class ColorControlPlugin extends BasePlugin {
+  static id = 'ColorControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'input-color';
@@ -66,7 +67,8 @@ export class ColorControlPlugin extends BasePlugin {
   icon = 'fa fa-eyedropper';
   pluginIcon = 'input-color-plugin';
   description =
-    '支持<code>hex、hls、rgb、rgba</code>格式，默认为<code>hex</code>格式';
+    '支持<code>hex、hexa、hls、rgb、rgba</code>格式，默认为<code>hex</code>格式';
+  searchKeywords = '颜色选择器';
   docLink = '/amis/zh-CN/components/form/input-color';
   tags = ['表单项'];
   scaffold = {
@@ -87,35 +89,6 @@ export class ColorControlPlugin extends BasePlugin {
   };
   panelTitle = '颜色框';
   notRenderFormZone = true;
-  events = [
-    {
-      eventName: 'change',
-      eventLabel: '值变化',
-      description: '输入框内容变化'
-    },
-    {
-      eventName: 'focus',
-      eventLabel: '获取焦点',
-      description: '输入框获取焦点'
-    },
-    {
-      eventName: 'blur',
-      eventLabel: '失去焦点',
-      description: '输入框失去焦点'
-    }
-  ];
-  actions = [
-    {
-      actionType: 'clear',
-      actionLabel: '清空',
-      description: '清空输入框内容'
-    },
-    {
-      actionType: 'focus',
-      actionLabel: '获取焦点',
-      description: '输入框获取焦点'
-    }
-  ];
   panelJustify = true;
   getConditionalColorPanel(format: string) {
     const visibleOnNoFormat = format === 'hex' ? ' || !this.format' : '';
@@ -299,17 +272,17 @@ export class ColorControlPlugin extends BasePlugin {
           ],
           {...context?.schema, configTitle: 'style'}
         )
-      },
-      {
-        title: '事件',
-        className: 'p-none',
-        body: [
-          getSchemaTpl('eventControl', {
-            name: 'onEvent',
-            ...getEventControlConfig(this.manager, context)
-          })
-        ]
       }
+      // {
+      //   title: '事件',
+      //   className: 'p-none',
+      //   body: [
+      //     getSchemaTpl('eventControl', {
+      //       name: 'onEvent',
+      //       ...getEventControlConfig(this.manager, context)
+      //     })
+      //   ]
+      // }
     ]);
   };
 }

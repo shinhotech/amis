@@ -1,5 +1,7 @@
 import {
+  EditorNodeType,
   getI18nEnabled,
+  RAW_TYPE_MAP,
   RendererPluginAction,
   RendererPluginEvent
 } from 'amis-editor-core';
@@ -18,13 +20,14 @@ import {defaultValue, getSchemaTpl, tipedLabel} from 'amis-editor-core';
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {inputStateTpl} from '../../renderer/style-control/helper';
+import {Schema} from 'amis-core';
+import type {SchemaType} from 'amis';
 
 export class NumberControlPlugin extends BasePlugin {
+  static id = 'NumberControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-number';
   $schema = '/schemas/NumberControlSchema.json';
-
-  order = -410;
 
   // 组件名称
   name = '数字框';
@@ -32,6 +35,7 @@ export class NumberControlPlugin extends BasePlugin {
   icon = 'fa fa-sort-numeric-asc';
   pluginIcon = 'input-number-plugin';
   description = '支持设定最大值和最小值，以及步长与精度';
+  searchKeywords = '数字输入框';
   docLink = '/amis/zh-CN/components/form/input-number';
   tags = ['表单项'];
   scaffold = {
@@ -68,9 +72,15 @@ export class NumberControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '输入值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'number',
+                  title: '当前数值'
+                }
+              }
             }
           }
         }
@@ -84,9 +94,15 @@ export class NumberControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '当前值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'number',
+                  title: '当前数值'
+                }
+              }
             }
           }
         }
@@ -100,9 +116,15 @@ export class NumberControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '当前值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'number',
+                  title: '当前数值'
+                }
+              }
             }
           }
         }
@@ -158,16 +180,20 @@ export class NumberControlPlugin extends BasePlugin {
                 getSchemaTpl('kilobitSeparator'),
 
                 getSchemaTpl('valueFormula', {
-                  rendererSchema: context?.schema,
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
+                    displayMode: 'base'
+                  }),
                   valueType: 'number' // 期望数值类型
                 }),
 
                 getSchemaTpl('valueFormula', {
                   name: 'min',
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.min
-                  },
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
+                    value: context?.schema.min,
+                    displayMode: 'base'
+                  }),
                   needDeleteProps: ['min'], // 避免自我限制
                   label: '最小值',
                   valueType: 'number'
@@ -175,23 +201,24 @@ export class NumberControlPlugin extends BasePlugin {
 
                 getSchemaTpl('valueFormula', {
                   name: 'max',
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.max
-                  },
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
+                    value: context?.schema.max,
+                    displayMode: 'base'
+                  }),
                   needDeleteProps: ['max'], // 避免自我限制
                   label: '最大值',
                   valueType: 'number'
                 }),
-
                 {
                   type: 'input-number',
                   name: 'step',
                   label: '步长',
                   min: 0,
-                  value: 1
+                  value: 1,
+                  precision: '${precision}',
+                  strictMode: false
                 },
-
                 {
                   type: 'input-number',
                   name: 'precision',
@@ -209,28 +236,40 @@ export class NumberControlPlugin extends BasePlugin {
                   label: '单位选项',
                   mode: 'normal',
                   name: 'unitOptions',
-                  flat: true,
                   items: [
                     {
-                      placeholder: '单位选项',
+                      placeholder: '文本',
                       type: i18nEnabled ? 'input-text-i18n' : 'input-text',
-                      name: 'text'
+                      name: 'label'
+                    },
+                    {
+                      placeholder: '值',
+                      type: 'input-text',
+                      name: 'value'
                     }
                   ],
                   draggable: false,
                   multiple: true,
                   pipeIn: (value: any) => {
-                    if (!isObject(value)) {
-                      return Array.isArray(value) ? value : [];
+                    if (Array.isArray(value)) {
+                      return value.map(item =>
+                        typeof item === 'string'
+                          ? {
+                              label: item,
+                              value: item
+                            }
+                          : item
+                      );
                     }
-                    const res = value.map((item: any) => item.value);
-                    return res;
+                    return [];
                   },
                   pipeOut: (value: any[]) => {
                     if (!value.length) {
                       return undefined;
                     }
-                    return value;
+                    return value.map(item =>
+                      item.value ? item : {label: item.label, value: item.label}
+                    );
                   }
                 }),
                 getSchemaTpl('labelRemark'),
@@ -252,8 +291,7 @@ export class NumberControlPlugin extends BasePlugin {
           getSchemaTpl(
             'collapseGroup',
             [
-              getSchemaTpl('style:formItem', {
-                renderer: context.info.renderer,
+              getSchemaTpl('theme:formItem', {
                 schema: [
                   {
                     label: '快捷编辑',
@@ -280,7 +318,7 @@ export class NumberControlPlugin extends BasePlugin {
                 body: [
                   ...inputStateTpl(
                     'themeCss.inputControlClassName',
-                    'inputNumber.base.base'
+                    '--inputNumber-${displayMode || "base"}'
                   )
                 ]
               },
@@ -312,6 +350,15 @@ export class NumberControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    return {
+      type: 'number',
+      title: node.schema?.label || node.schema?.name,
+      rawType: RAW_TYPE_MAP[node.schema.type as SchemaType] || 'string',
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+  }
 }
 
 registerEditorPlugin(NumberControlPlugin);

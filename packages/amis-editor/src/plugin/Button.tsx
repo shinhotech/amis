@@ -11,14 +11,17 @@ import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {BUTTON_DEFAULT_ACTION} from '../component/BaseControl';
 import {getEventControlConfig} from '../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
-import {SchemaObject} from 'amis/lib/Schema';
+import type {SchemaObject} from 'amis';
 import {getOldActionSchema} from '../renderer/event-control/helper';
 
 export class ButtonPlugin extends BasePlugin {
+  static id = 'ButtonPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'button';
   $schema = '/schemas/ActionSchema.json';
+
+  order = -400;
 
   // 组件名称
   name = '按钮';
@@ -26,7 +29,7 @@ export class ButtonPlugin extends BasePlugin {
   description =
     '用来展示一个按钮，你可以配置不同的展示样式，配置不同的点击行为。';
   docLink = '/amis/zh-CN/components/button';
-  tags = ['按钮'];
+  tags = ['功能'];
   icon = 'fa fa-square';
   pluginIcon = 'button-plugin';
   scaffold: SchemaObject = {
@@ -52,9 +55,15 @@ export class ButtonPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -68,9 +77,15 @@ export class ButtonPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -84,9 +99,15 @@ export class ButtonPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -118,33 +139,46 @@ export class ButtonPlugin extends BasePlugin {
           label: '文字',
           name: `themeCss.className.font:${state}`,
           visibleOn: visibleOn,
-          editorThemePath: [
-            `button1.type.\${level}.${state}.body.font-color`,
-            `button1.size.\${size}.body.font`
-          ]
+          editorValueToken: {
+            'color': `--button-\${level || "default"}-${state}-font-color`,
+            '*': '--button-size-${size || "default"}'
+          },
+          state
         }),
         getSchemaTpl('theme:colorPicker', {
           label: '背景',
           name: `themeCss.className.background:${state}`,
           labelMode: 'input',
           needGradient: true,
+          needImage: true,
           visibleOn: visibleOn,
-          editorThemePath: `button1.type.\${level}.${state}.body.bg-color`
+          editorValueToken: `--button-\${level || "default"}-${state}-bg-color`,
+          state
         }),
         getSchemaTpl('theme:border', {
           name: `themeCss.className.border:${state}`,
           visibleOn: visibleOn,
-          editorThemePath: `button1.type.\${level}.${state}.body.border`
+          editorValueToken: `--button-\${level || "default"}-${state}`,
+          state
         }),
         getSchemaTpl('theme:paddingAndMargin', {
           name: `themeCss.className.padding-and-margin:${state}`,
           visibleOn: visibleOn,
-          editorThemePath: `button1.size.\${size}.body.padding-and-margin`
+          editorValueToken: '--button-size-${size || "default"}',
+          state
         }),
         getSchemaTpl('theme:radius', {
           name: `themeCss.className.radius:${state}`,
           visibleOn: visibleOn,
-          editorThemePath: `button1.size.\${size}.body.border`
+          editorValueToken: '--button-size-${size || "default"}',
+          state
+        }),
+        getSchemaTpl('theme:select', {
+          label: '图标尺寸',
+          name: `themeCss.iconClassName.iconSize:${state}`,
+          visibleOn: visibleOn,
+          editorValueToken: '--button-size-${size || "default"}-icon-size',
+          state
         })
       ];
     };
@@ -238,13 +272,13 @@ export class ButtonPlugin extends BasePlugin {
                         '禁用状态下的提示内容，不填则弹出正常提示。可从数据域变量中取值。'
                       ),
                       clearValueOnHidden: true,
-                      visibleOn: 'data.tooltipTrigger !== "focus"'
+                      visibleOn: 'this.tooltipTrigger !== "focus"'
                     }),
                     {
                       type: 'button-group-select',
                       name: 'tooltipTrigger',
                       label: '触发方式',
-                      // visibleOn: 'data.tooltip || data.disabledTip',
+                      // visibleOn: 'this.tooltip || this.disabledTip',
                       size: 'sm',
                       options: [
                         {
@@ -261,7 +295,7 @@ export class ButtonPlugin extends BasePlugin {
                     {
                       type: 'button-group-select',
                       name: 'tooltipPlacement',
-                      // visibleOn: 'data.tooltip || data.disabledTip',
+                      // visibleOn: 'this.tooltip || this.disabledTip',
                       label: '提示位置',
                       size: 'sm',
                       options: [
@@ -320,7 +354,7 @@ export class ButtonPlugin extends BasePlugin {
                 label: '高亮样式',
                 name: 'activeLevel',
                 hidden: isInDropdown,
-                visibleOn: 'data.active'
+                visibleOn: 'this.active'
               }),
 
               getSchemaTpl('switch', {
@@ -336,11 +370,11 @@ export class ButtonPlugin extends BasePlugin {
             ]
           },
           {
-            title: '自定义样式',
+            title: '基本样式',
             body: [
               {
                 type: 'select',
-                name: 'editorState',
+                name: '__editorState',
                 label: '状态',
                 selectFirst: true,
                 options: [
@@ -359,11 +393,11 @@ export class ButtonPlugin extends BasePlugin {
                 ]
               },
               ...buttonStateFunc(
-                "${editorState == 'default' || !editorState}",
+                "${__editorState == 'default' || !__editorState}",
                 'default'
               ),
-              ...buttonStateFunc("${editorState == 'hover'}", 'hover'),
-              ...buttonStateFunc("${editorState == 'active'}", 'active')
+              ...buttonStateFunc("${__editorState == 'hover'}", 'hover'),
+              ...buttonStateFunc("${__editorState == 'active'}", 'active')
             ]
           },
           getSchemaTpl('theme:cssCode', {
@@ -385,14 +419,16 @@ export class ButtonPlugin extends BasePlugin {
             ? [
                 getSchemaTpl('eventControl', {
                   name: 'onEvent',
-                  ...getEventControlConfig(this.manager, context)
+                  ...getEventControlConfig(this.manager, context),
+                  rawType: 'button'
                 }),
                 getOldActionSchema(this.manager, context)
               ]
             : [
                 getSchemaTpl('eventControl', {
                   name: 'onEvent',
-                  ...getEventControlConfig(this.manager, context)
+                  ...getEventControlConfig(this.manager, context),
+                  rawType: 'button'
                 })
               ]
       }

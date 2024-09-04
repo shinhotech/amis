@@ -264,5 +264,28 @@ extendLocale('en-US', {
   '5b804b05e14aaacc75033a4f77fc2844': 'Source code',
   '69a53230577258b6d97ee932befcc168': '<Column>:',
   'cc6aeb073ebc3cb29734a49164f8964c': 'Page variables',
-  'b71e8739cb9bcba8057a8fa8b59512da': '<Column>'
+  'b71e8739cb9bcba8057a8fa8b59512da': '<Column>',
+  '34d240d1ded259c32f7fee21e99c5671': 'Preview/Edit',
+  '6722089d251c1e4aabe9d58c26a2208a': 'Turn preview mode on/off',
+  '107542a61cdccbb2981ad0c8bafc3440': 'Replace component',
+  '813a5158d9f7171d20e7df340c5b48f9': 'Component Context',
+  'd2655fdad2c9f8b6f6d7050d65226428':
+    "Exception registering plugin '{{@1}}', there is already a plugin with the same name:",
+  'e9d4c83c9cdc23c65d11f74866636661': 'Configuration panel loading',
+  '5ae147607b7896f8fd827337027607a9': '{{@1}} (Drawer type pop-up window)',
+  '7336083e6c61fe75fb5ec3f5ef101ac7': 'Drawer pop-up window',
+  'e5fd721b2921aa63bb7574c6bbead312': '{{@1}} (Confirmation dialog box)',
+  'fa6b01f51cc2b8e16bfbb914b6c08ace': 'Confirmation dialog box',
+  '05e70c7ef060f6c3ddcb4220702cde0f': '{{@1}} (pop up)',
+  '6cff4b6d794cc17f5d24dbe0d21e5732': 'pop-up notification',
+  'c65e6ddd7b48846aa1e5224d4e5743c1': 'View structure',
+  '67bcc69dd0a75d50c5cbb7f107ee9f63': 'Component Outline',
+  '80e73cda4bd12532252652b4e19bb39b': 'Popup Outline',
+  '21efd88b67a39834582ad99aabb9dc60': 'There is currently no data available',
+  '451d71974652fdd1840a73c980f80fe8': 'Skip Wizard',
+  'bc63dada3cdf28357dd4fe56ff5c567f': 'Current layer {{@1}}',
+  '0383d6f467ed0dd89860a7b8cc793ce9': 'Upper {{@1}} layer {{@2}}',
+  'b818d2fd22f70de2d912f19048e2cde2': 'Intercepted {{@1}} rendering error',
+  'e9a11b908a9b4f3d9dc947d9a64c0dab':
+    'A rendering error occurred. Please refer to the console output for detailed error information.'
 });

@@ -12,13 +12,14 @@ import {
   RendererInfoResolveEventContext
 } from '../plugin';
 import {autobind} from '../util';
-import {omit} from 'lodash';
+import omit from 'lodash/omit';
 
 export interface SubEditorProps {
   store: EditorStoreType;
   manager: EditorManager;
   theme?: string;
   amisEnv?: RenderOptions;
+  readonly?: boolean;
 }
 
 @observer
@@ -97,7 +98,7 @@ export class SubEditor extends React.Component<SubEditorProps> {
   }
 
   buildSchema() {
-    const {store, manager, amisEnv} = this.props;
+    const {store, manager, amisEnv, readonly} = this.props;
     const subEditorContext = store.subEditorContext;
     const config = manager.config;
     let superEditorData: any = store.superEditorData;
@@ -107,23 +108,8 @@ export class SubEditor extends React.Component<SubEditorProps> {
         subEditorContext?.data
       );
     }
-    const variables: any = [
-      ...(manager.config?.variables || []).filter(
-        item => item.title !== '页面变量'
-      ),
-      // 解决打开子编辑器 公式输入框汇总没有页面变量的问题
-      {
-        name: 'pageParams',
-        title: '页面变量',
-        parentId: 'root',
-        order: 0,
-        schema: {
-          type: 'object',
-          $id: 'pageParams',
-          properties: {}
-        }
-      }
-    ];
+    const variables: any = manager.config?.variables || [];
+
     return {
       size: 'full',
       title: store.subEditorContext?.title,
@@ -133,6 +119,7 @@ export class SubEditor extends React.Component<SubEditorProps> {
         ? {
             type: 'form',
             mode: 'normal',
+            wrapWithPanel: false,
             wrapperComponent: 'div',
             onValidate: async (value: any) => {
               const result = await store.subEditorContext?.validate?.(value);
@@ -161,6 +148,8 @@ export class SubEditor extends React.Component<SubEditorProps> {
                     ref={store.subEditorRef}
                     onChange={onChange}
                     data={store.subEditorContext?.data}
+                    hostManager={manager}
+                    hostNode={store.subEditorContext?.hostNode}
                     superEditorData={superEditorData}
                     schemaFilter={manager.config.schemaFilter}
                     theme={manager.env.theme}
@@ -168,7 +157,6 @@ export class SubEditor extends React.Component<SubEditorProps> {
                     onBuildPanels={this.handleBuildPanels}
                     isMobile={store.isMobile}
                     isSubEditor={true}
-                    iframeUrl={config.iframeUrl}
                     ctx={store.ctx}
                     schemas={manager.config?.schemas}
                     variables={variables}
@@ -182,6 +170,29 @@ export class SubEditor extends React.Component<SubEditorProps> {
                     }
                     isHiddenProps={config.isHiddenProps}
                     $schemaUrl={config.$schemaUrl}
+                    onFormulaEditorOpen={async (
+                      node,
+                      subEditormanager,
+                      data
+                    ) => {
+                      const fn = manager?.config?.onFormulaEditorOpen;
+
+                      if (fn && typeof fn === 'function') {
+                        return fn(node, subEditormanager, data, {
+                          node: subEditorContext?.hostNode,
+                          manager: manager
+                        });
+                      }
+                      return;
+                    }}
+                    getHostNodeDataSchema={async () => {
+                      await manager.getContextSchemas(manager.store.activeId);
+                      return manager.dataSchema;
+                    }}
+                    getAvaiableContextFields={node =>
+                      manager.getAvailableContextFields(node)
+                    }
+                    readonly={readonly}
                   />
                 )
               }
@@ -199,6 +210,7 @@ export class SubEditor extends React.Component<SubEditorProps> {
                 <button
                   type="button"
                   data-tooltip="撤销"
+                  data-position="top"
                   disabled={!subEditorContext.canUndo}
                   onClick={store.undoSubEditor}
                 >
@@ -207,6 +219,7 @@ export class SubEditor extends React.Component<SubEditorProps> {
                 <button
                   type="button"
                   data-tooltip="重做"
+                  data-position="top"
                   disabled={!subEditorContext.canRedo}
                   onClick={store.redoSubEditor}
                 >
@@ -217,7 +230,7 @@ export class SubEditor extends React.Component<SubEditorProps> {
           },
           {
             type: 'submit',
-            label: '确认',
+            label: '保存',
             level: 'primary'
           },
           {
@@ -234,10 +247,14 @@ export class SubEditor extends React.Component<SubEditorProps> {
   }
 
   render() {
-    const {store, theme, manager} = this.props;
+    const {store, theme, manager, readonly} = this.props;
+    if (!store.subEditorContext) {
+      return null;
+    }
     return render(
       {
-        type: 'dialog',
+        type: readonly ? 'container' : 'dialog',
+        className: readonly ? 'subEditor-container' : 'subEditor-dialog',
         ...this.buildSchema()
       },
 

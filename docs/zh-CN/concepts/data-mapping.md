@@ -880,10 +880,10 @@ ${xxx | split[:delimiter]}
 ##### 基本用法
 
 ```
-${xxx | join[:glue]}
+${xxx | join[:separator]}
 ```
 
-- **glue**：连接符，默认为`空字符`
+- **separator**：连接符，默认为`逗号`
 
 ```schema
 {
@@ -893,12 +893,27 @@ ${xxx | join[:glue]}
   },
   "body": {
     "type": "tpl",
-    "tpl": "array is ${array|join}" // 输出: array is abc
+    "tpl": "array is ${array|join}"
   }
 }
 ```
 
-##### 配置连接符
+配置成空字符串
+
+```schema
+{
+  "type": "page",
+  "data": {
+    "array": ["a", "b", "c"]
+  },
+  "body": {
+    "type": "tpl",
+    "tpl": "array is ${array|join:''}"
+  }
+}
+```
+
+配置成连接符
 
 ```schema
 {
@@ -1833,6 +1848,8 @@ ${xxx|filter1|filter2|...}
 
 amis npm 包里面暴露了 `registerFilter` 方法，通过它可以添加自己的过滤器逻辑。
 
+> 注意方法名不要出现 - 号，比如 a-b，要改成 a_b
+
 如：
 
 ```ts
@@ -1850,12 +1867,12 @@ registerFilter('count', (input: string) =>
 ```ts
 import {registerFilter} from 'amis';
 
-registerFilter('my-replace', (input: string, search: string, repalceWith) =>
+registerFilter('my_replace', (input: string, search: string, repalceWith) =>
   typeof input === 'string' ? input.replace(search, repalceWith) : input
 );
 ```
 
-用法为 `${xxxx|my-replace:aaaa:bbbb}`
+用法为 `${xxxx|my_replace:aaaa:bbbb}`
 
 ### 在 JS SDK 中自定义过滤器
 

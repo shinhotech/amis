@@ -7,6 +7,7 @@ import {
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 
 export class WrapperPlugin extends LayoutBasePlugin {
+  static id = 'WrapperPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'wrapper';
@@ -56,7 +57,7 @@ export class WrapperPlugin extends LayoutBasePlugin {
                 title: '布局',
                 body: [
                   getSchemaTpl('layout:position', {
-                    visibleOn: '!data.stickyStatus'
+                    visibleOn: '!this.stickyStatus'
                   }),
                   getSchemaTpl('layout:originPosition'),
                   getSchemaTpl('layout:inset', {
@@ -66,7 +67,7 @@ export class WrapperPlugin extends LayoutBasePlugin {
 
                   getSchemaTpl('layout:flex-setting', {
                     visibleOn:
-                      'data.style && (data.style.display === "flex" || data.style.display === "inline-flex")',
+                      'this.style && (this.style.display === "flex" || this.style.display === "inline-flex")',
                     direction: curRendererSchema.direction,
                     justify: curRendererSchema.justify,
                     alignItems: curRendererSchema.alignItems
@@ -74,42 +75,38 @@ export class WrapperPlugin extends LayoutBasePlugin {
 
                   getSchemaTpl('layout:flex-wrap', {
                     visibleOn:
-                      'data.style && (data.style.display === "flex" || data.style.display === "inline-flex")'
+                      'this.style && (this.style.display === "flex" || this.style.display === "inline-flex")'
                   }),
 
-                  isFlexItem
-                    ? getSchemaTpl('layout:flex', {
-                        isFlexColumnItem,
-                        label: isFlexColumnItem ? '高度设置' : '宽度设置',
-                        visibleOn:
-                          'data.style && (data.style.position === "static" || data.style.position === "relative")'
-                      })
-                    : null,
-                  isFlexItem
-                    ? getSchemaTpl('layout:flex-grow', {
-                        visibleOn:
-                          'data.style && data.style.flex === "1 1 auto" && (data.style.position === "static" || data.style.position === "relative")'
-                      })
-                    : null,
-                  isFlexItem
-                    ? getSchemaTpl('layout:flex-basis', {
-                        label: isFlexColumnItem ? '弹性高度' : '弹性宽度',
-                        visibleOn:
-                          'data.style && (data.style.position === "static" || data.style.position === "relative") && data.style.flex === "1 1 auto"'
-                      })
-                    : null,
-                  isFlexItem
-                    ? getSchemaTpl('layout:flex-basis', {
-                        label: isFlexColumnItem ? '固定高度' : '固定宽度',
-                        visibleOn:
-                          'data.style && (data.style.position === "static" || data.style.position === "relative") && data.style.flex === "0 0 150px"'
-                      })
-                    : null,
+                  ...(isFlexItem
+                    ? [
+                        getSchemaTpl('layout:flex', {
+                          isFlexColumnItem,
+                          label: isFlexColumnItem ? '高度设置' : '宽度设置',
+                          visibleOn:
+                            'this.style && (this.style.position === "static" || this.style.position === "relative")'
+                        }),
+                        getSchemaTpl('layout:flex-grow', {
+                          visibleOn:
+                            'this.style && this.style.flex === "1 1 auto" && (this.style.position === "static" || this.style.position === "relative")'
+                        }),
+                        getSchemaTpl('layout:flex-basis', {
+                          label: isFlexColumnItem ? '弹性高度' : '弹性宽度',
+                          visibleOn:
+                            'this.style && (this.style.position === "static" || this.style.position === "relative") && this.style.flex === "1 1 auto"'
+                        }),
+                        getSchemaTpl('layout:flex-basis', {
+                          label: isFlexColumnItem ? '固定高度' : '固定宽度',
+                          visibleOn:
+                            'this.style && (this.style.position === "static" || this.style.position === "relative") && this.style.flex === "0 0 150px"'
+                        })
+                      ]
+                    : []),
 
                   getSchemaTpl('layout:overflow-x', {
                     visibleOn: `${
                       isFlexItem && !isFlexColumnItem
-                    } && data.style.flex === '0 0 150px'`
+                    } && this.style.flex === '0 0 150px'`
                   }),
 
                   getSchemaTpl('layout:isFixedHeight', {
@@ -130,9 +127,9 @@ export class WrapperPlugin extends LayoutBasePlugin {
                   getSchemaTpl('layout:overflow-y', {
                     visibleOn: `${
                       !isFlexItem || !isFlexColumnItem
-                    } && (data.isFixedHeight || data.style && data.style.maxHeight) || (${
+                    } && (this.isFixedHeight || this.style && this.style.maxHeight) || (${
                       isFlexItem && isFlexColumnItem
-                    } && data.style.flex === '0 0 150px')`
+                    } && this.style.flex === '0 0 150px')`
                   }),
 
                   getSchemaTpl('layout:isFixedWidth', {
@@ -154,7 +151,7 @@ export class WrapperPlugin extends LayoutBasePlugin {
                   getSchemaTpl('layout:overflow-x', {
                     visibleOn: `${
                       !isFlexItem || isFlexColumnItem
-                    } && (data.isFixedWidth || data.style && data.style.maxWidth)`
+                    } && (this.isFixedWidth || this.style && this.style.maxWidth)`
                   }),
                   !isFlexItem ? getSchemaTpl('layout:margin-center') : null,
                   !isFlexItem
@@ -162,7 +159,7 @@ export class WrapperPlugin extends LayoutBasePlugin {
                         name: 'style.textAlign',
                         label: '内部对齐方式',
                         visibleOn:
-                          'data.style && data.style.display !== "flex" && data.style.display !== "inline-flex"'
+                          'this.style && this.style.display !== "flex" && this.style.display !== "inline-flex"'
                       })
                     : null,
                   getSchemaTpl('layout:z-index')

@@ -8,6 +8,7 @@ import {
 } from '../../component/BaseControl';
 
 export class ButtonToolbarControlPlugin extends BasePlugin {
+  static id = 'ButtonToolbarControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'button-toolbar';
@@ -20,7 +21,7 @@ export class ButtonToolbarControlPlugin extends BasePlugin {
   pluginIcon = 'btn-toolbar-plugin';
   description = '可以用来放置多个按钮或者按钮组，按钮之间会存在一定的间隔';
   docLink = '/amis/zh-CN/components/form/button-toolbar';
-  tags = ['表单项', '按钮'];
+  tags = ['表单项'];
   scaffold = {
     type: 'button-toolbar',
     label: '按钮工具栏',
@@ -92,7 +93,7 @@ export class ButtonToolbarControlPlugin extends BasePlugin {
                       type: 'tpl',
                       inline: false,
                       className: 'p-t-xs',
-                      tpl: `<span class="label label-default"><% if (data.type === "button-group") { %> ${'按钮组'} <% } else { %><%= data.label %><% if (data.icon) { %><i class="<%= data.icon %>"/><% }%><% } %></span>`
+                      tpl: `<span class="label label-default"><% if (this.type === "button-group") { %> ${'按钮组'} <% } else { %><%= this.label %><% if (this.icon) { %><i class="<%= this.icon %>"/><% }%><% } %></span>`
                     }
                   ],
                   addButtonText: '新增按钮',
@@ -118,7 +119,7 @@ export class ButtonToolbarControlPlugin extends BasePlugin {
                 getSchemaTpl('horizontal', {
                   label: '',
                   visibleOn:
-                    'data.mode == "horizontal" && data.label !== false && data.horizontal'
+                    'this.mode == "horizontal" && this.label !== false && this.horizontal'
                 })
               ]
             },

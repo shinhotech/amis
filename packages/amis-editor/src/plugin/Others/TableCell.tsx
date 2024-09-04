@@ -1,5 +1,6 @@
 import {Button} from 'amis';
 import React from 'react';
+import get from 'lodash/get';
 import {getI18nEnabled, registerEditorPlugin} from 'amis-editor-core';
 import {
   BasePlugin,
@@ -13,6 +14,7 @@ import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {getVariable} from 'amis-core';
 
 export class TableCellPlugin extends BasePlugin {
+  static id = 'TableCellPlugin';
   panelTitle = '列配置';
   panelIcon = 'fa fa-columns';
   panelBodyCreator = (context: BaseEventContext) => {
@@ -68,11 +70,15 @@ export class TableCellPlugin extends BasePlugin {
             getSchemaTpl('switch', {
               name: 'quickEdit',
               label: '启用快速编辑',
+              isChecked: (e: any) => {
+                const {data, name} = e;
+                return !!get(data, name);
+              },
               pipeIn: (value: any) => !!value
             }),
 
             {
-              visibleOn: 'data.quickEdit',
+              visibleOn: 'this.quickEdit',
               name: 'quickEdit.mode',
               type: 'button-group-select',
               value: 'popOver',
@@ -92,10 +98,14 @@ export class TableCellPlugin extends BasePlugin {
               ]
             },
 
+            getSchemaTpl('icon', {
+              name: 'quickEdit.icon'
+            }),
+
             getSchemaTpl('switch', {
               name: 'quickEdit.saveImmediately',
               label: '是否立即保存',
-              visibleOn: 'data.quickEdit',
+              visibleOn: 'this.quickEdit',
               description: '开启后修改即提交，而不是标记修改批量提交。',
               descriptionClassName: 'help-block m-b-none',
               pipeIn: (value: any) => !!value
@@ -110,7 +120,7 @@ export class TableCellPlugin extends BasePlugin {
             }),
 
             {
-              visibleOn: 'data.quickEdit',
+              visibleOn: 'this.quickEdit',
               name: 'quickEdit',
               asFormItem: true,
               children: ({value, onChange, data}: any) => {
@@ -119,18 +129,36 @@ export class TableCellPlugin extends BasePlugin {
                 } else if (typeof value === 'undefined') {
                   value = getVariable(data, 'quickEdit');
                 }
-
-                const originMode = value.mode;
-
-                value = {
-                  type: 'input-text',
-                  name: data.name,
-                  ...value
-                };
-                delete value.mode;
+                value = {...value};
+                const originMode = value.mode || 'popOver';
+                if (value.mode) {
+                  delete value.mode;
+                }
+                const originSaveImmediately = value.saveImmediately;
+                if (value.saveImmediately) {
+                  delete value.saveImmediately;
+                }
+                value =
+                  value.body && ['container', 'wrapper'].includes(value.type)
+                    ? {
+                        // schema中存在容器，用自己的就行
+                        type: 'wrapper',
+                        body: [],
+                        ...value
+                      }
+                    : {
+                        // schema中不存在容器，打开子编辑器时需要包裹一层
+                        type: 'wrapper',
+                        body: [
+                          {
+                            type: 'input-text',
+                            name: data.name,
+                            ...value
+                          }
+                        ]
+                      };
 
                 // todo 多个快速编辑表单模式看来只能代码模式编辑了。
-
                 return (
                   <Button
                     level="info"
@@ -141,17 +169,12 @@ export class TableCellPlugin extends BasePlugin {
                       this.manager.openSubEditor({
                         title: '配置快速编辑类型',
                         value: value,
-                        slot: {
-                          type: 'form',
-                          mode: 'normal',
-                          body: ['$$'],
-                          wrapWithPanel: false
-                        },
                         onChange: value =>
                           onChange(
                             {
                               ...value,
-                              mode: originMode
+                              mode: originMode,
+                              saveImmediately: originSaveImmediately
                             },
                             'quickEdit'
                           )
@@ -174,7 +197,7 @@ export class TableCellPlugin extends BasePlugin {
               name: 'popOver.mode',
               label: '查看更多弹出模式',
               type: 'select',
-              visibleOn: 'data.popOver',
+              visibleOn: 'this.popOver',
               pipeIn: defaultValue('popOver'),
               options: [
                 {
@@ -198,7 +221,7 @@ export class TableCellPlugin extends BasePlugin {
               name: 'popOver.position',
               label: '查看更多弹出模式',
               type: 'select',
-              visibleOn: 'data.popOver && data.popOver.mode === "popOver"',
+              visibleOn: 'this.popOver && this.popOver.mode === "popOver"',
               pipeIn: defaultValue('center'),
               options: [
                 {
@@ -249,7 +272,7 @@ export class TableCellPlugin extends BasePlugin {
             },
 
             {
-              visibleOn: 'data.popOver',
+              visibleOn: 'this.popOver',
               name: 'popOver',
               asFormItem: true,
               children: ({value, onChange}: any) => {
@@ -287,7 +310,7 @@ export class TableCellPlugin extends BasePlugin {
             }),
 
             {
-              visibleOn: 'data.copyable',
+              visibleOn: 'this.copyable',
               name: 'copyable.content',
               type: 'textarea',
               label: '复制内容模板',
@@ -299,13 +322,49 @@ export class TableCellPlugin extends BasePlugin {
           title: '外观',
           body: [
             {
+              type: 'select',
+              name: 'align',
+              label: '对齐方式',
+              pipeIn: defaultValue('left'),
+              options: [
+                {label: '左对齐', value: 'left'},
+                {label: '居中对齐', value: 'center'},
+                {label: '右对齐', value: 'right'},
+                {label: '两端对齐', value: 'justify'}
+              ]
+            },
+            {
+              type: 'select',
+              name: 'headerAlign',
+              label: '表头对齐方式',
+              pipeIn: defaultValue(''),
+              options: [
+                {label: '复用对齐方式', value: ''},
+                {label: '左对齐', value: 'left'},
+                {label: '居中对齐', value: 'center'},
+                {label: '右对齐', value: 'right'},
+                {label: '两端对齐', value: 'justify'}
+              ]
+            },
+            {
+              type: 'select',
+              name: 'vAlign',
+              label: '垂直对齐方式',
+              pipeIn: defaultValue('middle'),
+              options: [
+                {label: '顶部对齐', value: 'top'},
+                {label: '垂直居中', value: 'middle'},
+                {label: '底部对齐', value: 'bottom'}
+              ]
+            },
+            {
               name: 'fixed',
               type: 'button-group-select',
               label: '固定位置',
               pipeIn: defaultValue(''),
               size: 'xs',
               mode: 'inline',
-              className: 'w-full',
+              inputClassName: 'mt-1 w-full',
               options: [
                 {
                   value: '',
@@ -334,7 +393,7 @@ export class TableCellPlugin extends BasePlugin {
               name: 'breakpoint',
               type: 'button-group-select',
               label: '触发底部显示条件',
-              visibleOn: 'data.tableFootableEnabled',
+              visibleOn: 'this.tableFootableEnabled',
               size: 'xs',
               multiple: true,
               options: [

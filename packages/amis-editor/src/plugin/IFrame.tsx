@@ -9,6 +9,7 @@ import {
 import {defaultValue, getSchemaTpl, valuePipeOut} from 'amis-editor-core';
 
 export class IFramePlugin extends BasePlugin {
+  static id = 'IFramePlugin';
   // 关联渲染器名字
   rendererName = 'iframe';
   $schema = '/schemas/IFrameSchema.json';
@@ -17,7 +18,8 @@ export class IFramePlugin extends BasePlugin {
   name = 'iFrame';
   isBaseComponent = true;
   description = '可以用来嵌入现有页面。';
-  tags = ['容器'];
+  docLink = '/amis/zh-CN/components/iframe';
+  tags = ['功能'];
   icon = 'fa fa-window-maximize';
   pluginIcon = 'iframe-plugin';
   scaffold = {
@@ -76,7 +78,7 @@ export class IFramePlugin extends BasePlugin {
                 })
               ]
             },
-            ...getSchemaTpl('theme:common', ['layout'])
+            ...getSchemaTpl('theme:common', {exclude: ['layout']})
           ])
         ]
       }

@@ -6,6 +6,7 @@ import {BaseEventContext, BasePlugin} from 'amis-editor-core';
 import {getSchemaTpl} from 'amis-editor-core';
 
 export class PropertyPlugin extends BasePlugin {
+  static id = 'PropertyPlugin';
   // 关联渲染器名字
   rendererName = 'property';
   $schema = '/schemas/PropertySchema.json';
@@ -17,7 +18,7 @@ export class PropertyPlugin extends BasePlugin {
   pluginIcon = 'property-sheet-plugin';
   description = '属性表';
   docLink = '/amis/zh-CN/components/property';
-  tags = ['其他'];
+  tags = ['功能'];
   scaffold = {
     type: 'property',
     title: '机器配置',
@@ -80,7 +81,7 @@ export class PropertyPlugin extends BasePlugin {
             label: '分隔符',
             type: 'input-text',
             name: 'separator',
-            visibleOn: 'data.mode === "simple"'
+            visibleOn: 'this.mode === "simple"'
           },
           {
             label: '属性取自变量',
@@ -95,6 +96,11 @@ export class PropertyPlugin extends BasePlugin {
             multiLine: true,
             draggable: true,
             addButtonText: '新增',
+            scaffold: {
+              label: '',
+              content: '',
+              span: 1
+            },
             items: [
               getSchemaTpl('propertyLabel'),
               getSchemaTpl('propertyContent'),

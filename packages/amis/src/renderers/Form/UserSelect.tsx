@@ -191,15 +191,11 @@ export default class UserSelectControl extends React.Component<
 
     const rendererEvent = await dispatchEvent(
       'change',
-      resolveEventData(
-        this.props,
-        {
-          value: newValue,
-          options,
-          items: options // 为了保持名字统一
-        },
-        'value'
-      )
+      resolveEventData(this.props, {
+        value: newValue,
+        options,
+        items: options // 为了保持名字统一
+      })
     );
     if (rendererEvent?.prevented) {
       return;
@@ -259,6 +255,7 @@ export default class UserSelectControl extends React.Component<
             selection={selectedOptions}
             tabOptions={tabOptions}
             multiple={multiple}
+            displayFields={displayFields}
             onChange={this.changeValue}
             onSearch={this.onSearch}
             deferLoad={this.deferLoad}

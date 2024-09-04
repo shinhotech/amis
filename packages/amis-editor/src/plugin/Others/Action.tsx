@@ -10,9 +10,10 @@ import {
 } from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {diff} from 'amis-editor-core';
-import {SchemaCollection} from 'amis/lib/Schema';
+import type {SchemaCollection} from 'amis';
 
 export class ActionPlugin extends BasePlugin {
+  static id = 'ActionPlugin';
   panelTitle = '按钮';
   rendererName = 'action';
   name = '行为按钮';
@@ -118,7 +119,7 @@ export class ActionPlugin extends BasePlugin {
       {
         type: 'input-text',
         name: 'content',
-        visibleOn: 'data.actionType == "copy"',
+        visibleOn: 'this.actionType == "copy"',
         label: '复制内容模板'
       },
 
@@ -135,14 +136,14 @@ export class ActionPlugin extends BasePlugin {
             value: 'text/html'
           }
         ],
-        visibleOn: 'data.actionType == "copy"',
+        visibleOn: 'this.actionType == "copy"',
         label: '复制格式'
       },
 
       {
         type: 'input-text',
         name: 'target',
-        visibleOn: 'data.actionType == "reload"',
+        visibleOn: 'this.actionType == "reload"',
         label: '指定刷新目标',
         required: true
       },
@@ -157,57 +158,56 @@ export class ActionPlugin extends BasePlugin {
           showLoading: true
         }),
         asFormItem: true,
-        children: ({value, onChange, data}: any) =>
-          data.actionType === 'dialog' ? (
-            <Button
-              size="sm"
-              level="danger"
-              className="m-b"
-              onClick={() =>
-                this.manager.openSubEditor({
-                  title: '配置弹框内容',
-                  value: {type: 'dialog', ...value},
-                  onChange: value => onChange(value)
-                })
-              }
-              block
-            >
-              配置弹框内容
-            </Button>
-          ) : null
+        visibleOn: '${actionType == "dialog"}',
+        children: ({value, onChange, data}: any) => (
+          <Button
+            size="sm"
+            level="danger"
+            className="m-b"
+            onClick={() =>
+              this.manager.openSubEditor({
+                title: '配置弹框内容',
+                value: {type: 'dialog', ...value},
+                onChange: value => onChange(value)
+              })
+            }
+            block
+          >
+            配置弹框内容
+          </Button>
+        )
       },
 
       {
-        visibleOn: 'data.actionType == "drawer"',
         name: 'drawer',
         pipeIn: defaultValue({
           title: '弹框标题',
           body: '对，你刚刚点击了'
         }),
         asFormItem: true,
-        children: ({value, onChange, data}: any) =>
-          data.actionType == 'drawer' ? (
-            <Button
-              size="sm"
-              level="danger"
-              className="m-b"
-              onClick={() =>
-                this.manager.openSubEditor({
-                  title: '配置抽出式弹框内容',
-                  value: {type: 'drawer', ...value},
-                  onChange: value => onChange(value)
-                })
-              }
-              block
-            >
-              配置抽出式弹框内容
-            </Button>
-          ) : null
+        visibleOn: '${actionType == "drawer"}',
+        children: ({value, onChange, data}: any) => (
+          <Button
+            size="sm"
+            level="danger"
+            className="m-b"
+            onClick={() =>
+              this.manager.openSubEditor({
+                title: '配置抽出式弹框内容',
+                value: {type: 'drawer', ...value},
+                onChange: value => onChange(value)
+              })
+            }
+            block
+          >
+            配置抽出式弹框内容
+          </Button>
+        )
       },
 
       getSchemaTpl('api', {
         label: '目标API',
-        visibleOn: 'data.actionType == "ajax" || data.actionType == "download"'
+        visibleOn: 'this.actionType == "ajax" || this.actionType == "download"'
       }),
 
       {
@@ -217,35 +217,35 @@ export class ActionPlugin extends BasePlugin {
           body: '内容'
         }),
         asFormItem: true,
-        children: ({onChange, value, data}: any) =>
-          data.actionType == 'ajax' ? (
-            <div className="m-b">
+        visibleOn: '${actionType == "ajax"}',
+        children: ({onChange, value, data}: any) => (
+          <div className="m-b">
+            <Button
+              size="sm"
+              level={value ? 'danger' : 'info'}
+              onClick={() =>
+                this.manager.openSubEditor({
+                  title: '配置反馈弹框详情',
+                  value: {type: 'dialog', ...value},
+                  onChange: value => onChange(value)
+                })
+              }
+            >
+              配置反馈弹框内容
+            </Button>
+
+            {value ? (
               <Button
                 size="sm"
-                level={value ? 'danger' : 'info'}
-                onClick={() =>
-                  this.manager.openSubEditor({
-                    title: '配置反馈弹框详情',
-                    value: {type: 'dialog', ...value},
-                    onChange: value => onChange(value)
-                  })
-                }
+                level="link"
+                className="m-l"
+                onClick={() => onChange('')}
               >
-                配置反馈弹框内容
+                清空设置
               </Button>
-
-              {value ? (
-                <Button
-                  size="sm"
-                  level="link"
-                  className="m-l"
-                  onClick={() => onChange('')}
-                >
-                  清空设置
-                </Button>
-              ) : null}
-            </div>
-          ) : null
+            ) : null}
+          </div>
+        )
       },
 
       {
@@ -279,21 +279,21 @@ export class ActionPlugin extends BasePlugin {
         type: 'input-text',
         label: '目标地址',
         name: 'link',
-        visibleOn: 'data.actionType == "link"'
+        visibleOn: 'this.actionType == "link"'
       },
 
       {
         type: 'input-text',
         label: '目标地址',
         name: 'url',
-        visibleOn: 'data.actionType == "url"',
+        visibleOn: 'this.actionType == "url"',
         placeholder: 'http://'
       },
 
       {
         type: 'switch',
         name: 'blank',
-        visibleOn: 'data.actionType == "url"',
+        visibleOn: 'this.actionType == "url"',
         mode: 'inline',
         className: 'w-full',
         label: '是否用新窗口打开',
@@ -302,7 +302,7 @@ export class ActionPlugin extends BasePlugin {
 
       isInDialog
         ? {
-            visibleOn: 'data.actionType == "submit" || data.type == "submit"',
+            visibleOn: 'this.actionType == "submit" || this.type == "submit"',
             name: 'close',
             type: 'switch',
             mode: 'inline',
@@ -323,7 +323,7 @@ export class ActionPlugin extends BasePlugin {
         type: 'input-text',
         name: 'reload',
         label: '刷新目标组件',
-        visibleOn: 'data.actionType != "link" && data.actionType != "url"',
+        visibleOn: 'this.actionType != "link" && this.actionType != "url"',
         description:
           '当前动作完成后，指定目标组件刷新。支持传递数据如：<code>xxx?a=\\${a}&b=\\${b}</code>，多个目标请用英文逗号隔开。'
       },
@@ -331,7 +331,7 @@ export class ActionPlugin extends BasePlugin {
       {
         type: 'input-text',
         name: 'target',
-        visibleOn: 'data.actionType != "reload"',
+        visibleOn: 'this.actionType != "reload"',
         label: '指定响应组件',
         description:
           '指定动作执行者，默认为当前组件所在的功能性性组件，如果指定则转交给目标组件来处理。'

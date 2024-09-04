@@ -21,6 +21,7 @@ try {
 }
 
 export class WebComponentPlugin extends BasePlugin {
+  static id = 'WebComponentPlugin';
   // 关联渲染器名字
   rendererName = 'web-component';
   $schema = '/schemas/WebComponentSchema.json';
@@ -30,7 +31,7 @@ export class WebComponentPlugin extends BasePlugin {
   isBaseComponent = true;
   description = '用于渲染 Web Component 组件';
   docLink = '/amis/zh-CN/components/web-component';
-  tags = ['容器'];
+  tags = ['功能'];
   icon = 'fa fa-square-o';
   pluginIcon = 'web-component-plugin';
   scaffold = {
@@ -66,7 +67,11 @@ export class WebComponentPlugin extends BasePlugin {
                 getSchemaTpl('combo-container', {
                   type: 'input-kv',
                   mode: 'normal',
+                  draggable: false,
                   name: 'props',
+                  valueSchema: getSchemaTpl('formulaControl', {
+                    placeholder: 'Value'
+                  }),
                   label: '属性'
                 })
               ]

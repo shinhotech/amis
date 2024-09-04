@@ -3,7 +3,8 @@ import {
   FormItem,
   FormControlProps,
   FormBaseControl,
-  resolveEventData
+  resolveEventData,
+  getVariable
 } from 'amis-core';
 import {ClassNamesFn, themeable, ThemeProps} from 'amis-core';
 import {Spinner, SpinnerExtraProps} from 'amis-ui';
@@ -16,9 +17,11 @@ import {localeable, LocaleProps} from 'amis-core';
 import {FormBaseControlSchema} from '../../Schema';
 import {supportStatic} from './StaticHoc';
 
+import type {TestIdBuilder} from 'amis-core';
+
 /**
  * City 城市选择框。
- * 文档：https://baidu.gitee.io/amis/docs/components/form/city
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/city
  */
 export interface InputCityControlSchema
   extends FormBaseControlSchema,
@@ -62,6 +65,11 @@ export interface InputCityControlSchema
    * 是否显示搜索框
    */
   searchable?: boolean;
+
+  /**
+   * 下拉框className
+   */
+  itemClassName?: string;
 }
 
 export interface CityPickerProps
@@ -76,10 +84,12 @@ export interface CityPickerProps
   allowCity: boolean;
   allowDistrict: boolean;
   allowStreet: boolean;
-  useMobileUI?: boolean;
+  mobileUI?: boolean;
   style?: {
     [propName: string]: any;
   };
+  popOverContainer?: any;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface CityDb {
@@ -411,7 +421,10 @@ export class CityPicker extends React.Component<
       allowStreet,
       searchable,
       translate: __,
-      loadingConfig
+      loadingConfig,
+      popOverContainer,
+      itemClassName,
+      testIdBuilder
     } = this.props;
 
     const {provinceCode, cityCode, districtCode, street, db} = this.state;
@@ -419,6 +432,7 @@ export class CityPicker extends React.Component<
     return db ? (
       <div className={cx('CityPicker', className)}>
         <Select
+          className={cx(itemClassName)}
           searchable={searchable}
           disabled={disabled}
           options={db.province.map(item => ({
@@ -427,10 +441,13 @@ export class CityPicker extends React.Component<
           }))}
           value={provinceCode || ''}
           onChange={this.handleProvinceChange}
+          popOverContainer={popOverContainer}
+          testIdBuilder={testIdBuilder?.getChild('province')}
         />
 
         {allowCity && db.city[provinceCode] && db.city[provinceCode].length ? (
           <Select
+            className={cx(itemClassName)}
             searchable={searchable}
             disabled={disabled}
             options={db.city[provinceCode].map(item => ({
@@ -439,6 +456,8 @@ export class CityPicker extends React.Component<
             }))}
             value={cityCode || ''}
             onChange={this.handleCityChange}
+            popOverContainer={popOverContainer}
+            testIdBuilder={testIdBuilder?.getChild('city')}
           />
         ) : null}
 
@@ -446,6 +465,7 @@ export class CityPicker extends React.Component<
         allowDistrict &&
         (db.district[provinceCode]?.[cityCode] as any)?.length ? (
           <Select
+            className={cx(itemClassName)}
             searchable={searchable}
             disabled={disabled}
             options={(db.district[provinceCode][cityCode] as Array<number>).map(
@@ -456,6 +476,8 @@ export class CityPicker extends React.Component<
             )}
             value={districtCode || ''}
             onChange={this.handleDistrictChange}
+            popOverContainer={popOverContainer}
+            testIdBuilder={testIdBuilder?.getChild('district')}
           />
         ) : null}
 
@@ -467,6 +489,7 @@ export class CityPicker extends React.Component<
             onBlur={this.handleStreetEnd}
             placeholder={__('City.street')}
             disabled={disabled}
+            {...testIdBuilder?.getChild('street').getTestId()}
           />
         ) : null}
       </div>
@@ -493,13 +516,15 @@ export class LocationControl extends React.Component<LocationControlProps> {
 
   @autobind
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       onChange('');
     } else if (actionType === 'reset') {
-      onChange(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      onChange(pristineVal ?? '');
     }
   }
 
@@ -562,15 +587,16 @@ export class LocationControl extends React.Component<LocationControlProps> {
       disabled,
       searchable,
       env,
-      useMobileUI
+      mobileUI,
+      popOverContainer,
+      itemClassName,
+      testIdBuilder
     } = this.props;
-    const mobileUI = useMobileUI && isMobile();
+
     return mobileUI ? (
       <CityArea
         value={value}
-        popOverContainer={
-          env && env.getModalContainer ? env.getModalContainer : undefined
-        }
+        popOverContainer={env?.getModalContainer}
         onChange={this.handleChange}
         allowCity={allowCity}
         allowDistrict={allowDistrict}
@@ -578,10 +604,12 @@ export class LocationControl extends React.Component<LocationControlProps> {
         joinValues={joinValues}
         allowStreet={allowStreet}
         disabled={disabled}
-        useMobileUI={useMobileUI}
+        mobileUI={mobileUI}
       />
     ) : (
       <ThemedCity
+        itemClassName={itemClassName}
+        popOverContainer={popOverContainer || env?.getModalContainer}
         searchable={searchable}
         value={value}
         onChange={this.handleChange}
@@ -591,6 +619,7 @@ export class LocationControl extends React.Component<LocationControlProps> {
         joinValues={joinValues}
         allowStreet={allowStreet}
         disabled={disabled}
+        testIdBuilder={testIdBuilder}
       />
     );
   }

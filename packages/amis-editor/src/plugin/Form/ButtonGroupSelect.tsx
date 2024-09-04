@@ -1,4 +1,8 @@
-import {registerEditorPlugin} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {BasePlugin, BaseEventContext} from 'amis-editor-core';
 
 import {
@@ -8,8 +12,12 @@ import {
 } from 'amis-editor-core';
 import {getSchemaTpl, defaultValue} from 'amis-editor-core';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
+import {ValidatorTag} from '../../validator';
+import {resolveOptionEventDataSchame, resolveOptionType} from '../../util';
+import type {Schema} from 'amis';
 
 export class ButtonGroupControlPlugin extends BasePlugin {
+  static id = 'ButtonGroupControlPlugin';
   // 关联渲染器名字
   rendererName = 'button-group-select';
   $schema = '/schemas/ButtonGroupControlSchema.json';
@@ -22,7 +30,7 @@ export class ButtonGroupControlPlugin extends BasePlugin {
   description =
     '用来展示多个按钮，视觉上会作为一个整体呈现，同时可以作为表单项选项选择器来用。';
   docLink = '/amis/zh-CN/components/button-group';
-  tags = ['按钮'];
+  tags = ['表单项'];
   scaffold = {
     type: 'button-group-select',
     name: 'buttonGroupSelect',
@@ -61,17 +69,24 @@ export class ButtonGroupControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
+      dataSchema: (manager: EditorManager) => {
+        const {value} = resolveOptionEventDataSchame(manager);
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -85,7 +100,7 @@ export class ButtonGroupControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -117,20 +132,20 @@ export class ButtonGroupControlPlugin extends BasePlugin {
                 getSchemaTpl('label'),
                 getSchemaTpl('multiple'),
                 getSchemaTpl('valueFormula', {
-                  rendererSchema: context?.schema,
-                  useSelectMode: true, // 改用 Select 设置模式
-                  visibleOn: 'this.options && this.options.length > 0'
+                  rendererSchema: (schema: Schema) => schema,
+                  useSelectMode: true
                 }),
                 getSchemaTpl('description')
               ]
             },
             {
               title: '按钮管理',
-              body: [getSchemaTpl('optionControlV2')]
+              body: [getSchemaTpl('nav-badge'), getSchemaTpl('optionControlV2')]
             },
             getSchemaTpl('status', {
               isFormItem: true
-            })
+            }),
+            getSchemaTpl('validation', {tag: ValidatorTag.MultiSelect})
           ])
         ]
       },
@@ -145,7 +160,7 @@ export class ButtonGroupControlPlugin extends BasePlugin {
                 getSchemaTpl('horizontal', {
                   label: '',
                   visibleOn:
-                    'data.mode == "horizontal" && data.label !== false && data.horizontal'
+                    'this.mode == "horizontal" && this.label !== false && this.horizontal'
                 }),
                 getSchemaTpl('switch', {
                   name: 'tiled',
@@ -154,7 +169,7 @@ export class ButtonGroupControlPlugin extends BasePlugin {
                     '使按钮宽度占满父容器，各按钮宽度自适应'
                   ),
                   pipeIn: defaultValue(false),
-                  visibleOn: 'data.mode !== "inline"'
+                  visibleOn: 'this.mode !== "inline"'
                 }),
                 getSchemaTpl('size'),
                 getSchemaTpl('buttonLevel', {
@@ -192,6 +207,56 @@ export class ButtonGroupControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.joinValues === false) {
+      dataSchema = {
+        ...dataSchema,
+        type: 'object',
+        title: node.schema?.label || node.schema?.name,
+        properties: {
+          [node.schema?.labelField || 'label']: {
+            type: 'string',
+            title: '文本'
+          },
+          [node.schema?.valueField || 'value']: {
+            type,
+            title: '值'
+          }
+        }
+      };
+    }
+
+    if (node.schema?.multiple) {
+      if (node.schema?.extractValue) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name
+        };
+      } else if (node.schema?.joinValues === false) {
+        dataSchema = {
+          type: 'array',
+          title: node.schema?.label || node.schema?.name,
+          items: {
+            type: 'object',
+            title: '成员',
+            properties: dataSchema.properties
+          },
+          originalValue: dataSchema.originalValue
+        };
+      }
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(ButtonGroupControlPlugin);

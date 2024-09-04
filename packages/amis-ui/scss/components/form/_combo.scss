@@ -20,81 +20,8 @@
     margin-top: var(--gap-xs);
     display: inline-block;
   }
-
-  &-addBtn {
-    > svg {
-      width: var(--Combo-addBtn-fontSize);
-      height: var(--Combo-addBtn-fontSize);
-      top: 0;
-    }
-
-    @include button-size(
-      var(--Combo-addBtn-fontSize),
-      var(--Combo-addBtn-fontWeight),
-      var(--Combo-addBtn-lineHeight),
-      var(--combo-multi-addBtn-top-left-border-radius),
-      var(--combo-multi-addBtn-top-right-border-radius),
-      var(--combo-multi-addBtn-bottom-right-border-radius),
-      var(--combo-multi-addBtn-bottom-left-border-radius),
-      var(--Combo-addBtn-height),
-      var(--combo-multi-addBtn-paddingTop),
-      var(--combo-multi-addBtn-paddingBottom),
-      var(--combo-multi-addBtn-paddingLeft),
-      var(--combo-multi-addBtn-paddingRight)
-    );
-
-    @include button-variant(
-      var(--Combo-addBtn-bg),
-      var(--Combo-addBtn-color),
-      var(--Combo-addBtn-border),
-      var(--Combo-addBtn-border),
-      var(--Combo-addBtn-border),
-      var(--Combo-addBtn-border),
-      var(--button-default-default-top-border-width),
-      var(--button-default-default-right-border-width),
-      var(--button-default-default-bottom-border-width),
-      var(--button-default-default-left-border-width),
-      var(--button-default-default-top-border-style),
-      var(--button-default-default-right-border-style),
-      var(--button-default-default-bottom-border-style),
-      var(--button-default-default-left-border-style),
-      var(--button-default-default-shadow),
-      var(--Combo-addBtn-onHover-bg),
-      var(--Combo-addBtn-onHover-color),
-      var(--Combo-addBtn-onHover-border),
-      var(--Combo-addBtn-onHover-border),
-      var(--Combo-addBtn-onHover-border),
-      var(--Combo-addBtn-onHover-border),
-      var(--button-default-hover-top-border-width),
-      var(--button-default-hover-right-border-width),
-      var(--button-default-hover-bottom-border-width),
-      var(--button-default-hover-left-border-width),
-      var(--button-default-hover-top-border-style),
-      var(--button-default-hover-right-border-style),
-      var(--button-default-hover-bottom-border-style),
-      var(--button-default-hover-left-border-style),
-      var(--button-default-hover-shadow),
-      var(--Combo-addBtn-onActive-bg),
-      var(--Combo-addBtn-onActive-color),
-      var(--Combo-addBtn-onActive-border),
-      var(--Combo-addBtn-onActive-border),
-      var(--Combo-addBtn-onActive-border),
-      var(--Combo-addBtn-onActive-border),
-      var(--button-default-active-top-border-width),
-      var(--button-default-active-right-border-width),
-      var(--button-default-active-bottom-border-width),
-      var(--button-default-active-left-border-width),
-      var(--button-default-active-top-border-style),
-      var(--button-default-active-right-border-style),
-      var(--button-default-active-bottom-border-style),
-      var(--button-default-active-left-border-style),
-      var(--button-default-active-shadow)
-    );
-
-    &.is-disabled {
-      pointer-events: none;
-      opacity: var(--Button-onDisabled-opacity);
-    }
+  &-itemInner {
+    margin-right: px2rem(12px);
   }
 
   &-delBtn {
@@ -106,6 +33,13 @@
     }
   }
 
+  .#{$ns}Tabs--radio .is-active &-tab-delBtn {
+    color: var(--Tabs--radio-active-color);
+    &:hover {
+      color: var(--Tabs--radio-active-color);
+    }
+  }
+
   &-tab-delBtn {
     color: var(--combo-multi-delBtn-color);
     cursor: pointer;
@@ -113,8 +47,8 @@
     display: inline-block;
 
     > svg {
-      width: px2rem(11px);
-      height: px2rem(11px);
+      width: px2rem(14px);
+      height: px2rem(14px);
     }
 
     &:hover {
@@ -187,6 +121,7 @@
       white-space: nowrap;
       align-items: flex-start;
       padding-top: var(--Form-label-paddingTop);
+      height: px2rem(30px);
 
       &.is-disabled {
         pointer-events: none;
@@ -247,6 +182,12 @@
         var(--combo-vertical-paddingRight) var(--combo-vertical-paddingBottom)
         var(--combo-vertical-paddingLeft);
       position: relative;
+
+      &.has-error {
+        border-color: var(
+          --Combo--vertical-item--onError-borderColor
+        ) !important; // 因为下面的规则权重更高 &:not(.is-disabled) > .#{$ns}Combo-items > .#{$ns}Combo-item:hover
+      }
     }
 
     > .#{$ns}Combo-items > .#{$ns}Combo-item {
@@ -320,6 +261,44 @@
       background: rgba(0, 0, 0, 0.1);
     }
   }
+
+  &.is-mobile {
+    .#{$ns}Form-item {
+      .#{$ns}Form-rowInner {
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+      }
+    }
+
+    .#{$ns}Combo-delBtn {
+      height: px2rem(20px);
+      padding-top: 0;
+    }
+
+    .#{$ns}Combo-item {
+      align-items: center;
+      position: relative;
+
+      &::before {
+        @include hairline-bottom(var(--borderColor));
+      }
+    }
+  }
+
+  &.is-mobile:not(.#{$ns}Combo--ver) {
+    .#{$ns}TextareaControl > textarea,
+    .#{$ns}Form-control > .#{$ns}TextControl-input,
+    .#{$ns}TextControl.is-focused > .#{$ns}TextControl-input {
+      border-bottom: var(--Form-input-borderWidth) solid var(--borderColor);
+    }
+  }
+}
+
+.#{$ns}ComboTabs {
+  border-left: var(--Form-input-borderWidth) solid var(--borderColor);
+  border-right: var(--Form-input-borderWidth) solid var(--borderColor);
+  border-bottom: var(--Form-input-borderWidth) solid var(--borderColor);
 }
 
 .#{$ns}ComboTabs > .#{$ns}Tabs-links {
@@ -335,6 +314,7 @@
   float: right;
   > a svg {
     margin-right: var(--gap-xs);
+    top: 0;
   }
 }
 

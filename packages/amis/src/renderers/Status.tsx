@@ -2,7 +2,6 @@ import React from 'react';
 import merge from 'lodash/merge';
 import assign from 'lodash/assign';
 import {
-  generateIcon,
   isPureVariable,
   Renderer,
   RendererProps,
@@ -24,7 +23,7 @@ export interface StatusSource {
 
 /**
  * 状态展示控件。
- * 文档：https://baidu.gitee.io/amis/docs/components/status
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/status
  */
 export interface StatusSchema extends BaseSchema {
   /**
@@ -170,12 +169,12 @@ export class StatusField extends React.Component<StatusProps, object> {
       );
     }
 
-    let wrapClassName: string = '';
+    let classNameProp: string = '';
 
     // icon element
     let iconElement = null;
     if (status.icon) {
-      wrapClassName = `StatusField--${value}`;
+      classNameProp = `StatusField--${value}`;
       let icon = status.icon;
       let svgIcon: string = '';
       let itemClassName: string = '';
@@ -190,19 +189,15 @@ export class StatusField extends React.Component<StatusProps, object> {
           }
         );
       }
-
-      // 兼容 默认icon 和 旧版 iconfont icon
-      if (svgIcon) {
-        iconElement = (
-          <Icon
-            icon={svgIcon}
-            className={cx('Status-icon icon', itemClassName)}
-            key="icon"
-          />
-        );
-      } else {
-        iconElement = generateIcon(cx, icon, 'Status-icon');
-      }
+      iconElement = (
+        <Icon
+          cx={cx}
+          icon={svgIcon || icon}
+          className="Status-icon icon"
+          classNameProp={itemClassName}
+          key="icon"
+        />
+      );
     }
 
     let labelElement = null;
@@ -218,7 +213,7 @@ export class StatusField extends React.Component<StatusProps, object> {
       <span
         className={cx(
           'StatusField',
-          wrapClassName,
+          classNameProp,
           className,
           status.className
         )}

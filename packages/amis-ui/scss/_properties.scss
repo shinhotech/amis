@@ -1,13 +1,23 @@
 @import './functions';
 @import './variables';
 $remFactor: 16px;
+
+/* 此处放置需要override的变量，因为部分变量已经在variables.scss中定义 */
+$Table-strip-bg: transparent;
+
 :root {
+  --affix-offset-top: 0px;
+  --affix-offset-bottom: 0px;
+}
+
+:root,
+.AMISCSSWrapper {
   --white: var(--colors-neutral-text-11);
   --primary: var(--colors-brand-5);
   --primary-onHover: var(--colors-brand-6);
   --primary-onActive: var(--colors-brand-4);
 
-  --secondary: var(--colors-neutral-text-4); // secondary 颜色需进一步确认
+  --secondary: var(--colors-neutral-text-4); /*  secondary 颜色需进一步确认 */
   --secondary-onHover: var(--colors-neutral-text-6);
   --secondary-onActive: var(--colors-neutral-text-4);
 
@@ -103,8 +113,8 @@ $remFactor: 16px;
   --label--warning-bg: var(--warning);
   --label--danger-bg: var(--danger);
 
-  --label-color: var(--colors-neutral-text-11);
-  --label-link--hover-color: var(--colors-neutral-text-11);
+  --label-color: #fff;
+  --label-link--hover-color: #fff;
 
   --scrollbar-width: #{px2rem(17px)};
 
@@ -151,7 +161,7 @@ $remFactor: 16px;
   --Avatar-icon-size-small: #{px2rem(12px)};
 
   --Badge-size: var(--gap-md);
-  --Badge-color: var(--colors-neutral-fill-11);
+  --Badge-color: #fff;
   --Badge--success-bg: var(--success);
   --Badge--info-bg: var(--info);
   --Badge--warning-bg: var(--warning);
@@ -173,7 +183,7 @@ $remFactor: 16px;
   --Breadcrumb-item-default-color: var(--colors-neutral-text-5);
   --Breadcrumb-item-hover-color: var(--colors-brand-5);
   --Breadcrumb-item-active-color: var(--colors-brand-4);
-  --Breadcrumb-item-last-color: #151a26;
+  --Breadcrumb-item-last-color: var(--colors-neutral-text-2);
   --BreadcrumbDropdown-item-default-color: var(--colors-neutral-text-2);
   --BreadcrumbDropdown-item-default-bg: var(--colors-neutral-text-11);
   --BreadcrumbDropdown-item-hover-bg: var(--colors-brand-10);
@@ -218,7 +228,7 @@ $remFactor: 16px;
   --Carousel--light-control: white;
   --Carousel-arrowControl-height: var(--gap-lg);
   --Carousel-arrowControl-width: var(--gap-lg);
-  --Carousel-bg: #f6f8f8;
+  --Carousel-bg: var(--colors-neutral-fill-10);
   --Carousel-dot-borderRadius: #{px2rem(4px)};
   --Carousel-dot-height: #{px2rem(8px)};
   --Carousel-dot-margin: #{px2rem(7px)} var(--gap-xs);
@@ -239,18 +249,14 @@ $remFactor: 16px;
   --ColorPicker-fontSize: var(--Form-input-fontSize);
   --ColorPicker-height: var(--Form-input-height);
   --ColorPicker-lineHeight: var(--Form-input-lineHeight);
+  --ColorPicker-height: var(--sizes-base-16);
   --ColorPicker-onDisabled-bg: var(--colors-neutral-fill-8);
   --ColorPicker-onDisabled-color: var(--text--muted-color);
   --ColorPicker-onFocused-borderColor: var(--Form-input-onFocused-borderColor);
   --ColorPicker-onHover-bg: var(--colors-neutral-fill-11);
   --ColorPicker-onHover-borderColor: var(--colors-brand-5);
-  --ColorPicker-paddingX: #{px2rem(12px)};
-  --ColorPicker-paddingY: calc(
-    (
-        var(--ColorPicker-height) - var(--ColorPicker-lineHeight) *
-          var(--ColorPicker-fontSize)
-      ) / 2 - var(--ColorPicker-borderWidth)
-  );
+  --ColorPicker-paddingX: var(--sizes-size-6);
+  --ColorPicker-paddingY: var(--sizes-size-3);
   --ColorPicker-placeholderColor: var(--colors-neutral-text-6);
   --ColorPicker-boxShadow: var(--shadows-shadow-normal);
 
@@ -268,22 +274,18 @@ $remFactor: 16px;
   --DropDown-menu-borderColor: var(--borderColor);
   --DropDown-menu-borderRadius: var(--borderRadius);
   --DropDown-menu-borderWidth: var(--borderWidth);
-  --DropDown-menu-boxShadow: var(--shadows-shadow-normal);
-  --DropDown-menu-height: #{px2rem(34px)};
+  --DropDown-menu-boxShadow: var(--Form-select-outer-boxShadow);
+  --DropDown-menu-height: #{px2rem(32px)};
   --DropDown-menu-minWidth: #{px2rem(160px)};
   --DropDown-menu-paddingX: 0;
   --DropDown-menu-paddingY: var(--gap-xs);
-  --DropDown-menuItem-onHover-bg: var(--ListMenu-item--onHover-bg);
+  --DropDown-menuItem-onHover-bg: var(--Form-select-menu-onHover-bg);
   --DropDown-group-color: #848b99;
-  --DropDown-menuItem-color: #151a26;
-  --DropDown-menuItem-onHover-color: var(--colors-brand-5);
+  --DropDown-menuItem-color: var(--colors-neutral-text-2);
+  --DropDown-menuItem-onHover-color: var(--Form-select-menu-onHover-color);
   --DropDown-menuItem-onActive-color: var(--colors-brand-5);
   --DropDown-menuItem-onDisabled-color: #b4b6ba;
-  --DropDown-menuItem-paddingX: var(--gap-sm);
-  --DropDown-menuItem-paddingY: calc(
-    (var(--DropDown-menu-height) - var(--fontSizeBase) * var(--lineHeightBase)) /
-      2
-  );
+  --DropDown-menuItem-paddingX: var(--select-base-default-option-paddingRight);
 
   --Fieldset-legend-bgColor: var(--colors-neutral-fill-11);
 
@@ -339,12 +341,7 @@ $remFactor: 16px;
   --Form-input-password-icon-size: var(--sizes-size-9);
   --Form-input-password-icon-color: var(--colors-neutral-text-5);
 
-  --Form-input-paddingY: calc(
-    (
-        var(--Form-input-height) - var(--Form-input-lineHeight) *
-          var(--Form-input-fontSize) - #{px2rem(2px)}
-      ) / 2
-  );
+  --Form-input-paddingY: var(--sizes-size-3);
   --Form-input-placeholderColor: var(--text--muted-color);
   --Form-input-onDisabled-color: var(--colors-neutral-text-5);
 
@@ -426,7 +423,7 @@ $remFactor: 16px;
   --Layout-asideLink-onActive-arrowColor: var(
     --Layout-asideLink-onActive-color
   );
-  --Layout-asideLink-onActive-color: var(--colors-brand-4);
+  --Layout-asideLink-onActive-color: var(--colors-brand-6);
   --Layout-asideLink-onHover-color: var(--colors-brand-6);
   --Layout-asideLink-onHover-iconColor: var(--colors-brand-6);
   --Layout-asideLink-onHover-iconSize: var(--sizes-size-9);
@@ -450,7 +447,7 @@ $remFactor: 16px;
   --Layout-light-fontColor: var(--colors-neutral-text-1);
   --Layout-fontColor--onHover: var(--colors-brand-5);
   --Layout-dark-fontColor: var(--colors-neutral-text-11);
-  --Layout-fontColor--onActive: var(--colors-brand-5);
+  --Layout-fontColor--onActive: var(--colors-brand-4);
   --Layout-fontColor--info: var(--colors-brand-5);
   --Layout-dark-backgroundColor: var(--colors-neutral-fill-2);
   --Layout-dark-selected-color: var(--colors-brand-6);
@@ -475,8 +472,8 @@ $remFactor: 16px;
   --ListControl-item-borderWidth: var(--borders-width-2);
   --ListControl-item-borderRadius: var(--borders-radius-3);
   --ListControl-item-color: var(--colors-neutral-text-2);
-  --ListControl-item-onActive-after-borderColor: var(--colors-neutral-line-11);
-  --ListControl-item-onActive-before-bg: var(--colors-brand-4);
+  --ListControl-item-onActive-after-borderColor: #fff;
+  --ListControl-item-onActive-before-bg: var(--colors-brand-5);
   --ListControl-item-onActive-bg: var(--colors-neutral-fill-11);
   --ListControl-item-onActive-borderColor: var(--colors-brand-4);
   --ListControl-item-onActive-color: var(--colors-brand-4);
@@ -523,6 +520,10 @@ $remFactor: 16px;
   --ListMenu-item-bg: var(--colors-neutral-fill-11);
   --ListMenu-item-color: var(--colors-neutral-text-2);
   --ListMenu-item-height: var(--sizes-base-15);
+  --ListMenu-item-mobile-margin: #{px2rem(5px)};
+  --ListMenu-item-mobile-width: #{px2rem(90px)};
+  --ListMenu-item-mobile-bg: #f5f5f5;
+  --ListMenu-item-mobile-active-bg: #e7f1ff;
 
   --Log-bg: #222;
   --Log-padding: var(--gap-sm) 0;
@@ -594,7 +595,9 @@ $remFactor: 16px;
 
   --Pagination-fontSize: var(--fonts-size-8);
   --Pagination-height: #{px2rem(32px)};
+  --Pagination-height-sm: #{px2rem(24px)};
   --Pagination-minWidth: #{px2rem(32px)};
+  --Pagination-minWidth-sm: #{px2rem(24px)};
   --Pagination-onActive-backgroundColor: var(--colors-neutral-fill-11);
   --Pagination-onActive-border: var(--borders-width-2) var(--borders-style-2)
     var(--colors-brand-5);
@@ -602,12 +605,12 @@ $remFactor: 16px;
   --Pagination-onDisabled-color: var(--colors-neutral-text-6);
   --Pagination-onDisabled-backgroundColor: var(--colors-neutral-fill-10);
   --Pagination-padding: 0 #{px2rem(8px)};
-  --Pagination-light-color: #84868c;
+  --Pagination-padding-sm: 0 #{px2rem(4px)};
+  --Pagination-light-color: var(--colors-neutral-text-4);
 
   --Panel--default-badgeBg: var(--colors-neutral-fill-3);
   --Panel--default-badgeColor: var(--colors-neutral-fill-10);
 
-  --Picker-iconColor: var(--icon-color);
   --Picker-onHover-iconColor: var(--icon-onHover-color);
 
   --PickerColumns-bg: white;
@@ -625,25 +628,24 @@ $remFactor: 16px;
   --PickerColumns-loadingIcon-color: var(--icon-color);
   --PickerColumns-loadingMask-Color: rgba(255, 255, 255, 0.9);
 
-  --PopOver-bg: white;
+  --PopOver-bg: var(--colors-neutral-fill-11);
   --PopOverAble-iconColor: inherit;
   --PopOverAble-onHover-iconColor: inherit;
 
   --PopUp-cancelAction-color: #666;
+  --PopUp-confirmAction-color: var(--primary);
 
-  --Property-title-bg: #f2f2f2;
-  --Property-label-bg: #f7f7f7;
+  --Property-title-bg: var(--colors-neutral-fill-10);
+  --Property-label-bg: var(--colors-neutral-fill-10);
 
   --Portlet-borderColor: var(--borderColor);
   --Portlet-borderStyle: solid;
   --Portlet-borderWidth: var(--borderWidth);
   --Portlet-borderRadius: var(--borderRadius);
 
-  --QuickEdit-iconColor: inherit;
-  --QuickEdit-iconSize: #{px2rem(13px)};
+  --QuickEdit-iconSize: #{px2rem(14px)};
   --QuickEdit-onFocus-borderColor: var(--info);
   --QuickEdit-onFocus-borderWidth: var(--borderWidth);
-  --QuickEdit-onHover-iconColor: inherit;
 
   --Remark-bg: var(--colors-neutral-text-11);
   --Remark-borderColor: var(--colors-neutral-line-8);
@@ -693,7 +695,7 @@ $remFactor: 16px;
   --Tooltip--attr-borderRadius: var(--borderRadius);
   --Tooltip--attr-borderWidth: 0;
   --Tooltip--attr-boxShadow: var(--shadows-shadow-normal);
-  --Tooltip--attr-color: var(--background);
+  --Tooltip--attr-color: #fff;
   --Tooltip--attr-fontSize: var(--fontSizeSm);
   --Tooltip--attr-gap: var(--gap-sm);
   --Tooltip--attr-lineHeigt: var(--lineHeightBase);
@@ -702,13 +704,13 @@ $remFactor: 16px;
   --Tooltip--attr-transition: all var(--animation-duration) ease-in-out;
   --Tooltip-arrow-color: var(--Tooltip-bg);
   --Tooltip-arrow-color--dark: rgba(7, 12, 20, 0.85);
-  --Tooltip-arrow-height: 0.25rem;
+  --Tooltip-arrow-height: #{px2rem(4px)};
   --Tooltip-arrow-outerColor: #{fade-in($borderColor, 0.05)};
-  --Tooltip-arrow-width: 0.5rem;
+  --Tooltip-arrow-width: #{px2rem(8px)};
   --Tooltip-bg: var(--background);
   --Tooltip-bg--dark: rgba(7, 12, 20, 0.85);
   --Tooltip-body-color: var(--text-color);
-  --Tooltip-body-color--dark: var(--colors-neutral-fill-11);
+  --Tooltip-body-color--dark: #fff;
   --Tooltip-body-paddingX: var(--gap-base);
   --Tooltip-body-paddingY: var(--gap-sm);
   --Tooltip-borderColor: var(--borderColor);
@@ -724,7 +726,7 @@ $remFactor: 16px;
   --Tooltip-title-bg: #{darken($white, 3%)};
   --Tooltip-title-borderBottom-color: #{darken(darken($white, 3%), 5%)};
   --Tooltip-title-color: var(--text--loud-color);
-  --Tooltip-title-color--dark: var(--colors-neutral-fill-11);
+  --Tooltip-title-color--dark: #fff;
   --Tooltip-title-paddingX: var(--gap-base);
   --Tooltip-title-paddingY: var(--gap-sm);
 
@@ -734,8 +736,8 @@ $remFactor: 16px;
   --TransferSelect--normal-heading-bg: var(--colors-neutral-fill-10);
   --TransferSelect-heading-borderBottom: var(--borders-width-1);
 
-  --TabsTransfer-title-bg: #f7f7f9;
-  --TabsTransfer-border-color: #e8e9eb;
+  --TabsTransfer-title-bg: var(--colors-neutral-fill-10);
+  --TabsTransfer-border-color: var(--colors-neutral-fill-8);
 
   --AnchorNav-links-container-borderRight: #{px2rem(2px)} solid #d3dae0;
   --AnchorNav-onActive-borderWidth: 0 0 0 #{px2rem(2px)};
@@ -752,10 +754,11 @@ $remFactor: 16px;
   --ColumnToggler-item-margin: #{px2rem(4px)};
   --ColumnToggler-item-dragBar-color: #d8d8d8;
 
-  --InputFormula-header-bgColor: #fafafa;
-  --InputFormula-icon-size: #{px2rem(24px)};
+  --InputFormula-header-bgColor: var(--colors-neutral-fill-10);
+  --InputFormula-icon-size: #{px2rem(18px)};
   --InputFormula-icon-color-onActive: var(--colors-brand-5);
   --InputFormula-code-bgColor: var(--colors-neutral-fill-10);
+  --InputFormula-input-schema-height: var(--sizes-base-12);
 
   --UserSelect--post-bg: var(--colors-brand-6);
   --UserSelect--department-bg: #ffab52;
@@ -763,6 +766,24 @@ $remFactor: 16px;
   --UserSelect--border-color: #f7f7f9;
   --UserSelect--content-bg: #f5f7f8;
   --UserSelect--bread-color: #5e626a;
+
+  --Cascader-border-color: #f7f7f9;
+  --Cascader-border-active-bg-color: #f7f7f9;
+  --Cascader-option-disable-color: #b8babf;
+
+  // tag
+  --Tag-content-fontSize: var(--fontSizeSm);
+  --Tag-height: #{px2rem(24px)};
+  --Tag-borderRadius: #{px2rem(2px)};
+  --Tag-fontColor: #151a26;
+
+  --Tag-default-color: #f2f2f4;
+  --Tag-inactive-color: #b8babf;
+  --Tag-active-color: var(--colors-brand-5);
+  --Tag-processing-color: var(--colors-brand-6);
+  --Tag-success-color: var(--colors-success-5);
+  --Tag-error-color: var(--colors-error-5);
+  --Tag-warning-color: var(--colors-warning-5);
 
   --Tag-checkable-bgColor: #f2f2f4;
   --Tag-checkable-bgColor-onDisable: #e6e6e8;
@@ -797,7 +818,7 @@ $remFactor: 16px;
   --SearchBox-hover-color: var(--colors-brand-5);
   --SearchBox-focus-color: var(--colors-brand-4);
   --SearchBox-search-icon-color: var(--colors-neutral-text-5);
-  --SearchBox-enhonce-icon-color: var(--colors-neutral-text-11);
+  --SearchBox-enhonce-icon-color: var(--button-primary-default-font-color);
   --SearchBox-clearable-icon-color: var(--colors-neutral-text-7);
   --SearchBox-clearable-icon-size: var(--sizes-size-9);
   --SearchBox-height: var(--sizes-base-15);
@@ -805,6 +826,7 @@ $remFactor: 16px;
   --SearchBox-enhonce-disabled-color: var(--colors-neutral-text-9);
   --SearchBox-enhonce-disabled-search-color: var(--colors-neutral-text-6);
   --SearchBox-enhonce-clearable-gap: var(--borders-radius-4);
+  --SearchBox-search-btn-color--disabled: var(--colors-neutral-fill-6);
 
   --IconSelect-searchBox-width: #{px2rem(246px)};
   --IconSelect-type-item-height: #{px2rem(48px)};
@@ -814,7 +836,7 @@ $remFactor: 16px;
   --IconSelect-sm-padding: #{px2rem(6px)};
   --IconSelect-base-border-radius: var(--borderRadiusMd);
   --IconSelect-border-color: var(--menu-border-color);
-  --IconSelect-preivew-icon-size: #{px2rem(20px)};
+  --IconSelect-preview-icon-size: #{px2rem(16px)};
   --IconSelect-list-icon-size: #{px2rem(24px)};
   --IconSelect-type-font-size: var(--fontSizeSm);
   --IconSelect-active-badge-color: var(--colors-neutral-fill-11);

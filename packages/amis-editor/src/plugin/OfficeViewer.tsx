@@ -3,6 +3,7 @@ import {BaseEventContext, BasePlugin} from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 
 export class OfficeViewerPlugin extends BasePlugin {
+  static id = 'OfficeViewerPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'office-viewer';
@@ -12,7 +13,7 @@ export class OfficeViewerPlugin extends BasePlugin {
   name = '文档预览';
   isBaseComponent = true;
   description = 'Office 文档预览';
-  docLink = '/amis/zh-CN/components/OfficeViewer';
+  docLink = '/amis/zh-CN/components/office-viewer';
   tags = ['展示'];
   icon = 'fa fa-file-word';
   pluginIcon = 'officeViewer-plugin';
@@ -118,39 +119,39 @@ export class OfficeViewerPlugin extends BasePlugin {
                         type: 'input-number',
                         label: '页上下边距',
                         name: 'pageMarginBottom',
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       },
                       {
                         type: 'input-color',
                         label: '页背景色',
                         pipeIn: defaultValue('#FFFFFF'),
                         name: 'pageBackground',
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       },
                       getSchemaTpl('switch', {
                         label: '是否显示页面阴影',
                         name: 'pageShadow',
                         inline: true,
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       }),
                       getSchemaTpl('switch', {
                         label: '是否显示页面包裹',
                         name: 'pageWrap',
                         inline: true,
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       }),
                       {
                         type: 'input-number',
                         label: '页面包裹宽度',
                         name: 'pageWrapPadding',
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       },
                       {
                         type: 'input-color',
                         label: '页面包裹背景色',
                         pipeIn: defaultValue('#ECECEC'),
                         name: 'pageWrapBackground',
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       },
                       {
                         type: 'input-number',
@@ -158,13 +159,13 @@ export class OfficeViewerPlugin extends BasePlugin {
                         min: 0.1,
                         max: 1,
                         name: 'zoom',
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       },
                       getSchemaTpl('switch', {
                         label: '自适应宽度',
                         name: 'zoomFitWidth',
                         inline: true,
-                        visibleOn: 'data.page'
+                        visibleOn: 'this.page'
                       })
                     ]
                   }
@@ -175,7 +176,9 @@ export class OfficeViewerPlugin extends BasePlugin {
         },
         {
           title: '外观',
-          className: 'p-none'
+          body: getSchemaTpl('collapseGroup', [
+            getSchemaTpl('style:classNames', {isFormItem: false})
+          ])
         }
       ])
     ];

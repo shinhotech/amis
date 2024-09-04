@@ -1,18 +1,25 @@
-import {defaultValue, getSchemaTpl} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  RAW_TYPE_MAP,
+  defaultValue,
+  getSchemaTpl
+} from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {BasePlugin, BaseEventContext} from 'amis-editor-core';
 
 import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import {resolveOptionEventDataSchame, resolveOptionType} from '../../util';
+import type {Schema, SchemaType} from 'amis';
 
 export class RadiosControlPlugin extends BasePlugin {
+  static id = 'RadiosControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'radios';
   $schema = '/schemas/RadiosControlSchema.json';
-
-  order = -460;
 
   // 组件名称
   name = '单选框';
@@ -61,25 +68,29 @@ export class RadiosControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化时触发',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
-            },
-            'event.data.selectedItems': {
-              type: 'object',
-              title: '选中的项'
-            },
-            'event.data.items': {
-              type: 'array',
-              title: '选项集合'
+      dataSchema: (manager: EditorManager) => {
+        const {value, selectedItems, items} = resolveOptionEventDataSchame(
+          manager,
+          false
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value,
+                  selectedItems,
+                  items
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -93,7 +104,7 @@ export class RadiosControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'reload',
@@ -122,14 +133,16 @@ export class RadiosControlPlugin extends BasePlugin {
               }),
               getSchemaTpl('label'),
               getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema,
+                rendererSchema: (schema: Schema) => schema,
                 useSelectMode: true, // 改用 Select 设置模式
                 visibleOn: 'this.options && this.options.length > 0'
               }),
               // getSchemaTpl('autoFill')
               getSchemaTpl('labelRemark'),
               getSchemaTpl('remark'),
-              getSchemaTpl('autoFillApi')
+              getSchemaTpl('autoFillApi', {
+                trigger: 'change'
+              })
             ]
           },
           {
@@ -150,13 +163,13 @@ export class RadiosControlPlugin extends BasePlugin {
                 getSchemaTpl('switch', {
                   label: '一行选项显示',
                   name: 'inline',
-                  hiddenOn: 'data.mode === "inline"',
+                  hiddenOn: 'this.mode === "inline"',
                   pipeIn: defaultValue(true)
                 }),
                 {
                   label: '每行选项个数',
                   name: 'columnsCount',
-                  hiddenOn: 'data.mode === "inline" || data.inline !== false',
+                  hiddenOn: 'this.mode === "inline" || this.inline !== false',
                   type: 'input-range',
                   min: 1,
                   max: 6,
@@ -187,6 +200,37 @@ export class RadiosControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    const type = resolveOptionType(node.schema);
+    // todo:异步数据case
+    let dataSchema: any = {
+      type,
+      title: node.schema?.label || node.schema?.name,
+      rawType: RAW_TYPE_MAP[node.schema.type as SchemaType] || 'string',
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.joinValues === false) {
+      dataSchema = {
+        ...dataSchema,
+        type: 'object',
+        title: node.schema?.label || node.schema?.name,
+        properties: {
+          [node.schema?.labelField || 'label']: {
+            type: 'string',
+            title: '文本'
+          },
+          [node.schema?.valueField || 'value']: {
+            type,
+            title: '值'
+          }
+        }
+      };
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(RadiosControlPlugin);

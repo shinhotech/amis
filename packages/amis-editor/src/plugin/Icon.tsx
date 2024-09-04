@@ -1,9 +1,14 @@
-import {registerEditorPlugin, RendererPluginEvent} from 'amis-editor-core';
+import {
+  registerEditorPlugin,
+  RendererPluginAction,
+  RendererPluginEvent
+} from 'amis-editor-core';
 import {BaseEventContext, BasePlugin} from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {getEventControlConfig} from '../renderer/event-control';
 
 export class IconPlugin extends BasePlugin {
+  static id = 'IconPlugin';
   // 关联渲染器名字
   rendererName = 'icon';
   $schema = '/schemas/Icon.json';
@@ -42,9 +47,15 @@ export class IconPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -58,9 +69,15 @@ export class IconPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -74,9 +91,15 @@ export class IconPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            nativeEvent: {
+            context: {
               type: 'object',
-              title: '鼠标事件对象'
+              title: '上下文',
+              properties: {
+                nativeEvent: {
+                  type: 'object',
+                  title: '鼠标事件对象'
+                }
+              }
             }
           }
         }
@@ -107,15 +130,15 @@ export class IconPlugin extends BasePlugin {
           title: '外观',
           body: getSchemaTpl('collapseGroup', [
             {
-              title: '自定义样式',
+              title: '基本样式',
               body: [
-                getSchemaTpl('theme:size', {
+                getSchemaTpl('theme:select', {
                   label: '尺寸',
-                  name: 'css.className.font.fontSize'
+                  name: 'themeCss.className.iconSize'
                 }),
                 getSchemaTpl('theme:colorPicker', {
                   label: '颜色',
-                  name: `css.className.font.color`,
+                  name: `themeCss.className.font.color`,
                   labelMode: 'input'
                 }),
                 getSchemaTpl('theme:paddingAndMargin', {
@@ -124,18 +147,17 @@ export class IconPlugin extends BasePlugin {
               ]
             }
           ])
+        },
+        {
+          title: '事件',
+          className: 'p-none',
+          body: [
+            getSchemaTpl('eventControl', {
+              name: 'onEvent',
+              ...getEventControlConfig(this.manager, context)
+            })
+          ]
         }
-
-        // {
-        //   title: '事件',
-        //   className: 'p-none',
-        //   body: [
-        //     getSchemaTpl('eventControl', {
-        //       name: 'onEvent',
-        //       ...getEventControlConfig(this.manager, context)
-        //     })
-        //   ]
-        // }
       ])
     ];
   };

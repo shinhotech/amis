@@ -1,12 +1,20 @@
 import React from 'react';
-import {Renderer, RendererProps, stripNumber} from 'amis-core';
+import {Renderer, RendererProps, numberFormatter, stripNumber} from 'amis-core';
 import moment from 'moment';
 import {BaseSchema} from '../Schema';
-import {getPropValue} from 'amis-core';
+import isNumber from 'lodash/isNumber';
+import {getPropValue, Option, PlainObject, normalizeOptions} from 'amis-core';
+
+import getMiniDecimal, {
+  DecimalClass,
+  toFixed,
+  getNumberPrecision,
+  num2str
+} from '@rc-component/mini-decimal';
 
 /**
  * Number 展示渲染器。
- * 文档：https://baidu.gitee.io/amis/docs/components/number
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/number
  */
 export interface NumberSchema extends BaseSchema {
   /**
@@ -42,6 +50,11 @@ export interface NumberSchema extends BaseSchema {
    * 占位符
    */
   placeholder?: string;
+
+  /**
+   * 单位列表
+   */
+  unitOptions?: string | Array<Option> | string[] | PlainObject;
 }
 
 export interface NumberProps
@@ -63,6 +76,7 @@ export class NumberField extends React.Component<NumberProps> {
       affix,
       suffix,
       percent,
+      unitOptions,
       className,
       style,
       classnames: cx,
@@ -74,7 +88,16 @@ export class NumberField extends React.Component<NumberProps> {
 
     let value = getPropValue(this.props);
 
-    if (value) {
+    let unit = '';
+    if (typeof value === 'string' && unitOptions && unitOptions.length) {
+      const units = normalizeOptions(unitOptions).map(v => v.value);
+      unit = units.find(item => value.endsWith(item)) || '';
+      if (unit) {
+        value = value.replace(unit, '');
+      }
+    }
+
+    if (typeof value === 'number' || typeof value === 'string') {
       // 设置了精度，但是原始数据是字符串，需要转成 float 之后再处理
       if (typeof value === 'string' && precision) {
         value = stripNumber(parseFloat(value));
@@ -95,13 +118,11 @@ export class NumberField extends React.Component<NumberProps> {
         viewValue = <span>{value}</span>;
       } else {
         if (typeof value === 'number' && precision) {
-          value = value.toFixed(precision);
+          value = toFixed(num2str(value), '.', precision);
         }
 
         if (kilobitSeparator) {
-          let parts = String(value).split('.');
-          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-          value = parts.join('.');
+          value = numberFormatter(value, precision);
         }
 
         viewValue = <span>{value}</span>;
@@ -114,6 +135,7 @@ export class NumberField extends React.Component<NumberProps> {
       <>
         {prefix}
         {viewValue}
+        {unit}
         {affix ?? suffix}
       </>
     );

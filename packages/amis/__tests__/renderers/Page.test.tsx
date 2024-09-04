@@ -551,7 +551,7 @@ test('Renderer:Page initApi sendOn -> false', async () => {
   expect(fetcher).not.toHaveBeenCalled();
 });
 
-test('Renderer:Page location query', () => {
+test('Renderer:Page location query', async () => {
   const history = createMemoryHistory({
     initialEntries: ['/xxx?a=5']
   });
@@ -584,6 +584,7 @@ test('Renderer:Page location query', () => {
     )
   );
 
+  await wait(300);
   expect(component.toJSON()).toMatchSnapshot();
 });
 
@@ -686,7 +687,8 @@ test('Renderer:Page handleAction actionType=url|link', async () => {
 });
 
 test('Renderer:Page handleAction actionType=dialog default', async () => {
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -707,6 +709,8 @@ test('Renderer:Page handleAction actionType=dialog default', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('OpenDialog')).toBeInTheDocument();
@@ -727,7 +731,8 @@ test('Renderer:Page handleAction actionType=dialog default', async () => {
 });
 
 test('Renderer:Page handleAction actionType=dialog mergeData', async () => {
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -766,6 +771,8 @@ test('Renderer:Page handleAction actionType=dialog mergeData', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('OpenDialog')).toBeInTheDocument();
@@ -786,7 +793,8 @@ test('Renderer:Page handleAction actionType=dialog mergeData', async () => {
 });
 
 test('Renderer:Page handleAction actionType=drawer default', async () => {
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -807,6 +815,8 @@ test('Renderer:Page handleAction actionType=drawer default', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('OpenDrawer')).toBeInTheDocument();
@@ -826,7 +836,8 @@ test('Renderer:Page handleAction actionType=drawer default', async () => {
 });
 
 test('Renderer:Page handleAction actionType=drawer mergeData', async () => {
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -865,6 +876,8 @@ test('Renderer:Page handleAction actionType=drawer mergeData', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('OpenDrawer')).toBeInTheDocument();
@@ -897,7 +910,8 @@ test('Renderer:Page handleAction actionType=ajax', async () => {
       }
     })
   );
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -918,6 +932,8 @@ test('Renderer:Page handleAction actionType=ajax', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('RequestAjax')).toBeInTheDocument();
@@ -973,7 +989,8 @@ test('Renderer:Page handleAction actionType=ajax & feedback', async () => {
       }
     })
   );
-  const {getByText, container}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -997,11 +1014,14 @@ test('Renderer:Page handleAction actionType=ajax & feedback', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   fireEvent.click(getByText(/RequestAjax/));
   await waitFor(() => {
     expect(getByText('确认')).toBeInTheDocument();
   });
+  await wait(300);
   expect(container).toMatchSnapshot();
 
   fireEvent.click(getByText(/确认/));
@@ -1167,7 +1187,8 @@ test('Renderer:Page initApi reload by Dialog action', async () => {
       }
     })
   );
-  const {container, getByText, rerender}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -1203,6 +1224,8 @@ test('Renderer:Page initApi reload by Dialog action', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('The variable value is 1')).toBeInTheDocument();
@@ -1244,7 +1267,8 @@ test('Renderer:Page initApi reload by Drawer action', async () => {
       }
     })
   );
-  const {container, getByText, rerender}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -1280,6 +1304,8 @@ test('Renderer:Page initApi reload by Drawer action', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText('The variable value is 1')).toBeInTheDocument();
@@ -1321,7 +1347,8 @@ test('Renderer:Page initApi reload by Form submit', async () => {
       }
     })
   );
-  const {container, getByText, rerender}: any = render(
+  let container: HTMLElement;
+  const renderResult: any = render(
     amisRender(
       {
         type: 'page',
@@ -1356,6 +1383,8 @@ test('Renderer:Page initApi reload by Form submit', async () => {
       })
     )
   );
+  const getByText = renderResult.getByText;
+  container = renderResult.container;
 
   await waitFor(() => {
     expect(getByText(/Submit/)).toBeInTheDocument();

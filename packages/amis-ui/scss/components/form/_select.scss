@@ -70,6 +70,7 @@
     var(--select-base-default-paddingLeft);
   cursor: pointer;
   color: var(--Form-select-color);
+  transition: all var(--animation-duration) ease-in-out;
 
   &:hover {
     background: var(--Form-select-onHover-bg);
@@ -148,13 +149,24 @@
   }
 
   .#{$ns}PopOver.#{$ns}Select-popover {
-    margin-top: px2rem(4px);
+    &.#{$ns}PopOver--v-top {
+      margin-top: px2rem(4px);
+    }
+    &.#{$ns}PopOver--v-bottom {
+      margin-bottom: px2rem(4px);
+    }
     .#{$ns}Select-menu {
+      .#{$ns}Checkbox span {
+        line-height: var(--select-base-default-option-line-height);
+        height: var(--select-base-default-option-line-height);
+      }
       .#{$ns}Select-option {
         line-height: var(--select-base-default-option-line-height);
+        height: var(--select-base-default-option-line-height);
       }
       .#{$ns}Select-addBtn {
         line-height: var(--select-base-default-option-line-height);
+        height: var(--select-base-default-option-line-height);
       }
     }
   }
@@ -165,10 +177,10 @@
     user-select: none;
     position: relative;
     flex-grow: 1;
-    line-height: 1;
     width: auto;
     max-width: 100%;
     overflow: hidden;
+    padding-right: px2rem(4px);
   }
   &-valuesNoWrap {
     white-space: nowrap;
@@ -211,10 +223,6 @@
         display: inline-block;
         width: px2rem(100px);
         margin-bottom: var(--gap-xs);
-      }
-
-      .#{$ns}Select-placeholder {
-        margin-left: var(--gap-sm);
       }
     }
     .#{$ns}Select-values + .#{$ns}Select-input {
@@ -269,13 +277,13 @@
   }
 
   &.is-mobile {
-    min-height: calc(var(--Form-input-lineHeight) * var(--fontSizeLg));
+    min-height: var(--Form-select-height);
     border: none;
     padding: 0;
-    font-size: var(--fontSizeLg);
+    font-size: var(--select-base-default-fontSize);
 
     .#{$ns}Select-valueWrap {
-      text-align: right;
+      text-align: left;
       padding-right: 4px;
     }
     .#{$ns}Select-arrow {
@@ -292,7 +300,6 @@
     overflow: auto;
     user-select: none;
     .#{$ns}Checkbox--sm > i {
-      margin-top: px2rem(-3px);
       margin-right: px2rem(4px);
     }
     &.is-mobile {
@@ -436,6 +443,40 @@
       // display: inline-block;
       max-width: 100%;
     }
+
+    &.is-mobile {
+      position: relative;
+
+      & > a {
+        margin-right: calc(
+          20px + var(--select-base-default-option-paddingRight)
+        );
+      }
+
+      .#{$ns}Select-option-item-check {
+        min-width: 0;
+        min-height: 0;
+        flex: 1;
+        text-align: left;
+        border-bottom: px2rem(1px) solid var(--borderColor);
+      }
+
+      .#{$ns}Select-option-mcheck {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: var(--select-base-default-option-paddingRight);
+        flex: none;
+        width: px2rem(16px);
+        color: var(--Form-select-mobile-icon-check-color);
+      }
+
+      &:last-child {
+        .#{$ns}Select-option-item-check {
+          border-bottom: none;
+        }
+      }
+    }
   }
 
   &-noResult {
@@ -546,25 +587,19 @@
 }
 
 .#{$ns}Select-popover {
-  margin-top: calc(var(--Form-select-outer-borderWidth) * -1);
-
   background: var(--Form-select-menu-bg);
   color: var(--Form-select-menu-color);
   border: var(--Form-select-outer-borderWidth) solid
-    var(--Form-input-onFocused-borderColor);
+    var(--Form-select-outer-borderColor);
   box-shadow: var(--Form-select-outer-boxShadow);
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  // min-width: px2rem(100px);
+  min-width: px2rem(120px);
 
   // PopOver 上已经配置了，这个要是配置就会覆盖，所以先干掉好了
   // z-index: 10;
-
-  &.#{$ns}PopOver--leftTopLeftBottom {
-    margin-top: calc(
-      (var(--Form-select-popoverGap) - var(--Form-select-outer-borderWidth)) *
-        -1
-    );
+}
+.#{$ns}InputGroup:hover {
+  .#{$ns}Select-popover {
+    border-color: var(--Form-select-outer-borderColor) !important;
   }
 }
 
@@ -579,8 +614,6 @@
   }
 
   .#{$ns}TransferDropDown-popover {
-    border: none;
-
     .#{$ns}Tree-list {
       .#{$ns}Tree-item {
         .#{$ns}Tree-itemLabel,
@@ -623,6 +656,30 @@
 
     .#{$ns}Select-valueWrap {
       width: 0; // ! 没有这个会撑开。
+    }
+  }
+}
+
+// 下拉框在弹框中的的时候没有select层，所以把这部分单独提出来
+.#{$ns}PopOver.#{$ns}Select-popover {
+  &.#{$ns}PopOver--v-top {
+    margin-top: px2rem(4px);
+  }
+  &.#{$ns}PopOver--v-bottom {
+    margin-bottom: px2rem(4px);
+  }
+  .#{$ns}Select-menu {
+    .#{$ns}Checkbox span {
+      line-height: var(--select-base-default-option-line-height);
+      height: var(--select-base-default-option-line-height);
+    }
+    .#{$ns}Select-option {
+      line-height: var(--select-base-default-option-line-height);
+      height: var(--select-base-default-option-line-height);
+    }
+    .#{$ns}Select-addBtn {
+      line-height: var(--select-base-default-option-line-height);
+      height: var(--select-base-default-option-line-height);
     }
   }
 }

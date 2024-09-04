@@ -4,14 +4,18 @@
 
 import React from 'react';
 import {findDOMNode} from 'react-dom';
-import cx from 'classnames';
-import {FormItem, Button, Icon, FormControlProps, autobind} from 'amis';
-
-import {clone, remove} from 'lodash';
-import {GoConfigControl} from './GoConfigControl';
 import Sortable from 'sortablejs';
+import cx from 'classnames';
+import cloneDeep from 'lodash/cloneDeep';
+import remove from 'lodash/remove';
+import isPlainObject from 'lodash/isPlainObject';
+import {FormItem, Button, Icon, FormControlProps, autobind} from 'amis';
+import {Checkbox} from 'amis-ui';
+import {evalExpression} from 'amis-core';
+import {GoConfigControl} from './GoConfigControl';
 
 const klass = 'ae-FeatureControl';
+
 export type FeatureOption = {
   label: string;
   value: any;
@@ -27,9 +31,16 @@ interface FeatureControlProps extends FormControlProps {
   addable?: boolean;
   addText?: string;
   sortable?: boolean;
+  checkable?: boolean;
+  checkableOn?: string;
   features: Array<FeatureOption> | ((schema: any) => Array<FeatureOption>);
-  goFeatureComp?: (item: FeatureOption) => string; // 去子组件
-  onSort?: (value: FeatureOption[]) => void;
+  goFeatureComp?: (item: FeatureOption, index: number) => string; // 去子组件
+  onSort?: (data: any, value: {oldIndex: number; newIndex: number}) => void;
+  // 自定义添加内容，按钮变成普通按钮
+  customAction?: (props: {schema: any; onBulkChange: any}) => any;
+  onItemCheck?: (checked: boolean, index: number, schema: any) => void;
+  // 所有都添加完成后，隐藏添加按钮
+  hideAddWhenAll?: boolean;
 }
 
 interface FeatureControlState {
@@ -95,16 +106,23 @@ export default class FeatureControl extends React.Component<
   @autobind
   handleRemove(item: FeatureOption, index: number) {
     const {removeFeature, data, onBulkChange} = this.props;
+    const schema = cloneDeep(data);
     const {inUseFeat, unUseFeat} = this.state;
-
-    item.remove?.(data);
-    removeFeature?.(item, data);
-    onBulkChange?.(data);
+    item.remove?.(schema);
+    removeFeature?.(item, schema);
 
     remove(inUseFeat, item);
     item.add && unUseFeat.push(item);
+    onBulkChange?.(schema);
 
     this.setState({inUseFeat, unUseFeat});
+  }
+
+  handleSort(e: any) {
+    const {data, onBulkChange, onSort} = this.props;
+    let schema = cloneDeep(data);
+    onSort?.(schema, e);
+    onBulkChange?.(schema);
   }
 
   @autobind
@@ -115,7 +133,7 @@ export default class FeatureControl extends React.Component<
     inUseFeat.push(item);
     remove(unUseFeat, item);
 
-    const schema = clone(data);
+    const schema = cloneDeep(data);
     item.add?.(schema);
     addFeature?.(item, schema);
     onBulkChange?.(schema);
@@ -158,21 +176,25 @@ export default class FeatureControl extends React.Component<
           }
           // 换回来
           const parent = e.to as HTMLElement;
-          if (
-            e.newIndex < e.oldIndex &&
-            e.oldIndex < parent.childNodes.length - 1
-          ) {
-            parent.insertBefore(e.item, parent.childNodes[e.oldIndex + 1]);
-          } else if (e.oldIndex < parent.childNodes.length - 1) {
-            parent.insertBefore(e.item, parent.childNodes[e.oldIndex]);
+          if (e.oldIndex < parent.childNodes.length - 1) {
+            parent.insertBefore(
+              e.item,
+              parent.childNodes[
+                e.oldIndex > e.newIndex ? e.oldIndex + 1 : e.oldIndex
+              ]
+            );
           } else {
             parent.appendChild(e.item);
           }
 
           const value = this.state.inUseFeat.concat();
           value[e.oldIndex] = value.splice(e.newIndex, 1, value[e.oldIndex])[0];
+
           this.setState({inUseFeat: value}, () => {
-            this.props.onSort?.(value);
+            this.handleSort({
+              oldIndex: e.oldIndex,
+              newIndex: e.newIndex
+            });
           });
         }
       }
@@ -186,8 +208,24 @@ export default class FeatureControl extends React.Component<
     this.sortable && this.sortable.destroy();
   }
 
-  renderItem(item: FeatureOption, index: number) {
-    const {sortable, goFeatureComp, node, manager} = this.props;
+  @autobind
+  handleCheck(res: boolean, index: number) {
+    const {data, onBulkChange, onItemCheck} = this.props;
+    const schema = cloneDeep(data);
+    onItemCheck?.(res, index, schema);
+    onBulkChange?.(schema);
+  }
+
+  renderItem(item: FeatureOption, index: number, checkable: boolean) {
+    const {
+      sortable,
+      goFeatureComp,
+      node,
+      manager,
+      onItemCheck,
+      isItemChecked,
+      data
+    } = this.props;
 
     let content = null;
 
@@ -198,7 +236,7 @@ export default class FeatureControl extends React.Component<
           className={cx(`${klass}Item-go`)}
           label={item.label}
           manager={manager}
-          compId={() => goFeatureComp(item)}
+          compId={() => goFeatureComp(item, index)}
         />
       );
     } else {
@@ -207,12 +245,21 @@ export default class FeatureControl extends React.Component<
 
     return (
       <li className={klass + 'Item'} key={index}>
-        {sortable && (
-          <a className={klass + 'Item-dragBar'}>
-            <Icon icon="drag-bar" className="icon" />
-          </a>
+        {checkable && onItemCheck && (
+          <Checkbox
+            checked={isItemChecked(item, index, data)}
+            onChange={(val: any) => this.handleCheck(val, index)}
+          />
         )}
-        {content}
+
+        <div className={klass + 'Item-content'}>
+          {sortable && (
+            <a className={klass + 'Item-dragBar'}>
+              <Icon icon="drag-bar" className="icon" />
+            </a>
+          )}
+          {content}
+        </div>
         <Button
           className={klass + 'Item-action'}
           onClick={() => this.handleRemove(item, index)}
@@ -224,8 +271,28 @@ export default class FeatureControl extends React.Component<
   }
 
   renderAction() {
-    const {addable, addText, render} = this.props;
+    const {
+      addable,
+      addText,
+      render,
+      customAction,
+      data,
+      onBulkChange,
+      hideAddWhenAll
+    } = this.props;
     if (!addable) {
+      return null;
+    }
+
+    if (customAction && typeof customAction === 'function') {
+      const schema = customAction({onBulkChange, schema: cloneDeep(data)});
+
+      if (isPlainObject(schema) && typeof schema.type === 'string') {
+        return render('custom-action', schema);
+      }
+    }
+
+    if (hideAddWhenAll && !this.state.unUseFeat.length) {
       return null;
     }
 
@@ -251,13 +318,21 @@ export default class FeatureControl extends React.Component<
   }
 
   render() {
-    const {className} = this.props;
+    const {className, checkable, checkableOn, data} = this.props;
+
+    let isCheckable = false;
+
+    if (checkable !== undefined) {
+      isCheckable = checkable;
+    } else if (checkableOn) {
+      isCheckable = evalExpression(checkableOn, data) === true;
+    }
 
     return (
       <div className={cx('ae-FeatureControl', className)}>
         <ul className={cx('ae-FeatureControl-features')} ref={this.dragRef}>
           {this.state.inUseFeat.map((item, index) =>
-            this.renderItem(item, index)
+            this.renderItem(item, index, isCheckable)
           )}
         </ul>
 

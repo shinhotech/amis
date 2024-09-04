@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/not-a-regexp.js", "../../node_modules/core-js/internals/correct-is-regexp-logic.js"],
+  "sourcesContent": ["'use strict';\nvar isRegExp = require('../internals/is-regexp');\n\nvar $TypeError = TypeError;\n\nmodule.exports = function (it) {\n  if (isRegExp(it)) {\n    throw new $TypeError(\"The method doesn't accept regular expressions\");\n  } return it;\n};\n", "'use strict';\nvar wellKnownSymbol = require('../internals/well-known-symbol');\n\nvar MATCH = wellKnownSymbol('match');\n\nmodule.exports = function (METHOD_NAME) {\n  var regexp = /./;\n  try {\n    '/./'[METHOD_NAME](regexp);\n  } catch (error1) {\n    try {\n      regexp[MATCH] = false;\n      return '/./'[METHOD_NAME](regexp);\n    } catch (error2) { /* empty */ }\n  } return false;\n};\n"],
+  "mappings": ";;;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,WAAW;AAEf,QAAI,aAAa;AAEjB,WAAO,UAAU,SAAU,IAAI;AAC7B,UAAI,SAAS,EAAE,GAAG;AAChB,cAAM,IAAI,WAAW,+CAA+C;AAAA,MACtE;AAAE,aAAO;AAAA,IACX;AAAA;AAAA;;;ACTA;AAAA;AAAA;AACA,QAAI,kBAAkB;AAEtB,QAAI,QAAQ,gBAAgB,OAAO;AAEnC,WAAO,UAAU,SAAU,aAAa;AACtC,UAAI,SAAS;AACb,UAAI;AACF,cAAM,WAAW,EAAE,MAAM;AAAA,MAC3B,SAAS,QAAQ;AACf,YAAI;AACF,iBAAO,KAAK,IAAI;AAChB,iBAAO,MAAM,WAAW,EAAE,MAAM;AAAA,QAClC,SAAS,QAAQ;AAAA,QAAc;AAAA,MACjC;AAAE,aAAO;AAAA,IACX;AAAA;AAAA;",
+  "names": []
+}

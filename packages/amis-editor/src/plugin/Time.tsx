@@ -33,13 +33,15 @@ const dateFormatOptions = [
   }
 ];
 export class TimePlugin extends DatePlugin {
+  static id = 'TimePlugin';
   // 关联渲染器名字
   rendererName = 'time';
   name = '时间展示';
   isBaseComponent = true;
+  disabledRendererPlugin = true; // 可用 DatetimePlugin 实现
 
   pluginIcon = 'time-plugin';
-
+  docLink = '/amis/zh-CN/components/date';
   scaffold = {
     type: 'time',
     value: Math.round(Date.now() / 1000),

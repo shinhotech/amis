@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/internals/set-to-string-tag.js"],
+  "sourcesContent": ["'use strict';\nvar defineProperty = require('../internals/object-define-property').f;\nvar hasOwn = require('../internals/has-own-property');\nvar wellKnownSymbol = require('../internals/well-known-symbol');\n\nvar TO_STRING_TAG = wellKnownSymbol('toStringTag');\n\nmodule.exports = function (target, TAG, STATIC) {\n  if (target && !STATIC) target = target.prototype;\n  if (target && !hasOwn(target, TO_STRING_TAG)) {\n    defineProperty(target, TO_STRING_TAG, { configurable: true, value: TAG });\n  }\n};\n"],
+  "mappings": ";;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,iBAAiB,iCAA+C;AACpE,QAAI,SAAS;AACb,QAAI,kBAAkB;AAEtB,QAAI,gBAAgB,gBAAgB,aAAa;AAEjD,WAAO,UAAU,SAAU,QAAQ,KAAK,QAAQ;AAC9C,UAAI,UAAU,CAAC;AAAQ,iBAAS,OAAO;AACvC,UAAI,UAAU,CAAC,OAAO,QAAQ,aAAa,GAAG;AAC5C,uBAAe,QAAQ,eAAe,EAAE,cAAc,MAAM,OAAO,IAAI,CAAC;AAAA,MAC1E;AAAA,IACF;AAAA;AAAA;",
+  "names": []
+}

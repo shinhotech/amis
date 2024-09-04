@@ -18,11 +18,13 @@
     top: 0;
     left: 0;
     display: inline-block;
-    border: 0;
     width: auto;
     z-index: 1;
     background: var(--Fieldset-legend-bgColor);
-    border-left: 0 !important;
+  }
+
+  > legend.#{$ns}Collapse-header.is-mobile {
+    position: absolute;
   }
 
   .collapse {
@@ -43,11 +45,11 @@ fieldset.#{$ns}Collapse {
       var(--fieldSet-legend-paddingRight) var(--fieldSet-legend-paddingBottom)
       var(--fieldSet-legend-paddingLeft);
     cursor: pointer;
-    border-bottom: none !important;
     background: transparent;
     display: inline-flex !important;
     flex-direction: row-reverse;
     justify-content: flex-end;
+    box-sizing: content-box;
     // width: 100%;
 
     .#{$ns}TplField {
@@ -186,6 +188,15 @@ fieldset.#{$ns}Collapse {
 
     &:after {
       top: calc(var(--fieldSet-size-lg-fontSize) / 2);
+    }
+  }
+
+  .#{$ns}Collapse-header.is-mobile {
+    padding-left: var(--gap-xs) !important;
+    padding-right: px2rem(18px);
+
+    &:hover {
+      background: var(--white);
     }
   }
 }

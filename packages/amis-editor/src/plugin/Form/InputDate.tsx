@@ -6,6 +6,7 @@ import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {FormulaDateType} from '../../renderer/FormulaControl';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
+import type {Schema} from 'amis';
 
 const formatX = [
   {
@@ -20,9 +21,9 @@ const formatX = [
 
 const DateType: {
   [key: string]: {
-    format: string;
+    format: string; // 各类型时间的默认格式
     placeholder: string;
-    formatOptions: Array<{label: string; value: string; timeFormat?: string}>;
+    formatOptions: Array<{label: string; value: string; timeFormat?: string}>; // 各类型时间支持展示格式
   };
 } = {
   date: {
@@ -69,23 +70,19 @@ const DateType: {
     formatOptions: [
       {
         label: 'HH:mm',
-        value: 'HH:mm',
-        timeFormat: 'HH:mm'
+        value: 'HH:mm'
       },
       {
         label: 'HH:mm:ss',
-        value: 'HH:mm:ss',
-        timeFormat: 'HH:mm:ss'
+        value: 'HH:mm:ss'
       },
       {
         label: 'HH时mm分',
-        value: 'HH时mm分',
-        timeFormat: 'HH:mm'
+        value: 'HH时mm分'
       },
       {
         label: 'HH时mm分ss秒',
-        value: 'HH时mm分ss秒',
-        timeFormat: 'HH:mm:ss'
+        value: 'HH时mm分ss秒'
       }
     ]
   },
@@ -140,11 +137,10 @@ const dateTooltip =
   '支持例如: <code>now、+3days、-2weeks、+1hour、+2years</code> 等（minute|min|hour|day|week|month|year|weekday|second|millisecond）这种相对值用法';
 
 export class DateControlPlugin extends BasePlugin {
+  static id = 'DateControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-date';
   $schema = '/schemas/DateControlSchema.json';
-
-  order = -450;
 
   // 组件名称
   icon = 'fa fa-calendar';
@@ -153,7 +149,7 @@ export class DateControlPlugin extends BasePlugin {
   isBaseComponent = true;
   // 添加源对应组件中文名称 & type字段
   searchKeywords =
-    '日期框、input-datetime、日期时间框、input-time、时间框、input-month、月份框、input-quarter、季度框、input-year、年框';
+    '日期框、input-datetime、日期时间框、input-time、时间框、input-month、月份框、input-quarter、季度框、input-year、年框、年份框、年份选择';
   description = '年月日选择，支持相对值设定，如<code>+2days</code>两天后';
   docLink = '/amis/zh-CN/components/form/input-date';
   tags = ['表单项'];
@@ -187,9 +183,15 @@ export class DateControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前日期'
+                }
+              }
             }
           }
         }
@@ -203,9 +205,15 @@ export class DateControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前日期'
+                }
+              }
             }
           }
         }
@@ -219,9 +227,15 @@ export class DateControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前日期'
+                }
+              }
             }
           }
         }
@@ -239,7 +253,7 @@ export class DateControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'setValue',
@@ -278,9 +292,9 @@ export class DateControlPlugin extends BasePlugin {
                     let type: string = value.split('-')[1];
 
                     form.setValues({
-                      inputFormat: DateType[type]?.format,
                       placeholder: DateType[type]?.placeholder,
-                      format: type === 'time' ? 'HH:mm' : 'X',
+                      valueFormat: 'X',
+                      displayFormat: DateType[type]?.format,
                       minDate: '',
                       maxDate: '',
                       value: ''
@@ -289,12 +303,12 @@ export class DateControlPlugin extends BasePlugin {
                 }),
                 {
                   type: 'input-text',
-                  name: 'format',
+                  name: 'valueFormat',
                   label: tipedLabel(
                     '值格式',
                     '提交数据前将根据设定格式化数据，请参考 <a href="https://momentjs.com/" target="_blank">moment</a> 中的格式用法。'
                   ),
-                  pipeIn: defaultValue('YYYY-MM-DD'),
+                  pipeIn: defaultValue('X'),
                   clearable: true,
                   onChange: (
                     value: string,
@@ -304,26 +318,13 @@ export class DateControlPlugin extends BasePlugin {
                   ) => {
                     const type = form.data.type.split('-')[1];
                     model.setOptions(DateType[type].formatOptions);
-                    // 时间日期类组件 input-time 需要更加关注 timeFormat 和 inputFormat 属性区别
-                    // inputFormat 表示输入框内的显示格式； timeFormat表示选择下拉弹窗中展示"HH、mm、ss"的组合
-                    if (type === 'time') {
-                      const timeFormatObj = DateType[type].formatOptions.find(
-                        item => item.value === value
-                      );
-                      const timeFormat = timeFormatObj
-                        ? (timeFormatObj as any).timeFormat
-                        : 'HH:mm:ss';
-                      form.setValues({
-                        timeFormat: timeFormat
-                      });
-                    }
                   },
                   options:
                     DateType[this.scaffold.type.split('-')[1]].formatOptions
                 },
                 {
                   type: 'input-text',
-                  name: 'inputFormat',
+                  name: 'displayFormat',
                   label: tipedLabel(
                     '显示格式',
                     '请参考 <a href="https://momentjs.com/" target="_blank">moment</a> 中的格式用法。'
@@ -338,19 +339,6 @@ export class DateControlPlugin extends BasePlugin {
                   ) => {
                     const type = form.data.type.split('-')[1];
                     model.setOptions(DateType[type].formatOptions);
-                    // 时间日期类组件 input-time 需要更加关注 timeFormat 和 inputFormat 属性区别
-                    // inputFormat 表示输入框内的显示格式； timeFormat表示选择下拉弹窗中展示"HH、mm、ss"的组合
-                    if (type === 'time') {
-                      const timeFormatObj = DateType[type].formatOptions.find(
-                        item => item.value === value
-                      );
-                      const timeFormat = timeFormatObj
-                        ? (timeFormatObj as any).timeFormat
-                        : 'HH:mm:ss';
-                      form.setValues({
-                        timeFormat: timeFormat
-                      });
-                    }
                   },
                   options:
                     DateType[this.scaffold.type.split('-')[1]].formatOptions
@@ -360,9 +348,7 @@ export class DateControlPlugin extends BasePlugin {
                   pipeIn: defaultValue(true)
                 }),
                 getSchemaTpl('valueFormula', {
-                  rendererSchema: {
-                    ...context?.schema
-                  },
+                  rendererSchema: (schema: Schema) => schema,
                   placeholder: '请选择静态值',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsDate,
@@ -372,9 +358,11 @@ export class DateControlPlugin extends BasePlugin {
                   name: 'minDate',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.minDate
+                  rendererSchema: (schema: Schema) => {
+                    return {
+                      ...schema,
+                      value: context?.schema.minDate
+                    };
                   },
                   placeholder: '请选择静态值',
                   needDeleteProps: ['minDate'], // 避免自我限制
@@ -384,9 +372,11 @@ export class DateControlPlugin extends BasePlugin {
                   name: 'maxDate',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.maxDate
+                  rendererSchema: (schema: Schema) => {
+                    return {
+                      ...schema,
+                      value: context?.schema.maxDate
+                    };
                   },
                   needDeleteProps: ['maxDate'], // 避免自我限制
                   label: tipedLabel('最大值', dateTooltip)
@@ -402,7 +392,14 @@ export class DateControlPlugin extends BasePlugin {
             },
             getSchemaTpl('status', {isFormItem: true}),
             getSchemaTpl('validation', {
-              tag: ValidatorTag.Date
+              tag: ValidatorTag.Date,
+              rendererSchema: (schema: Schema) => {
+                return {
+                  ...schema,
+                  label: '值内容',
+                  validateName: 'equals'
+                };
+              }
             })
           ],
           {...context?.schema, configTitle: 'props'}

@@ -1,31 +1,36 @@
 import React from 'react';
-import {registerEditorPlugin} from 'amis-editor-core';
 import {
+  registerEditorPlugin,
   BaseEventContext,
   BasePlugin,
-  RendererPluginEvent
+  RendererPluginEvent,
+  RendererPluginAction
 } from 'amis-editor-core';
 import {getSchemaTpl} from 'amis-editor-core';
 import {getEventControlConfig} from '../renderer/event-control/helper';
 
-import {SchemaObject} from 'amis/lib/Schema';
+import type {Schema} from 'amis-core';
 
 export class SearchBoxPlugin extends BasePlugin {
+  static id = 'SearchBoxPlugin';
   // 关联渲染器名字
   rendererName = 'search-box';
   $schema = '/schemas/SearchBoxSchema.json';
 
   // 组件名称
   name = '搜索框';
+  searchKeywords = '搜索框、searchbox';
   isBaseComponent = true;
   description =
     '用于展示一个简单搜索框，通常需要搭配其他组件使用。比如 page 配置 initApi 后，可以用来实现简单数据过滤查找，name keywords 会作为参数传递给 page 的 initApi。';
   docLink = '/amis/zh-CN/components/search-box';
   icon = 'fa fa-search';
   pluginIcon = 'search-box-plugin';
+  tags = ['表单项'];
 
-  scaffold: SchemaObject = {
+  scaffold: Schema = {
     type: 'search-box',
+    name: 'keyword',
     body: {
       type: 'tpl',
       tpl: '搜索框',
@@ -51,9 +56,18 @@ export class SearchBoxPlugin extends BasePlugin {
       description: '点击搜索图标时触发',
       dataSchema: [
         {
-          'event.data.keywords': {
-            type: 'string',
-            title: '搜索内容'
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '搜索值'
+                }
+              }
+            }
           }
         }
       ]
@@ -64,13 +78,18 @@ export class SearchBoxPlugin extends BasePlugin {
       description: '输入框值变化时触发',
       dataSchema: [
         {
-          'event.data.keywords': {
-            type: 'string',
-            title: '搜索内容'
-          },
-          'event.data.value': {
-            type: 'string',
-            title: '搜索内容' // 和keywords值相同
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '搜索值'
+                }
+              }
+            }
           }
         }
       ]
@@ -81,13 +100,18 @@ export class SearchBoxPlugin extends BasePlugin {
       description: '输入框获取焦点时触发',
       dataSchema: [
         {
-          'event.data.keywords': {
-            type: 'string',
-            title: '搜索内容'
-          },
-          'event.data.value': {
-            type: 'string',
-            title: '搜索内容' // 和keywords值相同
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '搜索值'
+                }
+              }
+            }
           }
         }
       ]
@@ -98,16 +122,34 @@ export class SearchBoxPlugin extends BasePlugin {
       description: '输入框失去焦点时触发',
       dataSchema: [
         {
-          'event.data.keywords': {
-            type: 'string',
-            title: '搜索内容'
-          },
-          'event.data.value': {
-            type: 'string',
-            title: '搜索内容' // 和keywords值相同
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '搜索值'
+                }
+              }
+            }
           }
         }
       ]
+    }
+  ];
+
+  actions: RendererPluginAction[] = [
+    {
+      actionType: 'clear',
+      actionLabel: '清空',
+      description: '清空输入框'
+    },
+    {
+      actionType: 'setValue',
+      actionLabel: '更新数据',
+      description: '更新数据'
     }
   ];
 

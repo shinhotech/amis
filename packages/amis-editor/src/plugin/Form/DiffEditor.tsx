@@ -1,4 +1,4 @@
-import {availableLanguages} from 'amis/lib/renderers/Form/Editor';
+import {EditorAvailableLanguages as availableLanguages} from 'amis';
 import {
   defaultValue,
   getSchemaTpl,
@@ -14,6 +14,7 @@ import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {RendererPluginEvent, RendererPluginAction} from 'amis-editor-core';
 
 export class DiffEditorControlPlugin extends BasePlugin {
+  static id = 'DiffEditorControlPlugin';
   // 关联渲染器名字
   rendererName = 'diff-editor';
   $schema = '/schemas/DiffEditorControlSchema.json';
@@ -26,6 +27,7 @@ export class DiffEditorControlPlugin extends BasePlugin {
   description = `左右两边的代码做对比，支持的语言包括：${availableLanguages
     .slice(0, 10)
     .join('，')}等等`;
+  searchKeywords = '对比编辑器';
   docLink = '/amis/zh-CN/components/form/diff-editor';
   tags = ['表单项'];
   scaffold = {
@@ -56,9 +58,15 @@ export class DiffEditorControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '当前代码'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前代码内容'
+                }
+              }
             }
           }
         }
@@ -72,9 +80,15 @@ export class DiffEditorControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '当前代码'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前代码内容'
+                }
+              }
             }
           }
         }
@@ -88,9 +102,15 @@ export class DiffEditorControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '当前代码'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前代码内容'
+                }
+              }
             }
           }
         }
@@ -107,7 +127,7 @@ export class DiffEditorControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'focus',

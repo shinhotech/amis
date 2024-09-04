@@ -7,6 +7,8 @@ import {getEventControlConfig} from '../../renderer/event-control/helper';
 import {FormulaDateType} from '../../renderer/FormulaControl';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 import {getRendererByName} from 'amis-core';
+import omit from 'lodash/omit';
+import type {Schema} from 'amis';
 
 const formatX = [
   {
@@ -20,9 +22,11 @@ const formatX = [
 ];
 const DateType: {
   [key: string]: {
-    format: string;
+    format: string; // 某种类型时间的默认格式
     placeholder: string;
-    ranges: string[];
+    shortcuts: string[];
+    /** shortcuts的兼容配置, 不需要配置了 */
+    ranges?: string[];
     sizeMutable?: boolean;
     type?: string;
     timeFormat?: string;
@@ -33,7 +37,7 @@ const DateType: {
     ...getRendererByName('input-date-range'),
     format: 'YYYY-MM-DD',
     placeholder: '请选择日期范围',
-    ranges: [
+    shortcuts: [
       'yesterday',
       '7daysago',
       'prevweek',
@@ -62,7 +66,7 @@ const DateType: {
     format: 'YYYY-MM-DD HH:mm:ss',
     timeFormat: 'HH:mm:ss',
     placeholder: '请选择日期时间范围',
-    ranges: [
+    shortcuts: [
       'yesterday',
       '7daysago',
       'prevweek',
@@ -91,7 +95,7 @@ const DateType: {
     format: 'HH:mm',
     timeFormat: 'HH:mm:ss',
     placeholder: '请选择时间范围',
-    ranges: [],
+    shortcuts: [],
     formatOptions: [
       {
         label: 'HH:mm',
@@ -119,7 +123,7 @@ const DateType: {
     ...getRendererByName('input-month-range'),
     format: 'YYYY-MM',
     placeholder: '请选择月份范围',
-    ranges: [],
+    shortcuts: [],
     formatOptions: [
       ...formatX,
       {
@@ -140,7 +144,7 @@ const DateType: {
     ...getRendererByName('input-quarter-range'),
     format: 'YYYY [Q]Q',
     placeholder: '请选择季度范围',
-    ranges: ['thisquarter', 'prevquarter'],
+    shortcuts: ['thisquarter', 'prevquarter'],
     formatOptions: [
       ...formatX,
       {
@@ -157,7 +161,7 @@ const DateType: {
     ...getRendererByName('input-year-range'),
     format: 'YYYY',
     placeholder: '请选择年范围',
-    ranges: ['thisyear', 'lastYear'],
+    shortcuts: ['thisyear', 'lastYear'],
     formatOptions: [
       ...formatX,
       {
@@ -178,11 +182,10 @@ const sizeImmutableComponents = Object.values(DateType)
   .filter(a => a);
 
 export class DateRangeControlPlugin extends BasePlugin {
+  static id = 'DateRangeControlPlugin';
   // 关联渲染器名字
   rendererName = 'input-date-range';
   $schema = '/schemas/DateRangeControlSchema.json';
-
-  order = -440;
 
   // 组件名称
   icon = 'fa fa-calendar';
@@ -191,7 +194,7 @@ export class DateRangeControlPlugin extends BasePlugin {
   isBaseComponent = true;
   // 添加源对应组件中文名称 & type字段
   searchKeywords =
-    '日期范围框、input-datetime-range、日期时间范围、input-time-range、时间范围、input-month-range、月份范围、input-quarter-range、季度范围、input-year-range、年范围';
+    '日期范围框、input-datetime-range、日期时间范围、input-time-range、时间范围、input-month-range、月份范围、input-quarter-range、季度范围、input-year-range、年范围、年份范围';
   description =
     '日期范围选择，可通过<code>minDate</code>、<code>maxDate</code>设定最小、最大日期';
   docLink = '/amis/zh-CN/components/form/input-date-range';
@@ -226,9 +229,15 @@ export class DateRangeControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前时间范围'
+                }
+              }
             }
           }
         }
@@ -242,9 +251,15 @@ export class DateRangeControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前时间范围'
+                }
+              }
             }
           }
         }
@@ -258,9 +273,15 @@ export class DateRangeControlPlugin extends BasePlugin {
         {
           type: 'object',
           properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '时间值'
+            data: {
+              type: 'object',
+              title: '数据',
+              properties: {
+                value: {
+                  type: 'string',
+                  title: '当前时间范围'
+                }
+              }
             }
           }
         }
@@ -278,7 +299,7 @@ export class DateRangeControlPlugin extends BasePlugin {
     {
       actionType: 'reset',
       actionLabel: '重置',
-      description: '将值重置为resetValue，若没有配置resetValue，则清空'
+      description: '将值重置为初始值'
     },
     {
       actionType: 'setValue',
@@ -305,6 +326,9 @@ export class DateRangeControlPlugin extends BasePlugin {
                 getSchemaTpl('formItemName', {
                   required: true
                 }),
+
+                getSchemaTpl('formItemExtraName'),
+
                 getSchemaTpl('label'),
                 getSchemaTpl('selectDateRangeType', {
                   value: this.scaffold.type,
@@ -316,14 +340,15 @@ export class DateRangeControlPlugin extends BasePlugin {
                   ) => {
                     const type: string = value.split('-')[1];
                     form.setValues({
-                      inputFormat: DateType[type]?.format,
-                      timeFormat: DateType[type]?.timeFormat,
+                      displayFormat: DateType[type]?.format,
                       placeholder: DateType[type]?.placeholder,
-                      format: type === 'time' ? 'HH:mm' : 'X',
+                      valueFormat: type === 'time' ? 'HH:mm' : 'X',
                       minDate: '',
                       maxDate: '',
                       value: '',
-                      ranges: DateType[type]?.ranges,
+                      shortcuts: DateType[type]?.shortcuts,
+                      /** amis 3.1.0之后ranges属性废弃 */
+                      ranges: undefined,
                       // size immutable 组件去除 size 字段
                       size: sizeImmutableComponents.includes(value)
                         ? undefined
@@ -333,7 +358,7 @@ export class DateRangeControlPlugin extends BasePlugin {
                 }),
                 {
                   type: 'input-text',
-                  name: 'format',
+                  name: 'valueFormat',
                   label: tipedLabel(
                     '值格式',
                     '提交数据前将根据设定格式化数据，请参考 <a href="https://momentjs.com/" target="_blank">moment</a> 中的格式用法。'
@@ -355,7 +380,7 @@ export class DateRangeControlPlugin extends BasePlugin {
                 },
                 {
                   type: 'input-text',
-                  name: 'inputFormat',
+                  name: 'displayFormat',
                   label: tipedLabel(
                     '显示格式',
                     '请参考 <a href="https://momentjs.com/" target="_blank">moment</a> 中的格式用法。'
@@ -381,11 +406,11 @@ export class DateRangeControlPlugin extends BasePlugin {
                 }),
 
                 getSchemaTpl('valueFormula', {
-                  rendererSchema: {
-                    ...context?.schema,
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
                     size: 'full',
                     mode: 'inline'
-                  },
+                  }),
                   mode: 'vertical',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsRange,
@@ -395,26 +420,26 @@ export class DateRangeControlPlugin extends BasePlugin {
                   name: 'minDate',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.minDate,
+                  rendererSchema: (schema: Schema) => ({
+                    ...omit(schema, ['shortcuts']),
+                    value: schema?.minDate,
                     type: 'input-date'
-                  },
+                  }),
                   placeholder: '请选择静态值',
-                  needDeleteProps: ['minDate'], // 避免自我限制
+                  needDeleteProps: ['minDate', 'ranges', 'shortcuts'], // 避免自我限制
                   label: tipedLabel('最小值', dateTooltip)
                 }),
                 getSchemaTpl('valueFormula', {
                   name: 'maxDate',
                   header: '表达式或相对值',
                   DateTimeType: FormulaDateType.IsDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.maxDate,
+                  rendererSchema: (schema: Schema) => ({
+                    ...omit(schema, ['shortcuts']),
+                    value: schema?.maxDate,
                     type: 'input-date'
-                  },
+                  }),
                   placeholder: '请选择静态值',
-                  needDeleteProps: ['maxDate'], // 避免自我限制
+                  needDeleteProps: ['maxDate', 'ranges', 'shortcuts'], // 避免自我限制
                   label: tipedLabel('最大值', dateTooltip)
                 }),
 
@@ -422,11 +447,11 @@ export class DateRangeControlPlugin extends BasePlugin {
                   name: 'minDuration',
                   header: '表达式',
                   DateTimeType: FormulaDateType.NotDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.minDuration,
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
+                    value: schema?.minDuration,
                     type: 'input-text'
-                  },
+                  }),
                   placeholder: '请输入相对值',
                   needDeleteProps: ['minDuration'], // 避免自我限制
                   label: tipedLabel('最小跨度', rangTooltip)
@@ -436,39 +461,41 @@ export class DateRangeControlPlugin extends BasePlugin {
                   name: 'maxDuration',
                   header: '表达式',
                   DateTimeType: FormulaDateType.NotDate,
-                  rendererSchema: {
-                    ...context?.schema,
-                    value: context?.schema.maxDuration,
+                  rendererSchema: (schema: Schema) => ({
+                    ...schema,
+                    value: schema?.maxDuration,
                     type: 'input-text'
-                  },
+                  }),
                   placeholder: '请输入相对值',
                   needDeleteProps: ['maxDuration'], // 避免自我限制
                   label: tipedLabel('最大跨度', rangTooltip)
                 }),
                 getSchemaTpl('dateShortCutControl', {
+                  name: 'shortcuts',
                   mode: 'normal',
-                  normalDropDownOption: {
-                    yesterday: '昨天',
-                    thisweek: '这个周',
-                    prevweek: '上周',
-                    thismonth: '这个月',
-                    prevmonth: '上个月',
-                    thisquarter: '这个季度',
-                    prevquarter: '上个季度',
-                    thisyear: '今年'
-                  },
-                  customDropDownOption: {
-                    daysago: '最近n天',
-                    dayslater: 'n天以内',
-                    weeksago: '最近n周',
-                    weekslater: 'n周以内',
-                    monthsago: '最近n月',
-                    monthslater: 'n月以内',
-                    quartersago: '最近n季度',
-                    quarterslater: 'n季度以内',
-                    yearsago: '最近n年',
-                    yearslater: 'n年以内'
-                  }
+                  certainOptions: [
+                    'today',
+                    'yesterday',
+                    'thisweek',
+                    'prevweek',
+                    'thismonth',
+                    'prevmonth',
+                    'thisquarter',
+                    'prevquarter',
+                    'thisyear'
+                  ],
+                  modifyOptions: [
+                    '$daysago',
+                    '$dayslater',
+                    '$weeksago',
+                    '$weekslater',
+                    '$monthsago',
+                    '$monthslater',
+                    '$quartersago',
+                    '$quarterslater',
+                    '$yearsago',
+                    '$yearslater'
+                  ]
                 }),
                 getSchemaTpl('remark'),
                 getSchemaTpl('labelRemark'),
@@ -479,7 +506,14 @@ export class DateRangeControlPlugin extends BasePlugin {
             },
             getSchemaTpl('status', {isFormItem: true}),
             getSchemaTpl('validation', {
-              tag: ValidatorTag.Date
+              tag: ValidatorTag.Date,
+              rendererSchema: (schema: Schema) => {
+                return {
+                  ...schema,
+                  label: '值内容',
+                  validateName: 'equals'
+                };
+              }
             })
           ],
           {...context?.schema, configTitle: 'props'}

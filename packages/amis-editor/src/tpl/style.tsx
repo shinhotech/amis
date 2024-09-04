@@ -1,5 +1,5 @@
 import {setSchemaTpl, getSchemaTpl, defaultValue} from 'amis-editor-core';
-import {SchemaCollection} from 'amis/lib/Schema';
+import type {SchemaCollection} from 'amis';
 import kebabCase from 'lodash/kebabCase';
 
 setSchemaTpl('style:formItem', ({renderer, schema}: any) => {
@@ -16,28 +16,46 @@ setSchemaTpl('style:formItem', ({renderer, schema}: any) => {
   };
 });
 
+setSchemaTpl('theme:formItem', ({schema}: any = {}) => {
+  return {
+    title: '表单项',
+    key: 'formItem',
+    body: [
+      getSchemaTpl('theme:labelHide'),
+      {
+        type: 'col-size',
+        name: '__size',
+        label: '宽度'
+      }
+    ].concat(schema)
+  };
+});
+
 setSchemaTpl(
   'style:classNames',
   (config: {
     schema: SchemaCollection;
     isFormItem: boolean;
     unsupportStatic?: boolean;
+    collapsed?: boolean;
   }) => {
     const {
       isFormItem = true,
       unsupportStatic = false,
-      schema = []
+      schema = [],
+      collapsed = true
     } = config || {};
 
     return {
       title: 'CSS 类名',
+      collapsed,
       body: (isFormItem
         ? [
             getSchemaTpl('className', {
               label: '表单项'
             }),
             getSchemaTpl('className', {
-              label: '标签',
+              label: '标题',
               name: 'labelClassName'
             }),
             getSchemaTpl('className', {
@@ -426,50 +444,40 @@ export const styleTpl = {
  */
 
 // css类名
-setSchemaTpl(
-  'theme:cssCode',
-  ({
-    themeClass = [],
-    isFormItem,
-    isLayout
-  }: {
-    themeClass?: any[];
-    isFormItem?: boolean;
-  } = {}) => {
-    if (isFormItem) {
-      themeClass.push(
-        ...[
-          {
-            name: 'description',
-            value: 'description',
-            className: 'descriptionClassName'
-          },
-          {name: 'label', value: 'label', className: 'labelClassName'}
-        ]
-      );
-    }
-    return {
-      title: '样式源码',
-      body: [
-        {
-          type: 'theme-cssCode',
-          label: false,
-          themeClass
-        }
-      ]
-    };
-  }
-);
+setSchemaTpl('theme:cssCode', () => {
+  return {
+    title: '自定义样式',
+    body: [
+      {
+        type: 'theme-cssCode',
+        label: false
+      }
+    ]
+  };
+});
 
 // form label
 setSchemaTpl('theme:form-label', () => {
   return {
-    title: 'Label样式',
+    title: '标题样式',
+    visibleOn: 'this.label !== false',
     body: [
+      {
+        type: 'label-align',
+        name: 'labelAlign',
+        label: '位置'
+      },
+      getSchemaTpl('theme:select', {
+        label: '宽度',
+        name: 'labelWidth',
+        hiddenOn: 'this.labelAlign == "top"'
+      }),
+
       getSchemaTpl('theme:font', {
         label: '文字',
         name: 'themeCss.labelClassName.font:default',
-        editorThemePath: 'form.item.default.label.body.font'
+        hasSenior: false,
+        editorValueToken: '--Form-item'
       }),
       getSchemaTpl('theme:paddingAndMargin', {
         name: 'themeCss.labelClassName.padding-and-margin:default'
@@ -487,12 +495,29 @@ setSchemaTpl('theme:form-description', () => {
       getSchemaTpl('theme:font', {
         label: '文字',
         name: 'themeCss.descriptionClassName.font:default',
-        editorThemePath: 'form.item.default.description.body.font'
+        editorValueToken: '--Form-description'
       }),
-      getSchemaTpl('theme:paddingAndMargin', {
-        name: 'themeCss.descriptionClassName.padding-and-margin:default'
-      })
+      {
+        label: '上间距',
+        type: 'amis-theme-select',
+        name: 'themeCss.descriptionClassName.margin-top:default',
+        options: '${sizesOptions}',
+        editorValueToken: '--Form-description-gap'
+      }
     ]
+  };
+});
+
+// 带提示的值输入框
+setSchemaTpl('theme:select', (option: any = {}) => {
+  return {
+    mode: 'horizontal',
+    labelAlign: 'left',
+    type: 'amis-theme-select',
+    label: '大小',
+    name: `themeCss.className.select:default`,
+    options: '${sizesOptions}',
+    ...option
   };
 });
 
@@ -568,74 +593,253 @@ setSchemaTpl('theme:shadow', (option: any = {}) => {
 // 尺寸选择器
 setSchemaTpl('theme:size', (option: any = {}) => {
   return {
-    type: 'amis-theme-select',
+    mode: 'default',
+    type: 'amis-theme-size-editor',
     label: false,
-    name: `css.className.size`,
+    name: `themeCss.className.size:default`,
+    options: '${sizesOptions}',
+    hideMinWidth: true,
     ...option
   };
 });
 
 setSchemaTpl(
+  'theme:base',
+  (option: {
+    collapsed?: boolean;
+    extra?: any[];
+    classname?: string;
+    title?: string;
+    hiddenOn?: string;
+    visibleOn?: string;
+    hidePaddingAndMargin?: boolean;
+    hideBorder?: boolean;
+    hideRadius?: boolean;
+    hideBackground?: boolean;
+    hideShadow?: boolean;
+    hideMargin?: boolean;
+    hidePadding?: boolean;
+    needState?: boolean;
+    editorValueToken?: string;
+    state?: string[];
+  }) => {
+    const {
+      collapsed = false,
+      extra = [],
+      classname = 'baseControlClassName',
+      title = '基本样式',
+      hiddenOn,
+      visibleOn,
+      hidePaddingAndMargin,
+      hideBorder,
+      hideRadius,
+      hideBackground,
+      hideShadow,
+      hideMargin,
+      hidePadding,
+      needState = true,
+      editorValueToken,
+      state = ['default', 'hover', 'active']
+    } = option;
+
+    const classId = classname.replace(/\-/g, '_');
+
+    const styleStateFunc = (visibleOn: string, state: string) => {
+      return [
+        !hideBorder &&
+          getSchemaTpl('theme:border', {
+            visibleOn: visibleOn,
+            name: `themeCss.${classname}.border:${state}`,
+            state,
+            editorValueToken
+          }),
+        !hideRadius &&
+          getSchemaTpl('theme:radius', {
+            visibleOn: visibleOn,
+            name: `themeCss.${classname}.radius:${state}`,
+            state,
+            editorValueToken
+          }),
+        !hidePaddingAndMargin &&
+          getSchemaTpl('theme:paddingAndMargin', {
+            visibleOn: visibleOn,
+            name: `themeCss.${classname}.padding-and-margin:${state}`,
+            hideMargin,
+            hidePadding,
+            state,
+            editorValueToken
+          }),
+        !hideBackground &&
+          getSchemaTpl('theme:colorPicker', {
+            visibleOn: visibleOn,
+            name: `themeCss.${classname}.background:${state}`,
+            label: '背景',
+            needCustom: true,
+            needGradient: true,
+            needImage: true,
+            labelMode: 'input',
+            state,
+            editorValueToken: editorValueToken
+              ? `${editorValueToken}-\${__editorState${classId} || 'default'}-bg-color`
+              : undefined
+          }),
+        !hideShadow &&
+          getSchemaTpl('theme:shadow', {
+            visibleOn: visibleOn,
+            name: `themeCss.${classname}.boxShadow:${state}`,
+            state,
+            editorValueToken
+          })
+      ]
+        .filter(item => item)
+        .concat(
+          extra.map(item => {
+            return {
+              ...item,
+              visibleOn: visibleOn,
+              name: `${item.name}:${state}`,
+              state
+            };
+          })
+        );
+    };
+
+    const styles = [
+      needState && {
+        type: 'select',
+        mode: 'horizontal',
+        labelAlign: 'left',
+        labelWidth: 80,
+        name: `__editorState${classId}`,
+        label: '状态',
+        selectFirst: true,
+        options: [
+          {
+            label: '常规',
+            value: 'default'
+          },
+          {
+            label: '悬浮',
+            value: 'hover'
+          },
+          {
+            label: '点击',
+            value: 'active'
+          }
+        ].filter(item => state.includes(item.value))
+      },
+      ...styleStateFunc(
+        `\${__editorState${classId} == 'default' || !__editorState${classId}}`,
+        'default'
+      ),
+      ...styleStateFunc(`\${__editorState${classId} == 'hover'}`, 'hover'),
+      ...styleStateFunc(`\${__editorState${classId} == 'active'}`, 'active')
+    ].filter(Boolean);
+
+    return {
+      title,
+      collapsed,
+      body: styles,
+      hiddenOn,
+      visibleOn
+    };
+  }
+);
+
+setSchemaTpl(
   'theme:common',
-  (exclude: string[] | string, include: string[]) => {
+  (option: {
+    exclude: string[] | string;
+    collapsed?: boolean;
+    extra?: any[];
+    baseExtra?: any[];
+    layoutExtra?: any[];
+    classname?: string;
+    baseTitle?: string;
+    hidePaddingAndMargin?: boolean;
+  }) => {
+    let {
+      exclude,
+      collapsed,
+      extra = [],
+      baseExtra,
+      layoutExtra,
+      classname,
+      baseTitle,
+      hidePaddingAndMargin
+    } = option || {};
+
+    const curCollapsed = collapsed ?? false; // 默认都展开
     // key统一转换成Kebab case，eg: boxShadow => bos-shadow
     exclude = (
       exclude ? (Array.isArray(exclude) ? exclude : [exclude]) : []
     ).map((key: string) => kebabCase(key));
 
-    const moreStyle =
-      include?.map(key =>
-        getSchemaTpl(`theme:${key}`, {
-          name: 'style'
-        })
-      ) || [];
-    const styles = moreStyle.concat([
-      getSchemaTpl('theme:border', {
-        name: 'style'
-      }),
-      getSchemaTpl('theme:radius', {
-        name: 'style.radius'
-      }),
-      getSchemaTpl('theme:paddingAndMargin', {
-        name: 'style'
-      }),
-      getSchemaTpl('theme:colorPicker', {
-        name: 'style.background',
-        label: '背景',
-        needCustom: true,
-        needGradient: true,
-        labelMode: 'input'
-      }),
-      getSchemaTpl('theme:shadow', {
-        name: 'style.boxShadow'
-      })
-    ]);
     return [
       {
         header: '布局',
         key: 'layout',
+        collapsed: curCollapsed,
         body: [
           {
             type: 'style-display',
             label: false,
             name: 'style'
           }
-        ].filter(comp => !~exclude.indexOf(comp.type.replace(/^style-/i, '')))
+        ]
+          .filter(comp => !~exclude.indexOf(comp.type.replace(/^style-/i, '')))
+          .concat(layoutExtra || [])
       },
+      getSchemaTpl('theme:base', {
+        collapsed: curCollapsed,
+        extra: baseExtra,
+        classname,
+        title: baseTitle,
+        hidePaddingAndMargin
+      }),
+      ...extra,
       {
         title: '自定义样式',
-        body: styles
-      },
-      {
-        title: '样式源码',
+        collapsed: curCollapsed,
         body: [
           {
             type: 'theme-cssCode',
-            label: false,
-            isLayout: true
+            label: false
           }
         ]
       }
     ].filter(item => !~exclude.indexOf(item.key || ''));
+  }
+);
+
+setSchemaTpl(
+  'theme:icon',
+  (option: {classname?: string; visibleOn?: string; title?: string}) => {
+    const {
+      classname = 'iconControlClassName',
+      visibleOn,
+      title = '图标样式'
+    } = option;
+    return {
+      title,
+      visibleOn,
+      body: [
+        getSchemaTpl('theme:select', {
+          label: '图标尺寸',
+          name: `themeCss.${classname}.iconSize`
+        }),
+        getSchemaTpl('theme:colorPicker', {
+          name: `themeCss.${classname}.color`,
+          label: '图标颜色',
+          needCustom: true,
+          needGradient: true,
+          labelMode: 'input'
+        }),
+        getSchemaTpl('theme:paddingAndMargin', {
+          label: '图标边距',
+          name: `themeCss.${classname}.padding-and-margin`
+        })
+      ]
+    };
   }
 );

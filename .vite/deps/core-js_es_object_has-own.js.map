@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/core-js/modules/es.object.has-own.js", "../../node_modules/core-js/es/object/has-own.js"],
+  "sourcesContent": ["'use strict';\nvar $ = require('../internals/export');\nvar hasOwn = require('../internals/has-own-property');\n\n// `Object.hasOwn` method\n// https://tc39.es/ecma262/#sec-object.hasown\n$({ target: 'Object', stat: true }, {\n  hasOwn: hasOwn\n});\n", "'use strict';\nrequire('../../modules/es.object.has-own');\nvar path = require('../../internals/path');\n\nmodule.exports = path.Object.hasOwn;\n"],
+  "mappings": ";;;;;;;;;;;;AAAA;AAAA;AAAA;AACA,QAAI,IAAI;AACR,QAAI,SAAS;AAIb,MAAE,EAAE,QAAQ,UAAU,MAAM,KAAK,GAAG;AAAA,MAClC;AAAA,IACF,CAAC;AAAA;AAAA;;;ACRD;AAAA;AACA;AACA,QAAI,OAAO;AAEX,WAAO,UAAU,KAAK,OAAO;AAAA;AAAA;",
+  "names": []
+}

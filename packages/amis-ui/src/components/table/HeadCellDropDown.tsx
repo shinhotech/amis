@@ -16,6 +16,8 @@ import {
   PopOver
 } from 'amis-core';
 
+import type {TestIdBuilder} from 'amis-core';
+
 export interface FilterPayload {
   closeDropdown?: boolean;
 }
@@ -38,13 +40,14 @@ export interface Props extends ThemeProps, LocaleProps {
   setSelectedKeys?: (keys: Array<string | number> | string) => void;
   classnames: ClassNamesFn;
   classPrefix: string;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface State {
   isOpened: boolean;
 }
 
-export class HeadCellDropDown extends React.Component<Props, State> {
+export class HeadCellDropDown extends React.PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -102,7 +105,9 @@ export class HeadCellDropDown extends React.Component<Props, State> {
                       }
                     }
                   })
-                : filterDropdown || null}
+                : React.isValidElement(filterDropdown)
+                ? filterDropdown
+                : null}
             </PopOver>
           </Overlay>
         ) : null}

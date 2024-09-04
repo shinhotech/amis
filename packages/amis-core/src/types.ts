@@ -1,7 +1,8 @@
 // https://json-schema.org/draft-07/json-schema-release-notes.html
 import type {JSONSchema7} from 'json-schema';
 import {ListenerAction} from './actions/Action';
-import {debounceConfig} from './utils/renderer-event';
+import {debounceConfig, trackConfig} from './utils/renderer-event';
+import type {TestIdBuilder} from './utils/helper';
 
 export interface Option {
   /**
@@ -154,6 +155,14 @@ export interface BaseApiObject {
   replaceData?: boolean;
 
   /**
+   * 是否将两次返回的数据字段，做一个合并。配置返回对象中的字段名，支持配置多个。
+   *
+   * 比如：同时返回 log 字段，第一次返回 {log: '1'}，第二次返回 {log: '2'}，合并后的结果是 {log: ['1', '2']]}
+   * 再比如：同时返回 items 字段，第一次返回 {items: [1, 2]}，第二次返回 {items: [3, 4]}，合并后的结果是 {items: [1, 2, 3, 4]}
+   */
+  concatDataFields?: string | Array<string>;
+
+  /**
    * 是否自动刷新，当 url 中的取值结果变化时，自动刷新数据。
    *
    * @default true
@@ -162,7 +171,7 @@ export interface BaseApiObject {
 
   /**
    * 当开启自动刷新的时候，默认是 api 的 url 来自动跟踪变量变化的。
-   * 如果你希望监控 url 外的变量，请配置 traceExpression。
+   * 如果你希望监控 url 外的变量，请配置 trackExpression。
    */
   trackExpression?: string;
 
@@ -212,15 +221,31 @@ export interface ApiObject extends BaseApiObject {
     withCredentials?: boolean;
     cancelExecutor?: (cancel: Function) => void;
   };
+  originUrl?: string; // 原始的 url 地址，记录将 data 拼接到 query 之前的地址
   jsonql?: any;
   graphql?: string;
   operationName?: string;
   body?: PlainObject;
   query?: PlainObject;
-  adaptor?: (payload: object, response: fetcherResult, api: ApiObject) => any;
-  requestAdaptor?: (api: ApiObject) => ApiObject;
+  mockResponse?: PlainObject;
+  adaptor?: (
+    payload: object,
+    response: fetcherResult,
+    api: ApiObject,
+    context: any
+  ) => any;
+  requestAdaptor?: (
+    api: ApiObject,
+    context: any
+  ) => ApiObject | Promise<ApiObject>;
+  /**
+   * api 发送上下文，可以用来传递一些数据给 api 的 adaptor
+   * @readonly
+   */
+  context?: any;
   /** 是否过滤为空字符串的 query 参数 */
   filterEmptyQuery?: boolean;
+  downloadFileName?: string;
 }
 export type ApiString = string;
 export type Api = ApiString | ApiObject;
@@ -247,7 +272,7 @@ export interface fetchOptions {
   errorMessage?: string;
   autoAppend?: boolean;
   beforeSend?: (data: any) => any;
-  onSuccess?: (json: Payload) => any;
+  onSuccess?: (json: Payload, data: any) => any;
   onFailed?: (json: Payload) => any;
   silent?: boolean;
   [propName: string]: any;
@@ -304,6 +329,7 @@ export interface ActionObject extends ButtonObject {
     | 'saveAs'
     | 'dialog'
     | 'drawer'
+    | 'confirmDialog'
     | 'jump'
     | 'link'
     | 'url'
@@ -328,8 +354,17 @@ export interface ActionObject extends ButtonObject {
     | 'expand'
     | 'collapse'
     | 'step-submit'
+    | 'select'
     | 'selectAll'
-    | 'changeTabKey';
+    | 'clearAll'
+    | 'changeTabKey'
+    | 'clearSearch'
+    | 'submitQuickEdit'
+    | 'initDrag'
+    | 'cancelDrag'
+    | 'toggleExpanded'
+    | 'setExpanded';
+
   api?: BaseApiObject | string;
   asyncApi?: BaseApiObject | string;
   payload?: any;
@@ -379,7 +414,11 @@ export type FunctionPropertyNames<T> = {
 
 // 先只支持 JSONSchema draft07 好了
 
-export type JSONSchema = JSONSchema7;
+export type JSONSchema = JSONSchema7 & {
+  group?: string; // 分组
+  typeLabel?: string; // 类型说明
+  rawType?: string; // 类型
+};
 
 // export type Omit<T, K extends keyof T & any> = Pick<T, Exclude<keyof T, K>>;
 // export type Override<M, N> = Omit<M, Extract<keyof M, keyof N>> & N;
@@ -438,7 +477,8 @@ export interface EventTrack {
     | 'tabChange'
     | 'pageLoaded'
     | 'pageHidden'
-    | 'pageVisible';
+    | 'pageVisible'
+    | string;
 
   /**
    * 事件数据
@@ -543,6 +583,10 @@ export type SchemaClassName =
     };
 export interface BaseSchemaWithoutType {
   /**
+   * 组件唯一 id，主要用于页面设计器中定位 json 节点
+   */
+  $$id?: string;
+  /**
    * 容器 css 类名
    */
   className?: SchemaClassName;
@@ -598,6 +642,7 @@ export interface BaseSchemaWithoutType {
       weight?: number; // 权重
       actions: ListenerAction[]; // 执行的动作集
       debounce?: debounceConfig;
+      track?: trackConfig;
     };
   };
   /**
@@ -625,6 +670,42 @@ export interface BaseSchemaWithoutType {
    */
   staticInputClassName?: SchemaClassName;
   staticSchema?: any;
+
+  /**
+   * 组件样式
+   */
+  style?: {
+    [propName: string]: any;
+  };
+
+  /**
+   * 编辑器配置，运行时可以忽略
+   */
+  editorSetting?: {
+    /**
+     * 组件行为、用途，如 create、update、remove
+     */
+    behavior?: string;
+
+    /**
+     * 组件名称，通常是业务名称方便定位
+     */
+    displayName?: string;
+
+    /**
+     * 编辑器假数据，方便展示
+     */
+    mock?: any;
+
+    [propName: string]: any;
+  };
+
+  /**
+   * 可以组件级别用来关闭移动端样式
+   */
+  useMobileUI?: boolean;
+
+  testIdBuilder?: TestIdBuilder;
 }
 
 export type OperatorType =
@@ -683,6 +764,7 @@ export interface ConditionRule {
   left?: ExpressionComplex;
   op?: OperatorType;
   right?: ExpressionComplex | Array<ExpressionComplex>;
+  if?: string;
 }
 
 export interface ConditionGroupValue {
@@ -690,6 +772,7 @@ export interface ConditionGroupValue {
   conjunction: 'and' | 'or';
   not?: boolean;
   children?: Array<ConditionRule | ConditionGroupValue>;
+  if?: string;
 }
 
 export interface ConditionValue extends ConditionGroupValue {}

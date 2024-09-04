@@ -11,7 +11,13 @@ import {
   render as amisRender
 } from 'amis';
 import cloneDeep from 'lodash/cloneDeep';
-import {FormControlProps, autobind, findTree} from 'amis-core';
+import {
+  FormControlProps,
+  Schema,
+  autobind,
+  findTree,
+  getRendererByName
+} from 'amis-core';
 import ActionDialog from './action-config-dialog';
 import {
   findActionNode,
@@ -21,7 +27,9 @@ import {
   getEventStrongDesc,
   getEventLabel,
   getPropOfAcion,
-  SELECT_PROPS_CONTAINER
+  SELECT_PROPS_CONTAINER,
+  updateCommonUseActions,
+  FORMITEM_CMPTS
 } from './helper';
 import {
   ActionConfig,
@@ -30,6 +38,7 @@ import {
   ContextVariables
 } from './types';
 import {
+  EditorManager,
   PluginActions,
   PluginEvents,
   RendererPluginAction,
@@ -38,8 +47,9 @@ import {
 } from 'amis-editor-core';
 export * from './helper';
 import {i18n as _i18n} from 'i18n-runtime';
-import type {VariableItem} from 'amis-ui/lib/components/formula/Editor';
+import type {VariableItem} from 'amis-ui/src/components/formula/CodeEditor';
 import {reaction} from 'mobx';
+import {updateComponentContext} from 'amis-editor-core';
 
 interface EventControlProps extends FormControlProps {
   actions: PluginActions; // 组件的动作列表
@@ -56,15 +66,21 @@ interface EventControlProps extends FormControlProps {
   removeBroadcast?: (eventName: string) => void;
   getComponents: (action: any) => ComponentInfo[]; // 当前页面组件树
   getContextSchemas?: (id?: string, withoutSuper?: boolean) => DataSchema; // 获取上下文
-  actionConfigInitFormatter?: (
+  actionConfigInitFormatter?: (actionConfig: ActionConfig) => ActionConfig; // 动作配置初始化时格式化
+  actionConfigSubmitFormatter?: (
     actionConfig: ActionConfig,
-    variables: {
-      eventVariables: ContextVariables[]; // 当前事件变量
-      rawVariables: ContextVariables[]; // 绑定事件的组件上下文
-    }
-  ) => ActionConfig; // 动作配置初始化时格式化
-  actionConfigSubmitFormatter?: (actionConfig: ActionConfig) => ActionConfig; // 动作配置提交时格式化
+    type?: string,
+    actionData?: ActionData,
+    schema?: Schema
+  ) => ActionConfig; // 动作配置提交时格式化
   owner?: string; // 组件标识
+
+  // 监听面板提交事件
+  // 更改后写入 store 前触发
+  subscribeSchemaSubmit: (
+    fn: (schema: any, value: any, id: string, diff?: any) => any,
+    once?: boolean
+  ) => () => void;
 }
 
 interface EventDialogData {
@@ -75,6 +91,28 @@ interface EventDialogData {
     open: boolean;
     wait?: number;
   };
+  trackConfig?: {
+    open: boolean;
+    id: string;
+    name: string;
+  };
+  [propName: string]: any;
+}
+
+export interface ActionData {
+  eventKey: string;
+  actionIndex?: number;
+  action?: ActionConfig;
+  variables?: ContextVariables[];
+  pluginActions: PluginActions;
+  getContextSchemas?: (id?: string, withoutSuper?: boolean) => DataSchema;
+  groupType?: string;
+  __actionDesc?: string;
+  __cmptTreeSource?: ComponentInfo[];
+  __superCmptTreeSource?: ComponentInfo[];
+  __actionSchema?: any;
+  __subActions?: SubRendererPluginAction[];
+  __setValueDs?: any[];
   [propName: string]: any;
 }
 
@@ -87,27 +125,16 @@ interface EventControlState {
   showAcionDialog: boolean;
   showEventDialog: boolean;
   eventDialogData?: EventDialogData;
-  actionData:
-    | {
-        eventKey: string;
-        actionIndex?: number;
-        action?: ActionConfig;
-        variables?: ContextVariables[];
-        pluginActions: PluginActions;
-        getContextSchemas?: (id?: string, withoutSuper?: boolean) => DataSchema;
-        rawVariables: ContextVariables[];
-        groupType?: string;
-        __actionDesc?: string;
-        __cmptTreeSource?: ComponentInfo[];
-        __superCmptTreeSource?: ComponentInfo[];
-        __actionSchema?: any;
-        __subActions?: SubRendererPluginAction[];
-        __setValueDs?: any[];
-      }
-    | undefined;
+  actionData: ActionData | undefined;
   type: 'update' | 'add';
   appLocaleState?: number;
 }
+
+const dialogObjMap = {
+  dialog: 'dialog',
+  drawer: 'drawer',
+  confirmDialog: ['dialog', 'args']
+};
 
 export class EventControl extends React.Component<
   EventControlProps,
@@ -119,17 +146,22 @@ export class EventControl extends React.Component<
   } = {};
   drag?: HTMLElement | null;
   unReaction: any;
+  submitSubscribers: Array<(value: any) => any> = [];
 
   constructor(props: EventControlProps) {
     super(props);
-    const {events, value, data} = props;
+    const {events, value, data, rawType} = props;
 
     const eventPanelActive: {
       [prop: string]: boolean;
     } = {};
 
+    const tmpEvents =
+      events[
+        rawType || (!data.type || data.type === 'text' ? 'plain' : data.type)
+      ] || [];
     const pluginEvents =
-      events[!data.type || data.type === 'text' ? 'plain' : data.type] || [];
+      typeof tmpEvents === 'function' ? tmpEvents(data) : [...tmpEvents];
 
     pluginEvents.forEach((event: RendererPluginEvent) => {
       eventPanelActive[event.eventName] = true;
@@ -161,21 +193,52 @@ export class EventControl extends React.Component<
 
   componentWillUnmount() {
     this.unReaction?.();
+    this.submitSubscribers = [];
   }
 
   componentDidUpdate(
     prevProps: EventControlProps,
     prevState: EventControlState
   ) {
-    const {value, onChange} = this.props;
+    const {value, data, events, rawType} = this.props;
 
     if (value !== prevProps.value) {
       this.setState({onEvent: value});
     }
 
-    if (prevState.onEvent !== this.state.onEvent) {
-      onChange && onChange(this.state.onEvent);
+    if (
+      data?.type !== prevProps.data?.type ||
+      data?.onEvent !== prevProps.data?.onEvent
+    ) {
+      const eventPanelActive: {
+        [prop: string]: boolean;
+      } = {};
+      const tmpEvents =
+        events[
+          rawType || (!data.type || data.type === 'text' ? 'plain' : data.type)
+        ] || [];
+      const pluginEvents =
+        typeof tmpEvents === 'function' ? tmpEvents(data) : [...tmpEvents];
+
+      // 事件配置面板不自动折叠
+      // pluginEvents.forEach((event: RendererPluginEvent) => {
+      //   eventPanelActive[event.eventName] = true;
+      // });
+
+      this.setState({
+        events: pluginEvents
+      });
     }
+  }
+
+  @autobind
+  subscribeSubmit(subscriber: (value: any) => any) {
+    const fn = (value: any) => subscriber?.(value) || value;
+    this.submitSubscribers.push(fn);
+    return () => {
+      const idx = this.submitSubscribers.indexOf(fn);
+      this.submitSubscribers.splice(idx, 1);
+    };
   }
 
   generateEmptyDefault(events: RendererPluginEvent[]) {
@@ -215,6 +278,7 @@ export class EventControl extends React.Component<
   }
 
   activeEventDialog(eventInfo: EventDialogData) {
+    eventInfo = cloneDeep(eventInfo);
     if (!eventInfo.debounce) {
       // 防抖配置的默认值
       eventInfo.debounce = {
@@ -227,6 +291,16 @@ export class EventControl extends React.Component<
         ...eventInfo.debounce
       };
     }
+    if (!eventInfo.track) {
+      eventInfo.track = {
+        open: false
+      };
+    } else {
+      eventInfo.track = {
+        open: true,
+        ...eventInfo.track
+      };
+    }
     this.setState({
       eventDialogData: eventInfo,
       showEventDialog: true
@@ -235,11 +309,11 @@ export class EventControl extends React.Component<
 
   eventDialogSubmit(formData: any) {
     const {onChange} = this.props;
-    const {eventName, debounce = {}} = formData;
+    const {eventName, debounce = {}, track = {}} = formData;
     let onEvent = {
       ...this.state.onEvent
     };
-    let eventConfig = onEvent[`${eventName}`];
+    let eventConfig = {...onEvent[`${eventName}`]};
     if (!debounce.open) {
       delete eventConfig.debounce;
     } else {
@@ -250,6 +324,18 @@ export class EventControl extends React.Component<
         }
       };
     }
+    if (!track.open) {
+      delete eventConfig.track;
+    } else {
+      eventConfig = {
+        ...eventConfig,
+        track: {
+          id: track.id,
+          name: track.name
+        }
+      };
+    }
+
     onEvent[`${eventName}`] = {
       ...eventConfig
     };
@@ -293,7 +379,20 @@ export class EventControl extends React.Component<
     if (config.actionType) {
       onEventConfig[event] = {
         ...onEventConfig[event],
-        actions: onEventConfig[event].actions.concat(config)
+        actions: (onEventConfig[event].actions || []).concat(
+          // 临时处理，后面干掉这么多交互属性
+          Object.defineProperties(config, {
+            __cmptTreeSource: {
+              enumerable: false
+            },
+            __nodeSchema: {
+              enumerable: false
+            },
+            __subActions: {
+              enumerable: false
+            }
+          })
+        )
       };
     }
 
@@ -323,10 +422,10 @@ export class EventControl extends React.Component<
     }
 
     onEventConfig[event] = {
+      ...onEventConfig[event],
       actions: onEventConfig[event].actions.filter(
         (item, actionIndex) => index !== actionIndex
-      ),
-      weight: onEvent[event].weight
+      )
     };
 
     if (onEventConfig[event].actions.length < 1) {
@@ -396,7 +495,17 @@ export class EventControl extends React.Component<
                 ...item,
                 actionType: config
               }
-            : config
+            : Object.defineProperties(config, {
+                __cmptTreeSource: {
+                  enumerable: false
+                },
+                __nodeSchema: {
+                  enumerable: false
+                },
+                __subActions: {
+                  enumerable: false
+                }
+              })
           : item;
       })
     };
@@ -426,7 +535,7 @@ export class EventControl extends React.Component<
     // 找到激活的事件面板
     Object.keys(onEvent)
       .filter((key: string) => {
-        return onEvent[key].actions.length && eventPanelActive[key];
+        return onEvent[key]?.actions?.length && eventPanelActive[key];
       })
       .forEach((key: string, index: number) => {
         if (!this.eventPanelSortMap[key]) {
@@ -451,13 +560,13 @@ export class EventControl extends React.Component<
         }
         // 换回来
         const parent = e.to as HTMLElement;
-        if (
-          e.newIndex < e.oldIndex &&
-          e.oldIndex < parent.childNodes.length - 1
-        ) {
-          parent.insertBefore(e.item, parent.childNodes[e.oldIndex + 1]);
-        } else if (e.oldIndex < parent.childNodes.length - 1) {
-          parent.insertBefore(e.item, parent.childNodes[e.oldIndex]);
+        if (e.oldIndex < parent.childNodes.length - 1) {
+          parent.insertBefore(
+            e.item,
+            parent.childNodes[
+              e.oldIndex > e.newIndex ? e.oldIndex + 1 : e.oldIndex
+            ]
+          );
         } else {
           parent.appendChild(e.item);
         }
@@ -465,22 +574,7 @@ export class EventControl extends React.Component<
         const newEvent = onEventConfig[eventKey];
         let options = newEvent?.actions.concat();
         // 从后往前移
-        if (e.oldIndex > e.newIndex) {
-          options = [
-            ...options.slice(0, e.newIndex),
-            options[e.oldIndex],
-            ...options.slice(e.newIndex, e.oldIndex),
-            ...options.slice(e.oldIndex + 1, options.length)
-          ];
-        } else if (e.oldIndex < e.newIndex) {
-          // 从前往后
-          options = [
-            ...(e.oldIndex === 0 ? [] : options.slice(0, e.oldIndex)),
-            ...options.slice(e.oldIndex + 1, e.newIndex),
-            options[e.oldIndex],
-            ...options.slice(e.newIndex, options.length)
-          ];
-        }
+        options.splice(e.newIndex, 0, options.splice(e.oldIndex, 1)[0]);
         onEventConfig[eventKey] = {
           ...onEventConfig[eventKey],
           actions: options
@@ -488,83 +582,221 @@ export class EventControl extends React.Component<
         this.setState({
           onEvent: onEventConfig
         });
+        this.props.onChange && this.props.onChange(onEventConfig);
       }
     });
   }
 
   destroyDragging() {
     Object.keys(this.eventPanelSortMap).forEach((key: string) => {
-      this.eventPanelSortMap[key]?.destroy();
+      this.eventPanelSortMap[key]?.el && this.eventPanelSortMap[key]?.destroy();
     });
   }
 
-  getEventVariables(
-    activeData: Pick<
-      EventControlState,
-      'showAcionDialog' | 'type' | 'actionData'
-    >
-  ) {
+  buildEventDataSchema(data: any, manager: EditorManager) {
+    const {
+      actionTree,
+      actions: pluginActions,
+      commonActions,
+      allComponents
+    } = this.props;
     const {events, onEvent} = this.state;
-    const {actionTree, pluginActions, commonActions, allComponents} =
-      this.props;
-    // 收集当前事件已有ajax动作的请求返回结果作为事件变量
-    let oldActions = onEvent[activeData.actionData!.eventKey].actions;
-    if (activeData.type === 'update') {
-      // 编辑的时候只能拿到当前动作前面动作的事件变量
-      oldActions = oldActions.slice(0, activeData.actionData!.actionIndex);
+
+    const eventConfig = events.find(
+      item => item.eventName === data.actionData!.eventKey
+    );
+
+    // 收集当前事件动作出参
+    let actions = onEvent[data.actionData!.eventKey].actions;
+
+    // 编辑的时候只能拿到当前动作前面动作的事件变量以及当前动作事件
+    if (data.type === 'update') {
+      actions = actions.slice(
+        0,
+        data.actionData!.actionIndex !== undefined
+          ? data.actionData!.actionIndex + 1
+          : 0
+      );
     }
 
-    const withOutputVarActions = oldActions?.filter(item => item.outputVar);
-    const withOutputVarVariables = withOutputVarActions?.map(
-      (item: any, index: number) => {
+    let jsonSchema: any = {};
+
+    // 动态构建事件参数
+    if (typeof eventConfig?.dataSchema === 'function') {
+      jsonSchema = eventConfig.dataSchema(manager)?.[0];
+    } else {
+      jsonSchema = {...(eventConfig?.dataSchema?.[0] ?? {})};
+    }
+
+    actions
+      ?.filter(item => item.outputVar)
+      ?.forEach((action: ActionConfig, index: number) => {
+        if (
+          manager.dataSchema.getScope(
+            `action-output-${action.actionType}_ ${index}`
+          )
+        ) {
+          return;
+        }
+
         const actionLabel = getPropOfAcion(
-          item,
+          action,
           'actionLabel',
           actionTree,
           pluginActions,
           commonActions,
           allComponents
         );
-        const dataSchemaJson = getPropOfAcion(
-          item,
+        const actionSchema = getPropOfAcion(
+          action,
           'outputVarDataSchema',
           actionTree,
           pluginActions,
           commonActions,
           allComponents
         );
-        const dataSchema = new DataSchema(dataSchemaJson || []);
-        return {
-          label: `${
-            item.outputVar
-              ? item.outputVar + `（${actionLabel}结果）`
-              : `${actionLabel}结果`
-          }`,
-          tag: 'object',
-          children: dataSchema.getDataPropsAsOptions()?.map(variable => ({
-            ...variable,
-            value: variable.value.replace('${outputVar}', item.outputVar)
-          }))
+
+        // const schema: any = {
+        //   type: 'object',
+        //   $id: 'outputVar',
+        //   properties: {
+        //     [action.outputVar!]: {
+        //       ...actionSchema[0],
+        //       title: `${action.outputVar}(${actionLabel})`
+        //     }
+        //   }
+        // };
+
+        jsonSchema = {
+          ...jsonSchema,
+          properties: {
+            ...jsonSchema.properties,
+            data: {
+              type: 'object',
+              title: '数据',
+              ...jsonSchema.properties?.data,
+              properties: {
+                ...jsonSchema.properties?.data?.properties,
+                [action.outputVar!]: {
+                  ...(Array.isArray(actionSchema) && (actionSchema[0] || {})),
+                  title: `${action.outputVar}(${actionLabel}动作出参)`
+                }
+              }
+            }
+          }
         };
-      }
-    );
-    const eventVariables: ContextVariables[] = [
+
+        // manager.dataSchema.addScope(
+        //   schema,
+        //   `action-output-${action.actionType}_${index}`
+        // );
+        // manager.dataSchema.current.group = '动作出参';
+      });
+
+    if (manager.dataSchema.getScope('event-variable')) {
+      manager.dataSchema.removeScope('event-variable');
+    }
+
+    manager.dataSchema.addScope(
       {
-        label: '事件变量',
-        children: withOutputVarVariables || []
-      }
-    ];
-    const eventConfig = events.find(
-      item => item.eventName === activeData.actionData!.eventKey
+        type: 'object',
+        properties: {
+          event: {
+            ...jsonSchema,
+            title: '事件动作'
+          }
+        }
+      },
+      'event-variable'
     );
-    eventConfig?.dataSchema?.forEach((ds: any) => {
-      const dataSchema = new DataSchema(ds || []);
-      eventVariables[0].children = [
-        ...eventVariables[0].children!,
-        ...dataSchema.getDataPropsAsOptions()
-      ];
+  }
+
+  // buildActionDataSchema(
+  //   activeData: Pick<
+  //     EventControlState,
+  //     'showAcionDialog' | 'type' | 'actionData'
+  //   >,
+  //   manager: EditorManager
+  // ) {
+  //   const {actionTree, pluginActions, commonActions, allComponents} =
+  //     this.props;
+  //   const {onEvent} = this.state;
+  //   // 收集当前事件已有ajax动作的请求返回结果作为事件变量
+  //   let oldActions = onEvent[activeData.actionData!.eventKey].actions;
+
+  //   // 编辑的时候只能拿到当前动作前面动作的事件变量
+  //   if (activeData.type === 'update') {
+  //     oldActions = oldActions.slice(0, activeData.actionData!.actionIndex);
+  //   }
+
+  //   oldActions
+  //     ?.filter(item => item.outputVar)
+  //     ?.forEach((action: ActionConfig, index: number) => {
+  //       if (
+  //         manager.dataSchema.getScope(
+  //           `action-output-${action.actionType}_ ${index}`
+  //         )
+  //       ) {
+  //         return;
+  //       }
+
+  //       const actionLabel = getPropOfAcion(
+  //         action,
+  //         'actionLabel',
+  //         actionTree,
+  //         pluginActions,
+  //         commonActions,
+  //         allComponents
+  //       );
+  //       const actionSchema = getPropOfAcion(
+  //         action,
+  //         'outputVarDataSchema',
+  //         actionTree,
+  //         pluginActions,
+  //         commonActions,
+  //         allComponents
+  //       );
+
+  //       const schema: any = {
+  //         type: 'object',
+  //         properties: {
+  //           [`event.data.${action.outputVar}`]: {
+  //             ...actionSchema[0],
+  //             title: `${action.outputVar}(${actionLabel})`
+  //           }
+  //         }
+  //       };
+
+  //       manager.dataSchema.addScope(
+  //         schema,
+  //         `action-output-${action.actionType}_${index}`
+  //       );
+  //       manager.dataSchema.current.group = '动作出参';
+  //     });
+  // }
+
+  async buildContextSchema(data: any) {
+    const {manager, node: currentNode} = this.props;
+    let variables = [];
+
+    // 获取上下文
+    await manager.getContextSchemas(currentNode.id);
+    // 追加事件相关
+    // this.buildActionDataSchema(data, manager);
+    this.buildEventDataSchema(data, manager);
+    (manager.dataSchema as DataSchema).switchTo('event-variable');
+    variables = (manager.dataSchema as DataSchema).getDataPropsAsOptions();
+
+    // 插入应用变量
+    const appVariables: VariableItem[] =
+      manager?.variableManager?.getVariableFormulaOptions() || [];
+    appVariables.forEach(item => {
+      if (Array.isArray(item?.children) && item.children.length) {
+        variables.push(item);
+      }
     });
-    return eventVariables;
+
+    return updateComponentContext(variables);
   }
 
   // 唤起动作配置弹窗
@@ -578,48 +810,17 @@ export class EventControl extends React.Component<
       getComponents,
       actionTree,
       allComponents,
-      manager
+      manager,
+      node: currentNode
     } = this.props;
 
-    let rawVariables = [];
-    // 获取绑定事件的组件上下文变量
-    if (getContextSchemas) {
-      const dataSchemaIns = await getContextSchemas();
-      rawVariables = dataSchemaIns?.getDataPropsAsOptions();
-    }
-
-    // 收集事件变量
-    const eventVariables = this.getEventVariables(data);
-    const appVariables: VariableItem[] =
-      manager?.variableManager?.getVariableFormulaOptions() || [];
-    const variables = [...eventVariables, ...rawVariables];
-    const systemVarIndex = variables.findIndex(
-      item => item.label === '系统变量'
-    );
-
-    // 插入应用变量
-    if (!!~systemVarIndex) {
-      appVariables.forEach(item => {
-        if (Array.isArray(item?.children) && item.children.length) {
-          variables.splice(systemVarIndex, 0, item);
-        }
-      });
-    } else {
-      appVariables.forEach(item => {
-        if (Array.isArray(item?.children) && item.children.length) {
-          variables.push(item);
-        }
-      });
-    }
-    variables.forEach(item => (item.selectMode = 'tree'));
+    // 构建上下文变量schema
+    const variables = await this.buildContextSchema(data);
 
     // 编辑操作，需要格式化动作配置
     if (data.type === 'update') {
       const action = data.actionData!.action!;
-      const actionConfig = await actionConfigInitFormatter?.(action, {
-        eventVariables,
-        rawVariables
-      });
+      const actionConfig = await actionConfigInitFormatter?.(action);
       const actionNode = findActionNode(actionTree, actionConfig?.actionType!);
       const hasSubActionNode = findSubActionNode(actionTree, action.actionType);
       const supportComponents = getComponents(actionNode!);
@@ -628,22 +829,27 @@ export class EventControl extends React.Component<
         item => item.value === action.componentId
       );
 
-      // 获取组件数据动作所需上下文
+      // 获取被赋值组件的变量字段
       let setValueDs: any = null;
       if (
         actionConfig?.actionType === 'setValue' &&
         node?.id &&
         SELECT_PROPS_CONTAINER.includes(node?.type || '')
       ) {
-        const targetDataSchema: any = await getContextSchemas?.(node.id, true);
-        const targetDataSchemaIns = new DataSchema(targetDataSchema || []);
-        const targetVariables =
-          targetDataSchemaIns?.getDataPropsAsOptions() || [];
+        // 获取目标组件数据域
+        const contextSchema: any = await manager.getContextSchemas(
+          node.id,
+          true
+        );
+        const dataSchema = new DataSchema(contextSchema || []);
+        const targetVariables = dataSchema?.getDataPropsAsOptions() || [];
 
         setValueDs = targetVariables?.filter(
           (item: ContextVariables) => item.value !== '$$id'
         );
       }
+
+      const actionGroupType = actionConfig?.__actionType || action.actionType;
 
       data.actionData = {
         eventKey: data.actionData!.eventKey,
@@ -651,18 +857,19 @@ export class EventControl extends React.Component<
         variables,
         pluginActions,
         getContextSchemas,
-        rawVariables,
         ...actionConfig,
-        groupType: actionConfig?.__actionType || action.actionType,
-        __actionDesc: actionNode!.description!, // 树节点描述
+        groupType: actionGroupType,
+        __actionDesc: actionNode?.description ?? '', // 树节点描述
         __actionSchema: actionNode!.schema, // 树节点schema
         __subActions: hasSubActionNode?.actions, // 树节点子动作
         __cmptTreeSource: supportComponents ?? [],
+        // __dialogActions: manager.store.modalOptions,
         __superCmptTreeSource: allComponents,
         // __supersCmptTreeSource: '',
         __setValueDs: setValueDs
         // broadcastId: action.actionType === 'broadcast' ? action.eventName : ''
       };
+
       // 选中项自动滚动至可见位置
       setTimeout(
         () =>
@@ -677,15 +884,15 @@ export class EventControl extends React.Component<
         variables,
         pluginActions,
         getContextSchemas,
-        rawVariables,
-        __superCmptTreeSource: allComponents
+        __superCmptTreeSource: allComponents,
+        __dialogActions: manager.store.modalOptions
       };
     }
     this.setState(data);
   }
 
   // 渲染描述信息
-  renderDesc(action: ActionConfig) {
+  renderDesc(action: ActionConfig, actionIndex: number, eventKey: string) {
     const {
       actions: pluginActions,
       actionTree,
@@ -722,27 +929,110 @@ export class EventControl extends React.Component<
     }
 
     return typeof desc === 'function' ? (
-      <div className="action-control-content">{desc?.(info) || '-'}</div>
+      <div className="action-control-content">
+        {desc?.(
+          info,
+          {
+            actionIndex,
+            eventKey
+          },
+          this.props
+        ) || '-'}
+      </div>
     ) : null;
   }
 
   @autobind
   onSubmit(type: string, config: any) {
-    const {actionConfigSubmitFormatter} = this.props;
-    const action = actionConfigSubmitFormatter?.(config) ?? config;
+    const {actionConfigSubmitFormatter, manager} = this.props;
+    const {actionData} = this.state;
+    const store = manager.store;
+
+    let action =
+      actionConfigSubmitFormatter?.(config, type, actionData, store.schema) ??
+      config;
+
+    action = this.submitSubscribers.reduce(
+      (action, fn) => fn(action) || action,
+      action
+    );
+
+    delete action.__actionSchema;
     if (type === 'add') {
       this.addAction?.(config.eventKey, action);
     } else if (type === 'update') {
       this.updateAction?.(config.eventKey, config.actionIndex, action);
     }
 
+    updateCommonUseActions({
+      label: action.__title,
+      value: config.actionType,
+      use: 1
+    });
+
+    this.removeDataSchema();
     this.setState({showAcionDialog: false});
     this.setState({actionData: undefined});
   }
 
   @autobind
   onClose() {
+    this.removeDataSchema();
     this.setState({showAcionDialog: false});
+    this.unSubscribeSchemaSubmit?.();
+    delete this.unSubscribeSchemaSubmit;
+  }
+
+  unSubscribeSchemaSubmit?: () => void;
+  @autobind
+  subscribeSchemaSubmit(
+    fn: (schema: any, value: any, id: string, diff?: any) => any,
+    once?: boolean
+  ) {
+    this.unSubscribeSchemaSubmit = this.props.subscribeSchemaSubmit(fn, once);
+    return this.unSubscribeSchemaSubmit;
+  }
+
+  removeDataSchema() {
+    const {manager} = this.props;
+
+    // 删除事件
+    if (manager.dataSchema.getScope('event-variable')) {
+      manager.dataSchema.removeScope('event-variable');
+    }
+
+    // // 删除动作出参
+    // Object.keys(manager.dataSchema.idMap)
+    //   .filter(key => /^action-output/.test(key))
+    //   .map(key => {
+    //     if (manager.dataSchema.getScope(key)) {
+    //       manager.dataSchema.removeScope(key);
+    //     }
+    //   });
+  }
+
+  renderActionType(action: any, actionIndex: number, eventKey: string) {
+    const {
+      actionTree,
+      actions: pluginActions,
+      commonActions,
+      allComponents,
+      node,
+      manager
+    } = this.props;
+
+    return (
+      <span>
+        {getPropOfAcion(
+          action,
+          'actionLabel',
+          actionTree,
+          pluginActions,
+          commonActions,
+          allComponents
+        ) || action.actionType}
+      </span>
+    );
   }
 
   render() {
@@ -752,11 +1042,12 @@ export class EventControl extends React.Component<
       commonActions,
       getComponents,
       allComponents,
-      render
+      render,
+      subscribeSchemaSubmit
     } = this.props;
     const {
       onEvent,
-      events,
+      events: itemEvents,
       eventPanelActive,
       showAcionDialog,
       showEventDialog,
@@ -764,9 +1055,50 @@ export class EventControl extends React.Component<
       actionData,
       eventDialogData
     } = this.state;
-    const eventSnapshot = cloneDeep(onEvent);
+    const eventSnapshot = {...onEvent};
     const {showOldEntry} = this.props;
     const eventKeys = Object.keys(eventSnapshot);
+
+    let commonEvents: RendererPluginEvent[] = [];
+    if (getRendererByName(this.props?.data?.type)?.isFormItem) {
+      commonEvents = [
+        {
+          eventName: 'formItemValidateSucc',
+          eventLabel: '校验成功',
+          description: '表单项校验成功后触发',
+          dataSchema: [
+            {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'object',
+                  title: '数据',
+                  description: '当前表单数据，可以通过.字段名读取对应的值'
+                }
+              }
+            }
+          ]
+        },
+        {
+          eventName: 'formItemValidateError',
+          eventLabel: '校验失败',
+          description: '表单项校验失败后触发',
+          dataSchema: [
+            {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'object',
+                  title: '数据',
+                  description: '当前表单数据，可以通过.字段名读取对应的值'
+                }
+              }
+            }
+          ]
+        }
+      ];
+    }
+    const events = [...itemEvents, ...commonEvents];
     return (
       <div className="ae-event-control">
         <header
@@ -820,7 +1152,7 @@ export class EventControl extends React.Component<
                       'event-item-header': true,
                       'no-bd-btm':
                         !(
-                          eventSnapshot[eventKey].actions?.length &&
+                          eventSnapshot[eventKey]?.actions?.length &&
                           eventPanelActive[eventKey]
                         ) && !getEventStrongDesc(events, eventKey)
                     })}
@@ -888,10 +1220,10 @@ export class EventControl extends React.Component<
                         className: 'event-item-desc'
                       })
                     : null}
-                  {eventSnapshot[eventKey].actions.length &&
+                  {eventSnapshot[eventKey]?.actions?.length &&
                   eventPanelActive[eventKey] ? (
                     <ul className="item-content">
-                      {eventSnapshot[eventKey].actions.map(
+                      {eventSnapshot[eventKey]?.actions?.map(
                         (action, actionIndex) => {
                           return (
                             <li
@@ -907,14 +1239,11 @@ export class EventControl extends React.Component<
                                     />
                                   </div>
                                   <div className="action-item-actiontype">
-                                    {getPropOfAcion(
+                                    {this.renderActionType(
                                       action,
-                                      'actionLabel',
-                                      actionTree,
-                                      pluginActions,
-                                      commonActions,
-                                      allComponents
-                                    ) || action.actionType}
+                                      actionIndex,
+                                      eventKey
+                                    )}
                                   </div>
                                 </div>
                                 <div className="action-control-header-right">
@@ -932,10 +1261,7 @@ export class EventControl extends React.Component<
                                       }
                                     )}
                                   >
-                                    <Icon
-                                      className="icon"
-                                      icon="edit-full-btn"
-                                    />
+                                    <Icon className="icon" icon="setting" />
                                   </div>
                                   <div
                                     onClick={this.delAction.bind(
@@ -952,7 +1278,7 @@ export class EventControl extends React.Component<
                                   </div>
                                 </div>
                               </div>
-                              {this.renderDesc(action)}
+                              {this.renderDesc(action, actionIndex, eventKey)}
                             </li>
                           );
                         }
@@ -965,83 +1291,104 @@ export class EventControl extends React.Component<
           ) : (
             <div className="ae-event-control-placeholder">
               {/* 翻译未生效，临时方案 */}
-              {_i18n('4db5110d41293fef57f5a1f364187896')}
+              {_i18n('快去添加事件，让你的产品动起来吧')}
             </div>
           )}
         </ul>
-        {showEventDialog
-          ? amisRender(
+        {amisRender(
+          {
+            type: 'dialog',
+            title: `${eventDialogData?.eventLabel}-事件配置`,
+            showCloseButton: false,
+            body: [
               {
-                type: 'dialog',
-                title: `${eventDialogData?.eventLabel}-事件配置`,
-                showCloseButton: false,
+                type: 'form',
+                title: '表单',
+                data: {
+                  '&': '$$'
+                },
+                mode: 'horizontal',
+                horizontal: {
+                  left: 3,
+                  right: 9
+                },
                 body: [
                   {
-                    type: 'form',
-                    title: '表单',
-                    data: {
-                      '&': '$$'
-                    },
-                    mode: 'horizontal',
-                    horizontal: {
-                      left: 3,
-                      right: 9
-                    },
-                    body: [
-                      {
-                        label: '事件防重',
-                        type: 'switch',
-                        name: 'debounce.open',
-                        description:
-                          '开启事件防重后，防重时间内多次触发事件只会执行最后一次'
-                      },
-                      {
-                        label: '防重时间',
-                        required: true,
-                        hiddenOn: '!debounce.open',
-                        name: 'debounce.wait',
-                        suffix: 'ms',
-                        max: 10000,
-                        min: 0,
-                        type: 'input-number'
-                      }
-                    ],
-                    onSubmit: this.eventDialogSubmit.bind(this)
-                  }
-                ],
-                actions: [
-                  {
-                    type: 'button',
-                    label: '取消',
-                    onEvent: {
-                      click: {
-                        actions: [
-                          {
-                            actionType: 'custom',
-                            script: () => {
-                              this.setState({
-                                showEventDialog: false
-                              });
-                            }
-                          }
-                        ]
-                      }
-                    }
+                    label: '事件防重',
+                    type: 'switch',
+                    name: 'debounce.open',
+                    description:
+                      '开启事件防重后，防重时间内多次触发事件只会执行最后一次'
                   },
                   {
-                    type: 'button',
-                    actionType: 'confirm',
-                    label: '确认',
-                    primary: true
+                    label: '防重时间',
+                    required: true,
+                    hiddenOn: '!debounce.open',
+                    name: 'debounce.wait',
+                    suffix: 'ms',
+                    max: 10000,
+                    min: 0,
+                    type: 'input-number'
+                  },
+                  {
+                    label: '事件埋点',
+                    type: 'switch',
+                    name: 'track.open',
+                    description:
+                      '开启事件埋点后，每次事件触发都会发送埋点数据到后台'
+                  },
+                  {
+                    label: 'track-id',
+                    required: true,
+                    hiddenOn: '!track.open',
+                    name: 'track.id',
+                    type: 'input-text'
+                  },
+                  {
+                    label: 'track-name',
+                    required: true,
+                    hiddenOn: '!track.open',
+                    name: 'track.name',
+                    type: 'input-text'
                   }
-                ]
+                ],
+                onSubmit: this.eventDialogSubmit.bind(this)
+              }
+            ],
+            actions: [
+              {
+                type: 'button',
+                label: '取消',
+                onEvent: {
+                  click: {
+                    actions: [
+                      {
+                        actionType: 'custom',
+                        script: () => {
+                          this.setState({
+                            showEventDialog: false
+                          });
+                        }
+                      }
+                    ]
+                  }
+                }
               },
               {
-                data: eventDialogData
+                type: 'button',
+                actionType: 'confirm',
+                label: '确认',
+                primary: true
               }
-            )
-          : null}
+            ]
+          },
+          {
+            data: eventDialogData,
+            show: showEventDialog
+          }
+        )}
         <ActionDialog
+          closeOnEsc={false}
           show={showAcionDialog}
           type={type}
           actionTree={actionTree}
@@ -1052,6 +1399,8 @@ export class EventControl extends React.Component<
           onSubmit={this.onSubmit}
           onClose={this.onClose}
           render={this.props.render}
+          subscribeSchemaSubmit={this.subscribeSchemaSubmit}
+          subscribeActionSubmit={this.subscribeSubmit}
         />
       </div>
     );

@@ -1,4 +1,10 @@
-import {defaultValue, getSchemaTpl, valuePipeOut} from 'amis-editor-core';
+import {
+  EditorManager,
+  EditorNodeType,
+  defaultValue,
+  getSchemaTpl,
+  valuePipeOut
+} from 'amis-editor-core';
 import {registerEditorPlugin} from 'amis-editor-core';
 import {
   BasePlugin,
@@ -8,6 +14,7 @@ import {
   BaseEventContext
 } from 'amis-editor-core';
 import cloneDeep from 'lodash/cloneDeep';
+import type {Schema} from 'amis';
 
 import {formItemControl} from '../../component/BaseControl';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
@@ -15,6 +22,7 @@ import {ValidatorTag} from '../../validator';
 import {getEventControlConfig} from '../../renderer/event-control/helper';
 
 export class CityControlPlugin extends BasePlugin {
+  static id = 'CityControlPlugin';
   static scene = ['layout'];
   // 关联渲染器名字
   rendererName = 'input-city';
@@ -26,6 +34,7 @@ export class CityControlPlugin extends BasePlugin {
   icon = 'fa fa-building-o';
   pluginIcon = 'input-city-plugin';
   description = '可配置是否选择区域或者城市';
+  searchKeywords = '城市选择器';
   docLink = '/amis/zh-CN/components/form/input-city';
   tags = ['表单项'];
   scaffold = {
@@ -58,17 +67,33 @@ export class CityControlPlugin extends BasePlugin {
       eventName: 'change',
       eventLabel: '值变化',
       description: '选中值变化',
-      dataSchema: [
-        {
-          type: 'object',
-          properties: {
-            'event.data.value': {
-              type: 'string',
-              title: '选中值'
+      dataSchema: (manager: EditorManager) => {
+        const node = manager.store.getNodeById(manager.store.activeId);
+        const schemas = manager.dataSchema.current.schemas;
+        const dataSchema = schemas.find(
+          item => item.properties?.[node!.schema.name]
+        );
+
+        return [
+          {
+            type: 'object',
+            properties: {
+              data: {
+                type: 'object',
+                title: '数据',
+                properties: {
+                  value: {
+                    type: 'string',
+                    ...((dataSchema?.properties?.[node!.schema.name] as any) ??
+                      {}),
+                    title: '当前城市'
+                  }
+                }
+              }
             }
           }
-        }
-      ]
+        ];
+      }
     }
   ];
 
@@ -106,7 +131,7 @@ export class CityControlPlugin extends BasePlugin {
               }),
               getSchemaTpl('label'),
               getSchemaTpl('valueFormula', {
-                rendererSchema: context?.schema,
+                rendererSchema: (schema: Schema) => schema,
                 rendererWrapper: true,
                 mode: 'vertical' // 改成上下展示模式
               }),
@@ -142,7 +167,7 @@ export class CityControlPlugin extends BasePlugin {
               getSchemaTpl('switch', {
                 name: 'allowDistrict',
                 label: '可选区域',
-                visibleOn: 'data.allowCity',
+                visibleOn: 'this.allowCity',
                 pipeIn: defaultValue(true),
                 onChange: (
                   value: string,
@@ -193,6 +218,58 @@ export class CityControlPlugin extends BasePlugin {
       }
     ]);
   };
+
+  buildDataSchemas(node: EditorNodeType, region: EditorNodeType) {
+    let dataSchema: any = {
+      type: 'string',
+      title: node.schema?.label || node.schema?.name,
+      originalValue: node.schema?.value // 记录原始值，循环引用检测需要
+    };
+
+    if (node.schema?.extractValue === false) {
+      dataSchema = {
+        ...dataSchema,
+        type: 'object',
+        title: node.schema?.label || node.schema?.name,
+        properties: {
+          code: {
+            type: 'number',
+            title: '编码'
+          },
+          provinceCode: {
+            type: 'number',
+            title: '省份编码'
+          },
+          province: {
+            type: 'string',
+            title: '省份'
+          },
+          cityCode: {
+            type: 'number',
+            title: '城市编码'
+          },
+          city: {
+            type: 'string',
+            title: '城市'
+          },
+          districtCode: {
+            type: 'number',
+            title: '区域编码'
+          },
+          district: {
+            type: 'string',
+            title: '区域'
+          },
+          street: {
+            type: 'string',
+            title: '街道'
+          }
+        }
+      };
+    }
+
+    return dataSchema;
+  }
 }
 
 registerEditorPlugin(CityControlPlugin);

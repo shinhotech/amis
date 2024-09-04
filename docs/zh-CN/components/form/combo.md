@@ -474,7 +474,26 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
                     "c"
                 ]
             }
-        ]
+        ],
+        "onEvent": {
+            "dragEnd": {
+                "weight": 0,
+                "actions": [
+                    {
+                        "ignoreError": false,
+                        "actionType": "toast",
+                        "args": {
+                            "msgType": "info",
+                            "position": "top-right",
+                            "closeButton": true,
+                            "showIcon": true,
+                            "msg": "拖拽前的索引${event.data.oldIndex}\n拖拽后的索引${event.data.index}\n被拖拽项的${event.data.item|json}\n拖拽前的值${event.data.oldValue|json}\n拖拽后的值${event.data.value|json}\n",
+                            "className": "theme-toast-action-scope"
+                        }
+                    }
+                ]
+            }
+        }
     }
   ]
 }
@@ -774,7 +793,7 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
         "items": [
             {
                 "type": "tpl",
-                "tpl": "<%= this.index + 1%>",
+                "tpl": "${ index + 1 }",
                 "className": "p-t-xs",
                 "mode": "inline"
             },
@@ -824,7 +843,7 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
 }
 ```
 
-如果想要赋予删除按钮更多能力，则需要将 deleteBtn 配置成[Button](../button.md)类型
+如果想要赋予删除按钮更多能力，则需要将 deleteBtn 配置成[Button](../button.md)类型，还可以利用`index`参数动态控制按钮的显隐或禁用状态等。
 
 ```schema: scope="body"
 {
@@ -844,7 +863,8 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
           "level": "danger",
           "tooltip": "提示文本",
           "tooltipPlacement": "top",
-          "onClick": "alert(index)"
+          "onClick": "alert(index)",
+          "disabledOn": "${index % 2 === 1}"
         },
         "items": [
             {
@@ -946,15 +966,165 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
 
 ## 事件表
 
-当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`来获取事件产生的数据（`< 2.3.2 及以下版本 为 ${event.data.[事件参数名]}`），详细请查看[事件动作](../../docs/concepts/event-action)。
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`${事件参数名}`或`${event.data.[事件参数名]}`来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
 
 > `[name]`表示当前组件绑定的名称，即`name`属性，如果没有配置`name`属性，则通过`value`取值。
 
-| 事件名称   | 事件参数                                                                                         | 说明                                         |
-| ---------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| add        | `[name]: object \| object[]` 组件的值                                                            | 添加组合项时触发                             |
-| delete     | `key: number` 移除项的索引<br />`item: object` 移除项<br />`[name]: object \| object[]` 组件的值 | 删除组合项时触发                             |
-| tabsChange | `key: number` 选项卡索引<br />`item: object` 激活项<br />`[name]: object \| object[]` 组件的值   | 当设置 tabsMode 为 true 时，切换选项卡时触发 |
+| 事件名称   | 事件参数                                                                                                                                                                                                                                 | 说明                                                     |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| add        | `[name]: object \| object[]` 组件的值                                                                                                                                                                                                    | 添加组合项时触发                                         |
+| delete     | `key: number` 移除项的索引<br />`item: object` 移除项<br />`[name]: object \| object[]` 组件的值                                                                                                                                         | 删除组合项时触发                                         |
+| dragEnd    | `index: number` 拖拽后的索引<br />`oldIndex: number` 拖拽前的索引<br />`item: object` 被拖拽的项<br />`value: object[]` 拖拽后组合项的值<br />`oldValue: object \| object[]` 拖拽前组合项的值<br />`[name]: object \| object[]` 组件的值 | 当组合项拖拽结束且位置发生变化时触发，`6.1.1` 版本后支持 |
+| tabsChange | `key: number` 选项卡索引<br />`item: object` 激活项<br />`[name]: object \| object[]` 组件的值                                                                                                                                           | 当设置 tabsMode 为 true 时，切换选项卡时触发             |
+
+### add
+
+```schema: scope="body"
+{
+  "type": "form",
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "combo",
+      "name": "combo",
+      "label": "Combo",
+      "multiple": true,
+      "items": [
+        {
+          "name": "text",
+          "label": "文本",
+          "type": "input-text"
+        },
+        {
+          "name": "select",
+          "label": "选项",
+          "type": "select",
+          "options": ["a", "b", "c"]
+        }
+      ],
+      "onEvent": {
+        "add": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.value|json}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### delete
+
+```schema: scope="body"
+{
+  "type": "form",
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "combo",
+      "name": "combo",
+      "label": "Combo",
+      "multiple": true,
+      "items": [
+        {
+          "name": "text",
+          "label": "文本",
+          "type": "input-text"
+        },
+        {
+          "name": "select",
+          "label": "选项",
+          "type": "select",
+          "options": ["a", "b", "c"]
+        }
+      ],
+      "onEvent": {
+        "delete": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.item|json}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### tabsChange
+
+监听 tab 切换，获取被激活的索引。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "debug": true,
+  "body": [
+    {
+      "type": "combo",
+      "name": "combo101",
+      "label": "组合多条多行",
+      "multiple": true,
+      "multiLine": true,
+      "value": [
+        {}
+      ],
+      "tabsMode": true,
+      "tabsStyle": "card",
+      "maxLength": 3,
+      "items": [
+        {
+          "name": "a",
+          "label": "文本",
+          "type": "input-text",
+          "placeholder": "文本",
+          "value": "",
+          "size": "full"
+        },
+        {
+          "name": "b",
+          "label": "选项",
+          "type": "select",
+          "options": [
+            "a",
+            "b",
+            "c"
+          ],
+          "size": "full"
+        }
+      ],
+      "onEvent": {
+        "tabsChange": {
+          "actions": [
+            {
+              "actionType": "toast",
+              "args": {
+                "msg": "${event.data.key|json}"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
 
 ## 动作表
 
@@ -964,23 +1134,127 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
 | -------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | addItem  | `item: object` 新增项的值                                                                                 | 只有开启`multiple`模式才能使用, `multiple`模式下，给新增项添加默认值                              |
 | clear    | -                                                                                                         | 清空                                                                                              |
-| reset    | -                                                                                                         | 将值重置为`resetValue`，若没有配置`resetValue`，则清空                                            |
+| reset    | -                                                                                                         | 将值重置为初始值。6.3.0 及以下版本为`resetValue`                                                  |
 | setValue | `value: object \| Array<object>` 更新的值<br/>`index?: number` 指定更新的数据索引， 1.10.1 及以上版本引入 | 更新数据，对象数组针对开启`multiple`模式, `multiple`模式下可以通过指定`index`来更新指定索引的数据 |
 
-## 动作示例
+### clear
 
-### 复制数值
+```schema: scope="body"
+{
+    "type": "form",
+    "debug": true,
+    "body": [
+      {
+        "type": "combo",
+        "name": "type",
+        "id": "clear_type",
+        "label": "用户",
+        "items": [
+          {
+            "name": "text",
+            "label": "名字",
+            "type": "input-text"
+          },
+          {
+            "name": "gender",
+            "label": "性别",
+            "type": "select",
+            "options": [
+              "男",
+              "女"
+            ]
+          }
+        ],
+        "value": {
+          "text": "amis",
+          "gender": "男"
+        }
+      },
+      {
+        "type": "button",
+        "label": "清空",
+        "onEvent": {
+            "click": {
+                "actions": [
+                    {
+                      "actionType": "clear",
+                      "componentId": "clear_type"
+                    }
+                ]
+            }
+        }
+      }
+    ]
+}
+```
+
+### reset
+
+如果配置了`resetValue`，则重置时使用`resetValue`的值，否则使用初始值。
+
+```schema: scope="body"
+{
+    "type": "form",
+    "debug": true,
+    "body": [
+      {
+        "type": "combo",
+        "name": "type",
+        "id": "reset_type",
+        "label": "用户",
+        "items": [
+          {
+            "name": "text",
+            "label": "名字",
+            "type": "input-text"
+          },
+          {
+            "name": "gender",
+            "label": "性别",
+            "type": "select",
+            "options": [
+              "男",
+              "女"
+            ]
+          }
+        ],
+        "value": {
+          "text": "amis",
+          "gender": "男"
+        }
+      },
+      {
+        "type": "button",
+        "label": "重置",
+        "onEvent": {
+            "click": {
+                "actions": [
+                    {
+                      "actionType": "reset",
+                      "componentId": "reset_type"
+                    }
+                ]
+            }
+        }
+      }
+    ]
+}
+```
+
+### setValue
+
+#### 复制数值
 
 > 1.10.1 及以上版本
 
 此示例主要用来演示如何通过已有数据快速填充 combo 某条数据。点击 copy 按钮会弹出一个 crud 列表，点击对应行上的复制按钮，将选中数据填充到外层的 combo.
 
-注意事项：
-
-1. 需要给 combo 设置个 id 属性，用来给事件动作指定目标用。
-2. 弹窗按钮配置了数据映射 `{comboIndex: "${index}"}` 因为 crud 的行数据上也有 index 变量，派送动作时获取 index 变量是 crud 所在行的序号。所以弹出弹窗的时候，先把 combo 的序号赋值给 comboIndex
-3. crud 操作栏里面添加了个按钮，close: true 设置是让动作完成后关闭弹窗。
-4. 按钮里面添加了 onEvent 配置，click 时做 `setValue` 动作，并设置参数 index 为 '${comboIndex}' 值为 `${&}`。其中 `${&}` 是特殊语法，用来取整个上下数据。
+> 注意事项：
+>
+> 1. 需要给 combo 设置个 id 属性，用来给事件动作指定目标用。
+> 2. 弹窗按钮配置了数据映射 `{comboIndex: "${index}"}` 因为 crud 的行数据上也有 index 变量，派送动作时获取 index 变量是 crud 所在行的序号。所以弹出弹窗的时候，先把 combo 的序号赋值给 comboIndex
+> 3. crud 操作栏里面添加了个按钮，close: true 设置是让动作完成后关闭弹窗。
+> 4. 按钮里面添加了 onEvent 配置，click 时做 `setValue` 动作，并设置参数 index 为 '${comboIndex}' 值为 `${&}`。其中 `${&}` 是特殊语法，用来取整个上下数据。
 
 ```schema: scope="body"
 {
@@ -1052,6 +1326,591 @@ combo 还有一个作用是增加层级，比如返回的数据是一个深层�
               }
             ]
           }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 更新所有记录
+
+```schema: scope="body"
+{
+  "type": "form",
+  "debug": true,
+  "data": {
+    "combo": [
+      {
+        "select_1": "A",
+        "select_2": "c"
+      },
+      {
+        "select_1": "A",
+        "select_2": "d"
+      },
+      {
+        "select_1": "B",
+        "select_2": "d"
+      }
+    ]
+  },
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "更新所有记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "combo_setvalue_item",
+              "actionType": "setValue",
+              "args": {
+                "value": [
+                  {
+                      "select_1": "B",
+                      "select_2": "a"
+                  },
+                  {
+                      "select_1": "D",
+                      "select_2": "c"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "combo",
+      "label": "组合输入",
+      "name": "combo",
+      "className": "mt-2",
+      "id": "combo_setvalue_item",
+      "multiple": true,
+      "items": [
+        {
+          "type": "select",
+          "label": "选项",
+          "name": "select_1",
+          "options": [
+            {
+              "label": "选项A",
+              "value": "A"
+            },
+            {
+              "label": "选项B",
+              "value": "B"
+            },
+            {
+              "label": "选项C",
+              "value": "C"
+            },
+            {
+              "label": "选项D",
+              "value": "D"
+            }
+          ]
+        },
+        {
+          "type": "select",
+          "name": "select_2",
+          "placeholder": "选项",
+          "options": [
+            {
+              "label": "C",
+              "value": "c"
+            },
+            {
+              "label": "D",
+              "value": "c"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 更新指定行记录
+
+```schema: scope="body"
+{
+  "type": "form",
+  "debug": true,
+  "data": {
+    "combo": [
+      {
+        "select_1": "A",
+        "select_2": "c"
+      },
+      {
+        "select_1": "A",
+        "select_2": "d"
+      },
+      {
+        "select_1": "B",
+        "select_2": "d"
+      },
+      {
+        "select_1": "C",
+        "select_2": "d"
+      },
+      {
+        "select_1": "D",
+        "select_2": "d"
+      }
+    ]
+  },
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "button",
+      "label": "更新index为1和3的行记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "combo_setvalue_item",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "select_1": "B",
+                    "select_2": "a"
+                },
+                "index": '1,3'
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "更新选项为选项A的行记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "combo_setvalue_item",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "select_1": "B",
+                    "select_2": "a"
+                },
+                "condition": "${select_1 === 'A'}"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "button",
+      "label": "更新选项为选项D的行记录",
+      "onEvent": {
+        "click": {
+          "actions": [
+            {
+              "componentId": "combo_setvalue_item",
+              "actionType": "setValue",
+              "args": {
+                "value": {
+                    "select_1": "B",
+                    "select_2": "a"
+                },
+                "condition": {
+                  conjunction: 'and',
+                  children: [
+                    {
+                      left: {
+                        type: 'field',
+                        field: 'select_1'
+                      },
+                      op: 'equal',
+                      right: "D"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "combo",
+      "label": "组合输入",
+      "name": "combo",
+      "className": "mt-2",
+      "id": "combo_setvalue_item",
+      "multiple": true,
+      "items": [
+        {
+          "type": "select",
+          "label": "选项",
+          "name": "select_1",
+          "options": [
+            {
+              "label": "选项A",
+              "value": "A"
+            },
+            {
+              "label": "选项B",
+              "value": "B"
+            },
+            {
+              "label": "选项C",
+              "value": "C"
+            },
+            {
+              "label": "选项D",
+              "value": "D"
+            }
+          ]
+        },
+        {
+          "type": "select",
+          "name": "select_2",
+          "placeholder": "选项",
+          "options": [
+            {
+              "label": "C",
+              "value": "c"
+            },
+            {
+              "label": "D",
+              "value": "c"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 行记录内表单项联动
+
+在 combo 中行记录内表单项联动需要指定`componentName`为需要联动的表单项名称，以下示例中，当选择指定行内第一个下拉框的值时，将对应的修改所在行内第二个下拉框的值。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "debug": true,
+  "data": {
+    "combo": [
+      {
+        "select_1": "A",
+        "select_2": "c"
+      },
+      {
+        "select_1": "A",
+        "select_2": "d"
+      }
+    ]
+  },
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "combo",
+      "label": "组合输入",
+      "name": "combo",
+      "multiple": true,
+      "addable": true,
+      "removable": true,
+      "removableMode": "icon",
+      "addBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "level": "primary",
+        "size": "sm",
+        "onEvent": {
+          "click": {
+            "weight": 0,
+            "actions": [
+            ]
+          }
+        }
+      },
+      "items": [
+        {
+          "type": "select",
+          "label": "选项${index}",
+          "name": "select_1",
+          "options": [
+            {
+              "label": "选项A",
+              "value": "A"
+            },
+            {
+              "label": "选项B",
+              "value": "B"
+            }
+          ],
+          "multiple": false,
+          "onEvent": {
+            "change": {
+              "actions": [
+                {
+                  "componentName": "select_2",
+                  "args": {
+                    "value": "${IF(event.data.value==='A','c','d')}"
+                  },
+                  "actionType": "setValue"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "select",
+          "name": "select_2",
+          "placeholder": "选项",
+          "options": [
+            {
+              "label": "C",
+              "value": "c"
+            },
+            {
+              "label": "D",
+              "value": "d"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+通过[状态控制动作](../../concepts/event-action#控制状态)来联动时比较特殊，需要配置动态的`componentId`或`componentName`，一般使用`index`索引来区分指定的表单项。例如下面的示例中，每行的第一个下拉框的选择来决定所在行记录中的第二个下拉框是否显示。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "debug": true,
+  "data": {
+    "combo": [
+      {
+        "select_1": "A",
+        "select_2": "c"
+      },
+      {
+        "select_1": "A",
+        "select_2": "d"
+      }
+    ]
+  },
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "combo",
+      "label": "组合输入",
+      "name": "combo",
+      "multiple": true,
+      "addable": true,
+      "removable": true,
+      "removableMode": "icon",
+      "addBtn": {
+        "label": "新增",
+        "icon": "fa fa-plus",
+        "level": "primary",
+        "size": "sm"
+      },
+      "items": [
+        {
+          "type": "select",
+          "label": "选项${index}",
+          "name": "select_1",
+          "options": [
+            {
+              "label": "选项A",
+              "value": "A"
+            },
+            {
+              "label": "选项B",
+              "value": "B"
+            }
+          ],
+          "multiple": false,
+          "onEvent": {
+            "change": {
+              "actions": [
+                {
+                  "componentId": "select_2_${index}",
+                  "args": {
+                    "value": "${IF(event.data.value==='A',true,false)}"
+                  },
+                  "actionType": "visibility"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "select",
+          "name": "select_2",
+          "id": "select_2_${index}",
+          "placeholder": "选项",
+          "options": [
+            {
+              "label": "C",
+              "value": "c"
+            },
+            {
+              "label": "D",
+              "value": "c"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 嵌套结构中行记录内表单项联动
+
+这里所说的是列表结构数据的嵌套。下面的示例中，combo 内包含一个表格编辑框，即 combo 数据是一个列表结构，它的记录中嵌套了另一个列表结构（input-table）。想要实现 input-table 内行记录【修改】操作只更新所在行记录中的表单项。通过`componentName`来指定所需更新的字段名，它将帮你定位到当前操作行。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "debug": true,
+  "data": {
+    "combo": [
+      {
+        "table": [{
+          "name": "amis",
+          "age": "18"
+        }]
+      },
+      {
+        "table": [{
+          "name": "boss",
+          "age": "10"
+        }]
+      }
+    ]
+  },
+  "mode": "horizontal",
+  "api": "/api/mock2/form/saveForm",
+  "body": [
+    {
+      "type": "combo",
+      "name": "combo",
+      "id": "comboId",
+      "label": false,
+      "strictMode": false,
+      "multiple": true,
+      "addBtn": {
+        "type": "button",
+        "label": "增加",
+        "level": "default",
+        "block": true
+      },
+      "items": [
+        {
+          "type": "input-table",
+          "name": "table",
+          "strictMode": false,
+          "label": false,
+          "needConfirm": false,
+          "addable": true,
+          "removable": true,
+          "columns": [
+            {
+              "label": "姓名",
+              "name": "name",
+              "quickEdit": false
+            },
+            {
+              "label": "年龄",
+              "name": "age"
+            },
+            {
+              "type": "operation",
+              "label": "操作",
+              "quickEdit": false,
+              "buttons": [
+                {
+                  "type": "button",
+                  "level": "link",
+                  "onEvent": {
+                    "click": {
+                      "actions": [
+                        {
+                          "dialog": {
+                            "closeOnEsc": false,
+                            "body": [
+                              {
+                                "onEvent": {
+                                  "validateSucc": {
+                                    "weight": 0,
+                                    "actions": [
+                                      {
+                                        "actionType": "closeDialog"
+                                      },
+                                      {
+                                        "args": {
+                                          "index": "${index}",
+                                          "value": {
+                                            "name": "$name",
+                                            "age": "$age"
+                                          }
+                                        },
+                                        "actionType": "setValue",
+                                        "componentName": "table"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "body": [
+                                  {
+                                    "label": "姓名",
+                                    "name": "name",
+                                    "type": "input-text",
+                                    "required": true
+                                  },
+                                  {
+                                    "label": "年龄",
+                                    "name": "age",
+                                    "type": "input-text",
+                                    "required": true
+                                  }
+                                ],
+                                "type": "form",
+                                "title": "表单"
+                              }
+                            ],
+                            "type": "dialog",
+                            "title": "行记录",
+                            "showLoading": true,
+                            "withDefaultData": true,
+                            "dataMapSwitch": true,
+                            "size": "lg",
+                            "showErrorMsg": true,
+                            "showCloseButton": true,
+                          },
+                          "actionType": "dialog"
+                        }
+                      ]
+                    }
+                  },
+                  "label": "修改"
+                }
+              ]
+            }
+          ]
         }
       ]
     }

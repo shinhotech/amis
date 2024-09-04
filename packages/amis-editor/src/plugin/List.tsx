@@ -1,6 +1,10 @@
-import {Button, resolveVariable} from 'amis';
+import {Button, isObject} from 'amis';
 import React from 'react';
-import {getI18nEnabled, registerEditorPlugin} from 'amis-editor-core';
+import {
+  EditorNodeType,
+  getI18nEnabled,
+  registerEditorPlugin
+} from 'amis-editor-core';
 import {
   BaseEventContext,
   BasePlugin,
@@ -13,9 +17,15 @@ import {
 } from 'amis-editor-core';
 import {defaultValue, getSchemaTpl} from 'amis-editor-core';
 import {diff, JSONPipeOut, repeatArray} from 'amis-editor-core';
-import {schemaArrayFormat, schemaToArray} from '../util';
+import set from 'lodash/set';
+import {
+  schemaArrayFormat,
+  resolveArrayDatasource,
+  schemaToArray
+} from '../util';
 
 export class ListPlugin extends BasePlugin {
+  static id = 'ListPlugin';
   // 关联渲染器名字
   rendererName = 'list';
   $schema = '/schemas/ListSchema.json';
@@ -23,6 +33,9 @@ export class ListPlugin extends BasePlugin {
   // 组件名称
   name = '列表';
   isBaseComponent = true;
+  isListComponent = true;
+  disabledRendererPlugin = true;
+  memberImmutable = true;
   description =
     '展示一个列表，可以自定标题、副标题，内容及按钮组部分。当前组件需要配置数据源，不自带数据拉取，请优先使用 「CRUD」 组件。';
   docLink = '/amis/zh-CN/components/list';
@@ -59,7 +72,7 @@ export class ListPlugin extends BasePlugin {
   panelTitle = '列表';
   panelJustify = true;
   panelBodyCreator = (context: BaseEventContext) => {
-    const isCRUDBody = context.schema.type === 'crud';
+    const isCRUDBody = ['crud', 'crud2'].includes(context.schema.type);
     const i18nEnabled = getI18nEnabled();
     return getSchemaTpl('tabs', [
       {
@@ -68,21 +81,21 @@ export class ListPlugin extends BasePlugin {
           {
             title: '基本',
             body: [
-              {
-                children: (
-                  <Button
-                    level="primary"
-                    size="sm"
-                    block
-                    onClick={this.editDetail.bind(this, context.id)}
-                  >
-                    配置成员详情
-                  </Button>
-                )
-              },
-              {
-                type: 'divider'
-              },
+              // {
+              //   children: (
+              //     <Button
+              //       level="primary"
+              //       size="sm"
+              //       block
+              //       onClick={this.editDetail.bind(this, context.id)}
+              //     >
+              //       配置成员详情
+              //     </Button>
+              //   )
+              // },
+              // {
+              //   type: 'divider'
+              // },
               {
                 name: 'title',
                 type: i18nEnabled ? 'input-text-i18n' : 'input-text',
@@ -90,13 +103,9 @@ export class ListPlugin extends BasePlugin {
               },
               isCRUDBody
                 ? null
-                : {
-                    name: 'source',
-                    type: 'input-text',
-                    label: '数据源',
-                    pipeIn: defaultValue('${items}'),
-                    description: '绑定当前环境变量'
-                  },
+                : getSchemaTpl('formItemName', {
+                    label: '绑定字段名'
+                  }),
               {
                 name: 'placeholder',
                 pipeIn: defaultValue('没有数据'),
@@ -182,34 +191,41 @@ export class ListPlugin extends BasePlugin {
     ]);
   };
 
-  filterProps(props: any) {
-    if (props.isSlot) {
-      props.value = [props.data];
-      return props;
-    }
+  filterProps(props: any, node: EditorNodeType) {
+    if (!node.state.value) {
+      if (props.isSlot) {
+        node.updateState({
+          value: [props.data]
+        });
+        return;
+      }
 
-    const data = {
-      ...props.defaultData,
-      ...props.data
-    };
-    let arr = Array.isArray(props.value)
-      ? props.value
-      : typeof props.source === 'string'
-      ? resolveVariable(props.source, data)
-      : resolveVariable('items', data);
+      const data = {
+        ...props.defaultData,
+        ...props.data
+      };
+      const arr = resolveArrayDatasource({
+        value: props.value,
+        data,
+        source: props.source
+      });
 
-    if (!Array.isArray(arr) || !arr.length) {
-      const mockedData: any = this.buildMockData();
-      props.value = repeatArray(mockedData, 1).map((item, index) => ({
-        ...item,
-        id: index + 1
-      }));
+      if (!Array.isArray(arr) || !arr.length) {
+        const mockedData: any = this.buildMockData();
+        node.updateState({
+          value: repeatArray(mockedData, 1).map((item, index) => ({
+            ...item,
+            id: index + 1
+          }))
+        });
+      }
     }
 
     const {$schema, ...rest} = props;
 
     return {
-      ...JSONPipeOut(rest),
+      // ...JSONPipeOut(rest),
+      ...rest,
       $schema
     };
   }
@@ -289,7 +305,7 @@ export class ListPlugin extends BasePlugin {
     node &&
       value &&
       this.manager.openSubEditor({
-        title: '配置成员详情',
+        title: '配置成员渲染器',
         value: {
           ...value.listItem
         },
@@ -325,6 +341,36 @@ export class ListPlugin extends BasePlugin {
     }
   }
 
+  buildDataSchemas(node: EditorNodeType, region?: EditorNodeType) {
+    let dataSchema: any = {
+      $id: 'each',
+      type: 'object',
+      title: '当前循环项',
+      properties: {}
+    };
+
+    let match =
+      node.schema.source && String(node.schema.source).match(/{([\w-_]+)}/);
+    let field = node.schema.name || match?.[1];
+    const scope = this.manager.dataSchema.getScope(`${node.id}-${node.type}`);
+    const schema = scope?.parent?.getSchemaByPath(field);
+
+    if (isObject(schema?.items)) {
+      dataSchema = {
+        ...dataSchema,
+        ...(schema!.items as any)
+      };
+
+      // 循环添加序号方便处理
+      set(dataSchema, 'properties.index', {
+        type: 'number',
+        title: '序号'
+      });
+    }
+
+    return dataSchema;
+  }
+
   buildEditorContextMenu(
     {id, schema, region, info, selections}: ContextMenuEventContext,
     menus: Array<ContextMenuItem>
@@ -337,7 +383,7 @@ export class ListPlugin extends BasePlugin {
       (info.renderer.name === 'crud' && schema.mode === 'list')
     ) {
       menus.push('|', {
-        label: '配置成员详情',
+        label: '配置成员渲染器',
         onSelect: this.editDetail.bind(this, id)
       });
     }
@@ -351,7 +397,7 @@ export class ListPlugin extends BasePlugin {
     const {renderer, schema} = context;
     if (
       !schema.$$id &&
-      schema.$$editor?.renderer.name === 'crud' &&
+      ['crud', 'crud2'].includes(schema.$$editor?.renderer.name) &&
       renderer.name === 'list'
     ) {
       return {
@@ -364,7 +410,8 @@ export class ListPlugin extends BasePlugin {
         wrapperResolve: plugin.wrapperResolve,
         filterProps: plugin.filterProps,
         $schema: plugin.$schema,
-        renderRenderer: plugin.renderRenderer
+        renderRenderer: plugin.renderRenderer,
+        memberImmutable: plugin.memberImmutable
       };
     }
 

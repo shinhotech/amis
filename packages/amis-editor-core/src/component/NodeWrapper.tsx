@@ -1,11 +1,13 @@
-import {RendererProps} from 'amis-core';
+import {RendererProps, isObject} from 'amis-core';
 import {observer} from 'mobx-react';
 import {isAlive} from 'mobx-state-tree';
 import React from 'react';
 import {findDOMNode} from 'react-dom';
+import merge from 'lodash/merge';
+import omit from 'lodash/omit';
 import {RendererInfo} from '../plugin';
 import {EditorNodeType} from '../store/node';
-import {autobind} from '../util';
+import {autobind, isEmpty} from '../util';
 
 export interface NodeWrapperProps extends RendererProps {
   $$editor: RendererInfo; // 当前节点信息（info）
@@ -14,6 +16,9 @@ export interface NodeWrapperProps extends RendererProps {
 
 @observer
 export class NodeWrapper extends React.Component<NodeWrapperProps> {
+  /** 合并 Mock 配置时应该忽略的属性 */
+  omitMockProps = ['id', '$$id', 'enable', 'maxDisplayRows'];
+
   componentDidMount() {
     this.markDom(this.props.$$editor.id);
 
@@ -58,6 +63,12 @@ export class NodeWrapper extends React.Component<NodeWrapperProps> {
       dom.setAttribute('name', this.props.id);
       dom.setAttribute('data-visible', visible ? '' : 'false');
       dom.setAttribute('data-hide-text', visible ? '' : '<隐藏状态>');
+
+      if (info.regions) {
+        dom.setAttribute('data-container', '');
+      } else {
+        dom.removeAttribute('data-container');
+      }
     });
     info.plugin?.markDom?.(dom, this.props);
   }
@@ -69,6 +80,13 @@ export class NodeWrapper extends React.Component<NodeWrapperProps> {
 
     if ($$editor.filterProps) {
       rest = $$editor.filterProps.call($$editor.plugin, rest, $$node);
+    }
+
+    const mockProps = omit(rest?.editorSetting?.mock, this.omitMockProps);
+
+    // 自动合并假数据
+    if (isObject(mockProps) && !isEmpty(mockProps)) {
+      rest = merge(rest, mockProps);
     }
 
     if ($$editor.renderRenderer) {
@@ -86,6 +104,10 @@ export class NodeWrapper extends React.Component<NodeWrapperProps> {
       );
     }
 
+    const supportRef =
+      renderer.component.prototype?.isReactComponent ||
+      (renderer.component as any).$$typeof === Symbol.for('react.forward_ref');
+
     return (
       <renderer.component
         {...rest}
@@ -93,7 +115,7 @@ export class NodeWrapper extends React.Component<NodeWrapperProps> {
         {...$$node?.state}
         $$editor={$$editor}
         {...$$editor.wrapperProps}
-        ref={this.refFn}
+        ref={supportRef ? this.refFn : undefined}
       />
     );
   }

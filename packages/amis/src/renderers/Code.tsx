@@ -71,7 +71,7 @@ export interface CustomLang {
 
 /**
  * 代码高亮组件
- * 文档：https://baidu.gitee.io/amis/docs/components/code
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/code
  */
 export interface CodeSchema extends BaseSchema {
   type: 'code';
@@ -142,6 +142,11 @@ export interface CodeSchema extends BaseSchema {
    * 使用的标签，默认多行使用pre，单行使用code
    */
   wrapperComponent?: string;
+
+  /**
+   * 最大高度，单位为px
+   */
+  maxHeight?: number;
 }
 
 export interface CodeProps
@@ -162,7 +167,6 @@ export default class Code extends React.Component<CodeProps> {
 
   static defaultProps: Partial<CodeProps> = {
     language: 'plaintext',
-    editorTheme: 'vs',
     tabSize: 4,
     wordWrap: true
   };
@@ -195,7 +199,7 @@ export default class Code extends React.Component<CodeProps> {
 
     if (this?.monaco?.editor && dom) {
       const {tabSize} = props;
-      const sourceCode = getPropValue(this.props);
+      const sourceCode = getPropValue(this.props) ?? '';
       const language = this.resolveLanguage();
       const theme = this.registerAndGetTheme();
       /**
@@ -226,7 +230,7 @@ export default class Code extends React.Component<CodeProps> {
 
     this.monaco = monaco;
     const {tabSize} = this.props;
-    const sourceCode = getPropValue(this.props);
+    const sourceCode = getPropValue(this.props) ?? '';
     const language = this.resolveLanguage();
     const dom = this.codeRef.current;
 
@@ -262,12 +266,11 @@ export default class Code extends React.Component<CodeProps> {
 
     return language;
   }
-
   /** 注册并返回当前主题名称，如果未自定义主题，则范围editorTheme值，默认为'vs' */
   registerAndGetTheme() {
     const monaco = this.monaco;
-    const {editorTheme = 'vs'} = this.props;
-
+    let {theme, editorTheme} = this.props;
+    editorTheme = editorTheme || (theme === 'dark' ? 'vs-dark' : 'vs');
     if (!monaco) {
       return editorTheme;
     }
@@ -320,7 +323,8 @@ export default class Code extends React.Component<CodeProps> {
     const sourceCode = getPropValue(this.props);
     const {
       className,
-      style,
+      maxHeight,
+      style = {},
       classnames: cx,
       editorTheme,
       customLang,
@@ -334,6 +338,11 @@ export default class Code extends React.Component<CodeProps> {
 
     if (customLang) {
       this.customLang = customLang;
+    }
+
+    if (maxHeight) {
+      style.maxHeight = style.maxHeight || maxHeight;
+      style.overflow = 'auto';
     }
 
     return (

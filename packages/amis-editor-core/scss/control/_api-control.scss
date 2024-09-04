@@ -17,6 +17,7 @@
 
   &-content {
     @include flexBox();
+    align-items: stretch;
 
     .ae-ApiControl-input {
       background: var(--Form-input-bg);
@@ -31,7 +32,7 @@
       align-items: center;
       flex: 1;
       margin-right: #{px2rem(10px)};
-      max-width: calc(100% - 52px);
+      // max-width: calc(100% - 52px);
       height: var(--Button--sm-height);
 
       & > input {
@@ -43,6 +44,10 @@
         color: var(--Form-input-color);
         width: 100%;
         height: calc(var(--Form-input-lineHeight) * var(--Form-input-fontSize));
+      }
+
+      .ae-ApiControl-setting-button {
+        height: unset;
       }
     }
   }
@@ -82,6 +87,7 @@
       margin: #{px2rem(16px)} 0 #{px2rem(24px)};
 
       .ae-ApiControl-form {
+        @include panel-sm-content();
         .ae-ApiControl-tabContent {
           max-height: 560px;
           overflow-x: hidden;
@@ -121,7 +127,8 @@
   }
 }
 
-.ae-AdaptorControl {
+.ae-AdaptorControl,
+.ae-FunctionEditorControl {
   &-func {
     &-header,
     &-footer {

@@ -22,6 +22,7 @@ import {value2array, OptionProps, Option} from './Select';
 import chunk from 'lodash/chunk';
 import {ClassNamesFn, themeable} from 'amis-core';
 import {columnsSplit} from 'amis-core';
+import {TestIdBuilder} from 'amis-core';
 
 interface RadioProps extends OptionProps {
   id?: string;
@@ -41,8 +42,13 @@ interface RadioProps extends OptionProps {
   labelClassName?: string;
   classPrefix: string;
   classnames: ClassNamesFn;
+  renderLabel?: (item: Option, props: RadioProps) => JSX.Element;
+  testIdBuilder?: TestIdBuilder;
 }
 
+const defaultLabelRender = (item: Option, props: RadioProps) => (
+  <>{`${item[props.labelField || 'label']}`}</>
+);
 export class Radios extends React.Component<RadioProps, any> {
   static defaultProps = {
     type: 'radio',
@@ -79,14 +85,19 @@ export class Radios extends React.Component<RadioProps, any> {
   }
 
   renderGroup(option: Option, index: number, valueArray: Array<Option>) {
-    const {classnames: cx, optionType, classPrefix: ns} = this.props;
+    const {
+      classnames: cx,
+      optionType,
+      classPrefix: ns,
+      renderLabel = defaultLabelRender
+    } = this.props;
 
     return (
       <div key={index} className={cx('RadiosControl-group', option.className)}>
         <label
           className={cx('RadiosControl-groupLabel', option.labelClassName)}
         >
-          {option.label}
+          {renderLabel(option, this.props)}
         </label>
 
         {option.children && option.children.length
@@ -113,8 +124,11 @@ export class Radios extends React.Component<RadioProps, any> {
       optionType,
       level,
       btnActiveLevel,
-      classPrefix: ns
+      classPrefix: ns,
+      testIdBuilder,
+      renderLabel = defaultLabelRender
     } = this.props;
+    const itemTestIdBuilder = testIdBuilder?.getChild(option.value || index);
 
     if (optionType === 'button') {
       const active = !!~valueArray.indexOf(option);
@@ -127,7 +141,7 @@ export class Radios extends React.Component<RadioProps, any> {
           disabled={disabled || option.disabled}
           level={(active ? btnActiveLevel : '') || level}
         >
-          <span>{`${option[labelField || 'label']}`}</span>
+          <span>{renderLabel(option, this.props)}</span>
         </Button>
       );
     }
@@ -143,8 +157,9 @@ export class Radios extends React.Component<RadioProps, any> {
         description={option.description}
         inline={inline}
         labelClassName={labelClassName}
+        testIdBuilder={itemTestIdBuilder}
       >
-        {`${option[labelField || 'label']}`}
+        {renderLabel(option, this.props)}
       </Checkbox>
     );
   }

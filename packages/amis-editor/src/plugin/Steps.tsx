@@ -6,12 +6,13 @@ import {BasePlugin} from 'amis-editor-core';
 import {getSchemaTpl} from 'amis-editor-core';
 
 export class StepsPlugin extends BasePlugin {
+  static id = 'StepsPlugin';
   // 关联渲染器名字
   rendererName = 'steps';
   $schema = '/schemas/StepsSchema.json';
 
   // 组件名称
-  name = 'Steps 步骤条';
+  name = '步骤条';
   isBaseComponent = true;
   icon = 'fa fa-forward';
   pluginIcon = 'steps-plugin';

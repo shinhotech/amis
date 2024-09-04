@@ -14,7 +14,7 @@ export const ColorPicker = React.lazy(
 
 /**
  * Color 颜色选择框
- * 文档：https://baidu.gitee.io/amis/docs/components/form/color
+ * 文档：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/color
  */
 export interface InputColorControlSchema extends FormBaseControlSchema {
   /**
@@ -30,7 +30,7 @@ export interface InputColorControlSchema extends FormBaseControlSchema {
   /**
    * 颜色格式
    */
-  format?: 'hex' | 'rgb' | 'rgba' | 'hsl';
+  format?: 'hex' | 'hexa' | 'rgb' | 'rgba' | 'hsl';
 
   /**
    * 选中颜色后是否关闭弹出层。
@@ -46,6 +46,10 @@ export interface InputColorControlSchema extends FormBaseControlSchema {
    * 是否允许用户输入颜色。
    */
   allowCustomColor?: boolean;
+  /**
+   * 弹窗容器选择器
+   */
+  popOverContainerSelector?: string;
 }
 
 export interface ColorProps
@@ -80,23 +84,21 @@ export default class ColorControl extends React.PureComponent<
       value,
       env,
       static: isStatic,
-      useMobileUI,
+      mobileUI,
       ...rest
     } = this.props;
-    const mobileUI = useMobileUI && isMobile();
+
     return (
       <div className={cx(`${ns}ColorControl`, className)}>
         <Suspense fallback={<div>...</div>}>
           <ColorPicker
             classPrefix={ns}
             {...rest}
-            useMobileUI={useMobileUI}
+            mobileUI={mobileUI}
             popOverContainer={
-              mobileUI && env && env.getModalContainer
-                ? env.getModalContainer
-                : mobileUI
-                ? undefined
-                : rest.popOverContainer
+              mobileUI
+                ? env?.getModalContainer
+                : rest.popOverContainer || env.getModalContainer
             }
             value={value || ''}
           />

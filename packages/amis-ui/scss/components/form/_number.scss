@@ -48,12 +48,6 @@
       var(--inputNumber-base-hover-bottom-right-border-radius)
       var(--inputNumber-base-hover-bottom-left-border-radius);
     background: var(--inputNumber-base-hover-bg-color);
-    .#{$ns}Number-input {
-      padding-right: calc(
-        var(--Number-handler-width) +
-          var(--inputNumber-base-default-paddingRight)
-      );
-    }
   }
 
   &-focused {
@@ -77,6 +71,14 @@
     box-shadow: var(--inputNumber-base-active-shadow);
   }
 
+  &.is-mobile {
+    border: none;
+
+    &-focused {
+      border: none;
+    }
+  }
+
   &-disabled {
     border-width: var(--inputNumber-base-disabled-top-border-width)
       var(--inputNumber-base-disabled-right-border-width)
@@ -96,7 +98,12 @@
       var(--inputNumber-base-disabled-bottom-left-border-radius);
     background: var(--inputNumber-base-disabled-bg-color);
   }
-
+  &-readonly {
+    border-color: var(--inputNumber-base-default-top-border-color)
+      var(--inputNumber-base-default-right-border-color)
+      var(--inputNumber-base-default-bottom-border-color)
+      var(--inputNumber-base-default-left-border-color);
+  }
   @include input-border();
 
   &-handler {
@@ -127,6 +134,7 @@
     display: none;
   }
 
+  &-readonly:hover,
   &-disabled:hover {
     border-color: var(--Form-input-onDisabled-borderColor);
   }
@@ -202,6 +210,10 @@
       border-left: px2rem(1px) solid var(--Form-input-borderColor);
       width: var(--Number-handler-width);
       height: 100%;
+      // 为了实现handle出现后，不遮挡内容，自然的留出padding的位置的效果
+      outline: var(--inputNumber-base-default-paddingRight)
+        var(--inputNumber-base-default-bg-color)
+        solid;
     }
 
     &-handler {
@@ -244,6 +256,11 @@
     background: var(--Number-handler-onDisabled-bg);
     pointer-events: none;
     color: var(--Number-handler-onDisabled-color);
+  }
+
+  .is-error > & {
+    border-color: var(--Form-input-onError-borderColor);
+    background: var(--Form-input-onError-bg);
   }
 
   &-disabled {
@@ -302,7 +319,8 @@
 }
 
 .#{$ns}NumberControl--withUnit {
-  display: flex;
+  display: flex !important;
+
   &:hover {
     .#{$ns}Number,
     .#{$ns}NumberControl-unit {
@@ -322,6 +340,12 @@
         var(--inputNumber-base-hover-top-right-border-radius)
         var(--inputNumber-base-hover-bottom-right-border-radius)
         var(--inputNumber-base-hover-bottom-left-border-radius);
+      &-readonly {
+        border-color: var(--Form-input-onDisabled-borderColor);
+      }
+    }
+    .#{$ns}NumberControl-readonly {
+      border-color: var(--Form-input-onDisabled-borderColor);
     }
   }
   .#{$ns}Number {
@@ -349,18 +373,28 @@
       var(--inputNumber-base-active-bottom-right-border-radius)
       var(--inputNumber-base-active-bottom-left-border-radius);
   }
+  .#{$ns}Number-focused + .#{$ns}NumberControl-readonly {
+    border-color: var(--Form-input-onDisabled-borderColor);
+  }
 
   & .#{$ns}NumberControl-unit {
     border-top-left-radius: 0 !important;
     border-bottom-left-radius: 0 !important;
+    background-color: var(--inputNumber-base-unit-bg-color);
     min-width: var(--inputNumber-base-default-unit-width);
     padding: var(--inputNumber-base-default-unit-paddingTop)
       var(--inputNumber-base-default-unit-paddingRight)
       var(--inputNumber-base-default-unit-paddingBottom)
       var(--inputNumber-base-default-unit-paddingLeft);
+    .#{$ns}Select-valueWrap {
+      width: auto !important;
+    }
   }
   .#{$ns}NumberControl-single-unit {
     cursor: default;
+    text-align: center;
+    min-width: unset;
+    padding: 0 var(--inputNumber-base-default-unit-paddingLeft);
   }
 }
 .#{$ns}Number--enhance {
@@ -407,9 +441,6 @@
       var(--inputNumber-enhance-hover-top-right-border-radius)
       var(--inputNumber-enhance-hover-bottom-right-border-radius)
       var(--inputNumber-enhance-hover-bottom-left-border-radius);
-    .#{$ns}Number-input {
-      padding-right: var(--inputNumber-base-default-paddingRight);
-    }
     .#{$ns}Number--enhance-input {
       background: var(--inputNumber-enhance-hover-bg-color);
     }
@@ -536,6 +567,8 @@
     border-bottom-right-radius: var(--Number-borderRadius);
   }
   .#{$ns}Number--enhance-input {
+    min-width: 0;
+    min-height: 0;
     flex: 1;
     border: 0;
     border-left: var(--Number-borderWidth) solid var(--Number-borderColor);
