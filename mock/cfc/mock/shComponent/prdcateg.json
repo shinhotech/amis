@@ -1,0 +1,948 @@
+{
+  "status": 0,
+  "msg": "ok",
+  "data": {
+    "options":[
+        {
+          "value": "0100",
+          "label": "酱油",
+          "sort": 0,
+          "children": [
+            {
+              "value": "010001",
+              "label": "鲜味",
+              "sort": 34,
+              "children": []
+            },
+            {
+              "value": "010000",
+              "label": "生抽",
+              "sort": 42,
+              "children": []
+            },
+            {
+              "value": "010005",
+              "label": "蒸鱼",
+              "sort": 47,
+              "children": []
+            },
+            {
+              "value": "010003",
+              "label": "普通",
+              "sort": 51,
+              "children": []
+            },
+            {
+              "value": "010006",
+              "label": "有机",
+              "sort": 57,
+              "children": []
+            },
+            {
+              "value": "010004",
+              "label": "红烧",
+              "sort": 70,
+              "children": []
+            },
+            {
+              "value": "010002",
+              "label": "老抽",
+              "sort": 82,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0200",
+          "label": "花生",
+          "sort": 1,
+          "children": [
+            {
+              "value": "020004",
+              "label": "裹衣花生",
+              "sort": 35,
+              "children": []
+            },
+            {
+              "value": "020001",
+              "label": "麻辣花生",
+              "sort": 50,
+              "children": []
+            },
+            {
+              "value": "020005",
+              "label": "花生糖果",
+              "sort": 74,
+              "children": []
+            },
+            {
+              "value": "020002",
+              "label": "风味花生",
+              "sort": 101,
+              "children": []
+            },
+            {
+              "value": "020003",
+              "label": "海味花生",
+              "sort": 124,
+              "children": []
+            },
+            {
+              "value": "020000",
+              "label": "裸花生",
+              "sort": 130,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0103",
+          "label": "酿造酱",
+          "sort": 2,
+          "children": [
+            {
+              "value": "010300",
+              "label": "豆瓣酱",
+              "sort": 36,
+              "children": []
+            },
+            {
+              "value": "010302",
+              "label": "甜面酱",
+              "sort": 37,
+              "children": []
+            },
+            {
+              "value": "010304",
+              "label": "大酱",
+              "sort": 75,
+              "children": []
+            },
+            {
+              "value": "010301",
+              "label": "黄豆酱",
+              "sort": 78,
+              "children": []
+            },
+            {
+              "value": "010308",
+              "label": "熟酱",
+              "sort": 91,
+              "children": []
+            },
+            {
+              "value": "010303",
+              "label": "面酱",
+              "sort": 99,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0501",
+          "label": "休闲食品礼盒",
+          "sort": 3,
+          "children": [
+            {
+              "value": "050100",
+              "label": "单品牌礼盒",
+              "sort": 38,
+              "children": []
+            },
+            {
+              "value": "050101",
+              "label": "多品牌礼盒",
+              "sort": 122,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0105",
+          "label": "复合调味汁",
+          "sort": 4,
+          "children": [
+            {
+              "value": "010501",
+              "label": "凉拌汁",
+              "sort": 39,
+              "children": []
+            },
+            {
+              "value": "010511",
+              "label": "烧汁",
+              "sort": 48,
+              "children": []
+            },
+            {
+              "value": "010506",
+              "label": "烧烤汁",
+              "sort": 52,
+              "children": []
+            },
+            {
+              "value": "010504",
+              "label": "拌饭拌面汁",
+              "sort": 63,
+              "children": []
+            },
+            {
+              "value": "010503",
+              "label": "蘸汁",
+              "sort": 64,
+              "children": []
+            },
+            {
+              "value": "010599",
+              "label": "其他复合调味汁",
+              "sort": 65,
+              "children": []
+            },
+            {
+              "value": "010500",
+              "label": "油醋汁",
+              "sort": 69,
+              "children": []
+            },
+            {
+              "value": "010508",
+              "label": "小炒汁",
+              "sort": 73,
+              "children": []
+            },
+            {
+              "value": "010509",
+              "label": "腌渍汁",
+              "sort": 81,
+              "children": []
+            },
+            {
+              "value": "010507",
+              "label": "卤肉汁",
+              "sort": 83,
+              "children": []
+            },
+            {
+              "value": "010505",
+              "label": "红烧汁",
+              "sort": 103,
+              "children": []
+            },
+            {
+              "value": "010510",
+              "label": "蒸鱼汁",
+              "sort": 121,
+              "children": []
+            },
+            {
+              "value": "010502",
+              "label": "沙拉汁",
+              "sort": 134,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0106",
+          "label": "复合调味酱",
+          "sort": 5,
+          "children": [
+            {
+              "value": "010608",
+              "label": "酸汤酱",
+              "sort": 40,
+              "children": []
+            },
+            {
+              "value": "010609",
+              "label": "菜品调料",
+              "sort": 41,
+              "children": []
+            },
+            {
+              "value": "010604",
+              "label": "香菇酱",
+              "sort": 45,
+              "children": []
+            },
+            {
+              "value": "010606",
+              "label": "炸酱",
+              "sort": 55,
+              "children": []
+            },
+            {
+              "value": "010602",
+              "label": "其他辣椒酱",
+              "sort": 56,
+              "children": []
+            },
+            {
+              "value": "010601",
+              "label": "鲜椒酱",
+              "sort": 58,
+              "children": []
+            },
+            {
+              "value": "010610",
+              "label": "面类调料",
+              "sort": 66,
+              "children": []
+            },
+            {
+              "value": "010699",
+              "label": "其他复合烹饪酱",
+              "sort": 68,
+              "children": []
+            },
+            {
+              "value": "010698",
+              "label": "其他复合即食酱",
+              "sort": 80,
+              "children": []
+            },
+            {
+              "value": "010600",
+              "label": "油辣椒",
+              "sort": 98,
+              "children": []
+            },
+            {
+              "value": "010607",
+              "label": "海味酱",
+              "sort": 111,
+              "children": []
+            },
+            {
+              "value": "010603",
+              "label": "牛肉酱",
+              "sort": 115,
+              "children": []
+            },
+            {
+              "value": "010611",
+              "label": "汤类调料",
+              "sort": 123,
+              "children": []
+            },
+            {
+              "value": "010605",
+              "label": "拌饭酱",
+              "sort": 147,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0104",
+          "label": "蚝油",
+          "sort": 6,
+          "children": [
+            {
+              "value": "010400",
+              "label": "普通蚝油",
+              "sort": 43,
+              "children": []
+            },
+            {
+              "value": "010402",
+              "label": "功能蚝油",
+              "sort": 118,
+              "children": []
+            },
+            {
+              "value": "010401",
+              "label": "风味蚝油",
+              "sort": 120,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0198",
+          "label": "调味品组合装",
+          "sort": 7,
+          "children": [
+            {
+              "value": "019801",
+              "label": "调味大A+大A",
+              "sort": 44,
+              "children": []
+            },
+            {
+              "value": "019802",
+              "label": "调味大A+小B",
+              "sort": 53,
+              "children": []
+            },
+            {
+              "value": "019806",
+              "label": "调味小A+小B+小C",
+              "sort": 88,
+              "children": []
+            },
+            {
+              "value": "019803",
+              "label": "调味大A+大B",
+              "sort": 93,
+              "children": []
+            },
+            {
+              "value": "019804",
+              "label": "调味小A+小B",
+              "sort": 95,
+              "children": []
+            },
+            {
+              "value": "019807",
+              "label": "调味小A+小A",
+              "sort": 97,
+              "children": []
+            },
+            {
+              "value": "019800",
+              "label": "调味大A+小A",
+              "sort": 129,
+              "children": []
+            },
+            {
+              "value": "019805",
+              "label": "调味大A+大B+大C",
+              "sort": 133,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0102",
+          "label": "料酒",
+          "sort": 8,
+          "children": [
+            {
+              "value": "010200",
+              "label": "料酒",
+              "sort": 46,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0109",
+          "label": "香脆椒",
+          "sort": 9,
+          "children": [
+            {
+              "value": "010901",
+              "label": "香脆椒",
+              "sort": 49,
+              "children": []
+            },
+            {
+              "value": "010900",
+              "label": "香脆椒碎",
+              "sort": 67,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0500",
+          "label": "调味品礼盒",
+          "sort": 10,
+          "children": [
+            {
+              "value": "050001",
+              "label": "多品牌礼盒",
+              "sort": 54,
+              "children": []
+            },
+            {
+              "value": "050000",
+              "label": "单品牌礼盒",
+              "sort": 62,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0101",
+          "label": "醋",
+          "sort": 11,
+          "children": [
+            {
+              "value": "010100",
+              "label": "米醋",
+              "sort": 59,
+              "children": []
+            },
+            {
+              "value": "010104",
+              "label": "果醋",
+              "sort": 79,
+              "children": []
+            },
+            {
+              "value": "010103",
+              "label": "香醋",
+              "sort": 112,
+              "children": []
+            },
+            {
+              "value": "010105",
+              "label": "功能醋",
+              "sort": 117,
+              "children": []
+            },
+            {
+              "value": "010101",
+              "label": "陈醋",
+              "sort": 139,
+              "children": []
+            },
+            {
+              "value": "010102",
+              "label": "白醋",
+              "sort": 145,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1000",
+          "label": "食用油",
+          "sort": 12,
+          "children": [
+            {
+              "value": "100008",
+              "label": "山茶油",
+              "sort": 60,
+              "children": []
+            },
+            {
+              "value": "100007",
+              "label": "橄榄油",
+              "sort": 125,
+              "children": []
+            },
+            {
+              "value": "100000",
+              "label": "花生油",
+              "sort": 140,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0599",
+          "label": "多行业礼盒",
+          "sort": 13,
+          "children": [
+            {
+              "value": "059901",
+              "label": "多品牌礼盒",
+              "sort": 61,
+              "children": []
+            },
+            {
+              "value": "059900",
+              "label": "单品牌礼盒",
+              "sort": 109,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0108",
+          "label": "异国风味酱",
+          "sort": 14,
+          "children": [
+            {
+              "value": "010805",
+              "label": "味噌",
+              "sort": 71,
+              "children": []
+            },
+            {
+              "value": "010806",
+              "label": "韩式辣椒酱",
+              "sort": 84,
+              "children": []
+            },
+            {
+              "value": "010808",
+              "label": "烧烤酱",
+              "sort": 96,
+              "children": []
+            },
+            {
+              "value": "010800",
+              "label": "番茄酱",
+              "sort": 113,
+              "children": []
+            },
+            {
+              "value": "010807",
+              "label": "黑胡椒酱",
+              "sort": 119,
+              "children": []
+            },
+            {
+              "value": "010804",
+              "label": "花生酱",
+              "sort": 142,
+              "children": []
+            },
+            {
+              "value": "010802",
+              "label": "咖喱酱",
+              "sort": 148,
+              "children": []
+            },
+            {
+              "value": "010803",
+              "label": "春酱",
+              "sort": 150,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0298",
+          "label": "休闲食品组合装",
+          "sort": 15,
+          "children": [
+            {
+              "value": "029800",
+              "label": "花生组合装",
+              "sort": 72,
+              "children": []
+            },
+            {
+              "value": "029899",
+              "label": "多品类零食组合装",
+              "sort": 102,
+              "children": []
+            },
+            {
+              "value": "029802",
+              "label": "脆脆椒组合装",
+              "sort": 116,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0202",
+          "label": "脆脆椒",
+          "sort": 16,
+          "children": [
+            {
+              "value": "020201",
+              "label": "脆脆椒花生",
+              "sort": 76,
+              "children": []
+            },
+            {
+              "value": "020200",
+              "label": "单一脆脆椒",
+              "sort": 126,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1001",
+          "label": "米类",
+          "sort": 17,
+          "children": [
+            {
+              "value": "100102",
+              "label": "八宝米",
+              "sort": 77,
+              "children": []
+            },
+            {
+              "value": "100101",
+              "label": "小米",
+              "sort": 104,
+              "children": []
+            },
+            {
+              "value": "100100",
+              "label": "大米",
+              "sort": 135,
+              "children": []
+            },
+            {
+              "value": "100199",
+              "label": "其他米类",
+              "sort": 146,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0107",
+          "label": "火锅调料",
+          "sort": 18,
+          "children": [
+            {
+              "value": "010700",
+              "label": "火锅底料",
+              "sort": 85,
+              "children": []
+            },
+            {
+              "value": "010701",
+              "label": "火锅蘸料",
+              "sort": 92,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0203",
+          "label": "果蔬脆片",
+          "sort": 19,
+          "children": [
+            {
+              "value": "020301",
+              "label": "食用菌脆片",
+              "sort": 86,
+              "children": []
+            },
+            {
+              "value": "020300",
+              "label": "蔬菜脆片",
+              "sort": 108,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0110",
+          "label": "花生配料",
+          "sort": 20,
+          "children": [
+            {
+              "value": "011001",
+              "label": "非花生碎",
+              "sort": 87,
+              "children": []
+            },
+            {
+              "value": "011000",
+              "label": "花生碎",
+              "sort": 127,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0201",
+          "label": "其他坚果炒货类",
+          "sort": 21,
+          "children": [
+            {
+              "value": "020199",
+              "label": "其他坚果",
+              "sort": 89,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0111",
+          "label": "其他干果配料",
+          "sort": 22,
+          "children": [
+            {
+              "value": "011101",
+              "label": "芝麻",
+              "sort": 90,
+              "children": []
+            },
+            {
+              "value": "011102",
+              "label": "混合坚果",
+              "sort": 107,
+              "children": []
+            },
+            {
+              "value": "011100",
+              "label": "豆类",
+              "sort": 141,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1201",
+          "label": "家禽类",
+          "sort": 23,
+          "children": [
+            {
+              "value": "120100",
+              "label": "家禽类",
+              "sort": 94,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1300",
+          "label": "家居清洁",
+          "sort": 24,
+          "children": [
+            {
+              "value": "130000",
+              "label": "厨卫清洁",
+              "sort": 100,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1003",
+          "label": "五谷杂粮",
+          "sort": 25,
+          "children": [
+            {
+              "value": "100399",
+              "label": "其他杂粮",
+              "sort": 105,
+              "children": []
+            },
+            {
+              "value": "100308",
+              "label": "豆类",
+              "sort": 114,
+              "children": []
+            },
+            {
+              "value": "100310",
+              "label": "芝麻",
+              "sort": 132,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1102",
+          "label": "佐饮类",
+          "sort": 26,
+          "children": [
+            {
+              "value": "110299",
+              "label": "其他佐饮",
+              "sort": 106,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0400",
+          "label": "有机蜂蜜",
+          "sort": 27,
+          "children": [
+            {
+              "value": "040000",
+              "label": "有机蜂蜜",
+              "sort": 110,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0205",
+          "label": "海味零食",
+          "sort": 28,
+          "children": [
+            {
+              "value": "020503",
+              "label": "鱼类",
+              "sort": 128,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1103",
+          "label": "酱菜",
+          "sort": 29,
+          "children": [
+            {
+              "value": "110303",
+              "label": "海带&裙带",
+              "sort": 131,
+              "children": []
+            },
+            {
+              "value": "110300",
+              "label": "泡菜",
+              "sort": 149,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1203",
+          "label": "豆制类",
+          "sort": 30,
+          "children": [
+            {
+              "value": "120300",
+              "label": "豆制类",
+              "sort": 136,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0199",
+          "label": "其他调味料",
+          "sort": 31,
+          "children": [
+            {
+              "value": "019999",
+              "label": "其他",
+              "sort": 137,
+              "children": []
+            },
+            {
+              "value": "019903",
+              "label": "香辛调味料",
+              "sort": 143,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "1202",
+          "label": "肉制类",
+          "sort": 32,
+          "children": [
+            {
+              "value": "120200",
+              "label": "肉制类",
+              "sort": 138,
+              "children": []
+            }
+          ]
+        },
+        {
+          "value": "0208",
+          "label": "糕点类",
+          "sort": 33,
+          "children": [
+            {
+              "value": "020801",
+              "label": "传统糕点",
+              "sort": 144,
+              "children": []
+            }
+          ]
+        }
+      ]
+  }
+}
