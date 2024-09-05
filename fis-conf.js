@@ -795,6 +795,9 @@ if (fis.project.currentMedia() === 'publish-sdk') {
     cfcAddress = '/amis/api';
   }
 
+  // 欣和 github.io 存放 mock 数据地址
+  const cfcAddressNew = 'https://shinhotech.github.io/amis/mock/cfc/mock';
+
   ghPages.match('/{examples,docs}/**', {
     preprocessor: function (contents, file) {
       if (!file.isText() || typeof contents !== 'string') {

@@ -20,3 +20,12 @@ mv sdk.tar.gz gh-pages/
 
 # 加这个 github page 就不会忽略下划线开头的文件
 touch gh-pages/.nojekyll
+
+
+echo "deploy"
+cd gh-pages
+git init
+git add -A
+git commit -m 'deploy'
+git push -f git@github.com:shinhotech/amis.git master:gh-pages
+cd -

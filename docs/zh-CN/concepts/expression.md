@@ -240,4 +240,4 @@ _特殊字符变量名_
 
 下面是目前所支持函数的使用手册
 
-!!!include(amis-formula/lib/doc.md)!!!
+!!!include(amis-formula/src/doc.md)!!!
